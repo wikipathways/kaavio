@@ -1,10 +1,12 @@
 var _ = require('lodash');
 var customElement = require('./custom-element');
+var DiagramComponent = require('./diagram-renderer/diagram-component');
 var Editor = require('./editor/editor');
 var ElementResizeDetector = require('element-resize-detector');
 var fs = require('fs');
 var highland = require('highland');
 var insertCss = require('insert-css');
+var m = require('mithril');
 var PvjsHighlighter = require('./highlighter/highlighter.js');
 var promisescript = require('promisescript');
 var Utils = require('./utils');
@@ -98,17 +100,13 @@ function initPvjs(window, $) {
     this.events = {};
 
     this.initContainer();
-    if (this.options.editor !== 'disabled') {
-      this.editor = new Editor(this);
-      if (this.options.editor === 'open') {
-        this.editor.open();
-      }
-    }
 
+    /*
     // Check if render should be called now or it will be done later manually
     if (!this.options.manualRender) {
       this.render(this);
     }
+    //*/
   };
 
   /**
@@ -118,11 +116,60 @@ function initPvjs(window, $) {
    */
   Pvjs.prototype.initContainer = function() {
     var pvjs = this;
-    var containerContents = fs.readFileSync(
-        __dirname + '/pvjs.html').toString();
 
-    // Add default container elements
-    this.$element.html(containerContents);
+    var containerElement = this.$element[0][0];
+    //pvjs.editor = new Editor(pvjs);
+    var diagramComponent = new DiagramComponent(pvjs);
+
+    var pvjsComponent = {};
+
+    pvjsComponent.controller = function() {
+      this.onunload = function() {
+        console.log('unloading pvjsComponent module');
+        diagramComponent.vm.onunload();
+        //pvjs.editor.vm.onunload();
+      };
+      //pvjs.editor.vm.init(privateInstance);
+    };
+
+    pvjsComponent.view = function(controller) {
+      return [
+        diagramComponent.view(),
+        //pvjs.editor.view(),
+        m('div.annotation.ui-draggable.editor-' + m.route.param('editorState'), {}, [
+          m('header.annotation-header', {}, [
+            m('span.annotation-header-move', {}, [
+              m('i.icon-move'),
+            ]),
+            m('span.annotation-header-close', {}, [
+              m('i.icon-remove'),
+            ]),
+            m('span.annotation-header-text', 'Header'),
+            m('div.annotation-description', {}, [
+              m('h2', {}, 'description'),
+            ]),
+          ]),
+          m('span.annotation-items-container', {}, [
+            /*
+               List items inside this ul element are generated automatically by JavaScript.
+               Each item will be composed of a title and text. The text can be set to be an href.
+               You can edit the styling of the title by editing CSS class "annotation-item-title"
+               and the styling of the text by editing CSS class "annotation-item-text.
+            //*/
+            m('ul.annotation-items-container-list'),
+          ]),
+        ]),
+      ];
+    };
+
+    //setup routes to start w/ the `#` symbol
+    m.route.mode = 'hash';
+
+    //define a route
+    m.route(containerElement, '/editor/closed', {
+      '/editor/:editorState': pvjsComponent,
+      '/test': pvjsComponent
+    });
 
     // Set ID to $element if it has no ID
     this.$element.attr('id', this.$element.attr('id') ||
@@ -193,6 +240,18 @@ function initPvjs(window, $) {
         windowResizeListener.fork()
         .debounce(refreshInterval)
         .each(function() {
+          /* Change this so it works. This was pulled from the element resize listener.
+          if (_.isElement(element)) {
+            diagramContainerElement.setAttribute('style',
+              'width: ' + element.clientWidth + 'px; ' +
+              'height: ' + element.clientHeight + 'px; ')
+            diagramContainerElement.setAttribute('style',
+              'width: ' + element.clientWidth + 'px; ' +
+              'height: ' + element.clientHeight + 'px; ')
+            svgElement.setAttribute('width', '100%')
+            svgElement.setAttribute('height', '100%')
+          }
+          //*/
           pvjs.publicInstance.resizeDiagram();
         });
 
@@ -213,7 +272,7 @@ function initPvjs(window, $) {
             // "Uncaught TypeError: undefined is not a function"
             // It's probably becase I'm using an old version of lodash
             // that doesn't yet have the isError method.
-            //if (_.isError(data)) {
+            //if (_.isError(data)) {}
             // Using the following as error detector, until I update the
             // lodash version.
             if (!!data.message && !!data.name &&
@@ -244,18 +303,6 @@ function initPvjs(window, $) {
         .debounce(refreshInterval)
         .each(function(element) {
           console.log('element resized');
-          /* We probably can get rid of the code commented out here
-          if (_.isElement(element)) {
-            diagramContainerElement.setAttribute('style',
-              'width: ' + element.clientWidth + 'px; ' +
-              'height: ' + element.clientHeight + 'px; ')
-            diagramContainerElement.setAttribute('style',
-              'width: ' + element.clientWidth + 'px; ' +
-              'height: ' + element.clientHeight + 'px; ')
-            svgElement.setAttribute('width', '100%')
-            svgElement.setAttribute('height', '100%')
-          }
-          //*/
           pvjs.publicInstance.resizeDiagram();
         });
 
@@ -265,15 +312,15 @@ function initPvjs(window, $) {
       // Initialize Highlighter plugin
       var hi = pvjsHighlighter(pvjs.publicInstance);
       // TODO don't use hi in global namespace
-      window.hi = hi
+      window.hi = hi;
 
       // TODO don't hard-code these
       // Highlight by ID
-      hi.highlight('#eb5')
-      hi.highlight('id:d25e1')
+      hi.highlight('#eb5');
+      hi.highlight('id:d25e1');
 
       // Highlight by Text
-      hi.highlight('Mitochondrion', null, {backgroundColor: 'gray'})
+      hi.highlight('Mitochondrion', null, {backgroundColor: 'gray'});
 
       // Highlight by xref
       hi.highlight('xref:id:http://identifiers.org/wormbase/ZK1193.5', null, {
@@ -296,6 +343,7 @@ function initPvjs(window, $) {
 
     // TODO take in account paddings, margins and border
     this.elementHeight = +boundingRect.height;
+
   };
 
   /**
