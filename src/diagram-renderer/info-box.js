@@ -27,7 +27,7 @@ module.exports = {
 
     /*
     if (data.hasOwnProperty('PublicationXref')) {
-      pvjs.renderer.publicationXref.getPublicationXrefString(data, data.PublicationXref, function(publicationXrefString) {
+      kaavio.renderer.publicationXref.getPublicationXrefString(data, data.PublicationXref, function(publicationXrefString) {
         infoBoxData.push({'key':'Citation(s)', 'value':publicationXrefString});
       })
     }

@@ -1,4 +1,4 @@
-.pvjs-notifications {
+.kaavio-notifications {
   position: absolute;
   top: 0;
   left: 0;
@@ -6,38 +6,38 @@
   z-index: 10;
 }
 
-.pvjs-notifications .alert{
+.kaavio-notifications .alert{
   padding: 9px 15px;
   margin: 4px;
   border: 1px solid transparent;
   border-radius: 4px;
 }
 
-.pvjs-notifications .alert.alert-success{
+.kaavio-notifications .alert.alert-success{
   background-color: #dff0d8;
   border-color: #d6e9c6;
   color: #3c763d;
 }
 
-.pvjs-notifications .alert.alert-info{
+.kaavio-notifications .alert.alert-info{
   background-color: #d9edf7;
   border-color: #bce8f1;
   color: #31708f;
 }
 
-.pvjs-notifications .alert.alert-warning{
+.kaavio-notifications .alert.alert-warning{
   background-color: #fcf8e3;
   border-color: #faebcc;
   color: #8a6d3b;
 }
 
-.pvjs-notifications .alert.alert-danger{
+.kaavio-notifications .alert.alert-danger{
   background-color: #f2dede;
   border-color: #ebccd1;
   color: #a94442;
 }
 
-.pvjs-notifications .alert .close{
+.kaavio-notifications .alert .close{
   padding: 0;
   cursor: pointer;
   background: 0 0;
@@ -59,7 +59,7 @@
 /*
   Counter
  */
-.pvjs-notifications .alert .counter{
+.kaavio-notifications .alert .counter{
   margin: 0 4px 0 0;
   min-width: 15px;
   height: 15px;
@@ -73,22 +73,22 @@
   border-radius: 50%;
 }
 
-.pvjs-notifications .alert.alert-success .counter{
+.kaavio-notifications .alert.alert-success .counter{
   color: #fff;
   background: #31708F;
 }
 
-.pvjs-notifications .alert.alert-info .counter{
+.kaavio-notifications .alert.alert-info .counter{
   color: #D9534F;
   background: #EBCCD1;
 }
 
-.pvjs-notifications .alert.alert-warning .counter{
+.kaavio-notifications .alert.alert-warning .counter{
   color: #D9534F;
   background: #EBCCD1;
 }
 
-.pvjs-notifications .alert.alert-danger .counter{
+.kaavio-notifications .alert.alert-danger .counter{
   color: #000;
   background: #fff;
 }

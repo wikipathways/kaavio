@@ -10,7 +10,7 @@ module.exports = function() {
 
   var pathwaySearchUriStub = '/index.php?title=Special:SearchPathways&doSearch=1&query=';
 
-  function render(pvjs, args) {
+  function render(kaavio, args) {
     var xrefs = args.xrefs;
     var metadata = args.metadata;
     var preloadedData = {
@@ -19,7 +19,7 @@ module.exports = function() {
       // TODO there's probably a better way to do this.
       'listItems':[null]
     };
-    Annotation.render(pvjs, preloadedData);
+    Annotation.render(kaavio, preloadedData);
 
     if (xrefs.id.indexOf('bridgedb.org') > -1) {
       // dereference the BridgeDB IRI to get multiple xrefs
@@ -52,11 +52,11 @@ module.exports = function() {
             }]};
           annotationData.listItems.unshift(searchAtWikiPathwaysListItem);
 
-          Annotation.render(pvjs, annotationData);
+          Annotation.render(kaavio, annotationData);
         });
     } else {
       var xrefWithContext = {
-        '@context': pvjs.sourceData.pvjson['@context'],
+        '@context': kaavio.sourceData.pvjson['@context'],
         '@graph':{entityReference:xrefs.id}
       }
       jsonld.expand(xrefWithContext, function(err, expandedXref) {
@@ -95,7 +95,7 @@ module.exports = function() {
           };
         }
 
-        Annotation.render(pvjs, directLinkData);
+        Annotation.render(kaavio, directLinkData);
       });
     }
   }

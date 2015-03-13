@@ -1,11 +1,11 @@
 var highland = require('highland');
 
 /**
- * Enable the wikipathways-pvjs custom element
+ * Enable the ariutta-kaavio custom element
  *
  * @return
  */
-function registerWikiPathwaysPvjsElement() {
+function registerAriuttaKaavioElement() {
   'use strict';
 
   var DivPrototype = Object.create(window.HTMLDivElement.prototype);
@@ -17,37 +17,37 @@ function registerWikiPathwaysPvjsElement() {
     }
   };
 
-  var WikiPathwaysPvjsPrototype = Object.create(DivPrototype);
+  var AriuttaKaavioPrototype = Object.create(DivPrototype);
 
-  WikiPathwaysPvjsPrototype.createdCallback = function() {
+  AriuttaKaavioPrototype.createdCallback = function() {
     var vm = this;
-    var args = {};
+    var options = {};
 
-    var alt = args.alt = vm.getAttribute('alt');
+    var alt = options.alt = vm.getAttribute('alt');
     if (!!alt) {
       vm.attributeChangedCallback('alt', null, alt);
     }
 
-    var displayErrors = args.displayErrors =
+    var displayErrors = options.displayErrors =
         Boolean(vm.getAttribute('display-errors'));
     if (!!displayErrors) {
       vm.attributeChangedCallback('display-errors', null, displayErrors);
     }
 
-    var displayWarnings = args.displayErrors =
+    var displayWarnings = options.displayErrors =
         Boolean(vm.getAttribute('display-warnings'));
     if (!!displayWarnings) {
       vm.attributeChangedCallback('display-warnings', null, displayWarnings);
     }
 
-    var fitToContainer = args.fitToContainer =
+    var fitToContainer = options.fitToContainer =
         Boolean(vm.getAttribute('fit-to-container'));
     if (!!fitToContainer) {
       vm.attributeChangedCallback('fit-to-container', null, fitToContainer);
     }
 
     /* TODO should this be enabled? It doesn't seem needed for the web-component.
-    var manualRender = args.manualRender =
+    var manualRender = options.manualRender =
         Boolean(vm.getAttribute('manual-render'));
     if (!!manualRender) {
       vm.attributeChangedCallback('manual-render', null, manualRender);
@@ -58,26 +58,18 @@ function registerWikiPathwaysPvjsElement() {
     if (!!src) {
       vm.attributeChangedCallback('src', null, src);
     }
-    args.sourceData = [
-      {
-        uri: src,
-        // TODO we should be able to use the content type
-        // header from the server response instead of relying
-        // on this.
-        // Think analogous to image/png, image/gif, etc. for the img tag.
-        fileType:'gpml' // generally will correspond to filename extension
-      }
-    ];
+
+    options.src = src;
 
     vm.innerHTML = '';
 
-    $(vm).pvjs(args);
+    $(vm).kaavio(options);
 
     // Get first element from array of instances
-    var pathInstance = $(vm).pvjs('get').pop()
+    var pathInstance = $(vm).kaavio('get').pop()
 
     // Load notification plugin
-    pvjsNotifications(pathInstance, {
+    kaavioNotifications(pathInstance, {
       displayErrors: displayErrors,
       displayWarnings: displayWarnings
     });
@@ -88,16 +80,16 @@ function registerWikiPathwaysPvjsElement() {
     });
   };
 
-  // Public: WikiPathwaysPvjsPrototype constructor.
+  // Public: AriuttaKaavioPrototype constructor.
   //
-  //   # => <wikipathways-pvjs></wikipathways-pvjs>
+  //   # => <ariutta-kaavio></ariutta-kaavio>
   //
-  window.WikiPathwaysPvjs = document.registerElement(
-      'wikipathways-pvjs', {
-      prototype: WikiPathwaysPvjsPrototype
+  window.AriuttaKaavio = document.registerElement(
+      'ariutta-kaavio', {
+      prototype: AriuttaKaavioPrototype
   });
 }
 
 module.exports = {
-  registerElement: registerWikiPathwaysPvjsElement
+  registerElement: registerAriuttaKaavioElement
 }

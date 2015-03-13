@@ -1,4 +1,6 @@
-// Note: the view (HTML) for this annotation panel is in pvjs.html
+// Note: the view (HTML) for this annotation panel
+// is current created in kaavio.js
+// TODO move it into here
 var fs = require('fs');
 var insertCss = require('insert-css');
 var Spinner = require('spin.js');
@@ -12,8 +14,8 @@ module.exports = function() {
 
   css.map(insertCss);
 
-  function render(pvjs, annotationData) {
-    var annotation = pvjs.$element.select('.annotation')
+  function render(kaavio, annotationData) {
+    var annotation = kaavio.$element.select('.annotation')
     .data([annotationData]);
 
     //Special drag code to update absolute position of annotation panel
@@ -37,7 +39,8 @@ module.exports = function() {
 
     var annotationHeaderTextWidth = annotationHeaderText[0][0]
       .getBoundingClientRect().width;
-    var annotationHeaderTextSize = 22; // TODO this is bad if it gets changed in the CSS and not here.
+    // TODO this is bad if it gets changed in the CSS and not here.
+    var annotationHeaderTextSize = 22;
     if (annotationHeaderTextWidth > 190) {
       do {
         annotationHeaderTextSize -= 1;
