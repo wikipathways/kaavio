@@ -345,12 +345,13 @@ module.exports = function(window, $) {
       rendererEngine: null // renderer engine name
     };
 
+    var pvjson = kaavio.options.pvjson;
     var src = kaavio.options.src;
 
-    if (_.isPlainObject(src)) {
-      kaavio.sourceData.pvjson = src;
+    if (!!pvjson) {
+      kaavio.sourceData.pvjson = pvjson;
       diagramRenderer.render(kaavio);
-    } else if (_.isString(src)) {
+    } else if (!!src) {
       d3.json(src, function(err, pvjson) {
         if (err) {
           throw err;
@@ -628,7 +629,6 @@ module.exports = function(window, $) {
     });
   };
 
-  if (!!$) {
-    $(window).trigger('kaavioReady');
-  }
+  var kaavioreadyEvent = new CustomEvent('kaavioready');
+  window.dispatchEvent(kaavioreadyEvent);
 };
