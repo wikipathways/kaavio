@@ -1,6 +1,6 @@
 @import url("//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css");
 
-.pvjs-container {
+.kaavio-container {
   position: relative;
   min-width: 400px;
   width: inherit;
@@ -13,11 +13,11 @@
   display: block;
 }
 
-.pvjs-container.loading {
+.kaavio-container.loading {
   opacity: 0.7;
 }
 
-.pvjs-container.loading:after {
+.kaavio-container.loading:after {
   content: '';
   position: absolute;
   left: 50%;
@@ -28,7 +28,7 @@
 }
 
 /* Centering image */
-.pvjs-container .pvjs-img {
+.kaavio-container .kaavio-img {
   position: absolute;
   margin: auto;
   top: 0;

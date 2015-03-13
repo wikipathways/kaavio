@@ -13,164 +13,164 @@ var css = fs.readFileSync(
 
   /**
    * Init plugin
-   * @param {pvjs instance} pvjs
+   * @param {kaavio instance} kaavio
    * @param {objects} options
    */
-  function init(pvjs, options) {
+  function init(kaavio, options) {
     // Create new instance if it does not exist
-    if (!instancesMap.hasOwnProperty(pvjs.instanceId)) {
-      instancesMap[pvjs.instanceId] = new PvjsDiffViewer(pvjs, options)
+    if (!instancesMap.hasOwnProperty(kaavio.instanceId)) {
+      instancesMap[kaavio.instanceId] = new PvjsDiffViewer(kaavio, options)
     }
   }
 
   /**
    * Constructor
-   * @param {Object} pvjs
+   * @param {Object} kaavio
    */
-  var PvjsDiffViewer = function(pvjs, options) {
+  var PvjsDiffViewer = function(kaavio, options) {
     this.options = $.extend({}, optionsDefault, options)
 
-    this.pvjs = pvjs
-    this.$pvjsElement = $(this.pvjs.$element[0][0])
+    this.kaavio = kaavio
+    this.$kaavioElement = $(this.kaavio.$element[0][0])
 
     this.initContainer()
     this.initSecondPvjs()
     this.hookEvents()
 
-    // Trigger pvjs2 render when everything is ready
-    this.pvjs2.render()
+    // Trigger kaavio2 render when everything is ready
+    this.kaavio2.render()
   }
 
   /**
    * Create differences container
    */
   PvjsDiffViewer.prototype.initContainer = function() {
-    this.$diffviewer = $('<div class="pvjs-diffviewer"/>')
+    this.$diffviewer = $('<div class="kaavio-diffviewer"/>')
 
     // Create panes
     this.$paneLeft = $('<div class="pane-inner"></div>').appendTo($('<div class="pane pane-left"></div>').appendTo(this.$diffviewer))
     this.$paneRight = $('<div class="pane-inner"></div>').appendTo($('<div class="pane pane-right"></div>').appendTo(this.$diffviewer))
     this.$paneCenter = $('<div class="pane pane-center"></div>').appendTo(this.$diffviewer)
 
-    // Insert diffviewer container before pvjs element
-    this.$diffviewer.insertBefore(this.$pvjsElement)
+    // Insert diffviewer container before kaavio element
+    this.$diffviewer.insertBefore(this.$kaavioElement)
 
     // Move instance element into left pane
-    this.$paneLeft.append(this.$pvjsElement)
+    this.$paneLeft.append(this.$kaavioElement)
   }
 
   /**
-   * Initialize second pvjs. Save its instance into this.pvjs2
+   * Initialize second kaavio. Save its instance into this.kaavio2
    */
   PvjsDiffViewer.prototype.initSecondPvjs = function() {
     // Create second instance container
-    this.$pvjsElement2 = $('<div/>').appendTo(this.$paneRight)
+    this.$kaavioElement2 = $('<div/>').appendTo(this.$paneRight)
 
     // Get original options
-    var pvjsOptions = this.pvjs.getOptions()
+    var kaavioOptions = this.kaavio.getOptions()
     // Set new source data
-    pvjsOptions.sourceData = this.options.sourceData
-    pvjsOptions.manualRender = true
+    kaavioOptions.sourceData = this.options.sourceData
+    kaavioOptions.manualRender = true
 
-    // Create second pvjs instance
-    this.pvjs2 = window.pvjs(this.$pvjsElement2[0], pvjsOptions)[0]
+    // Create second kaavio instance
+    this.kaavio2 = window.kaavio(this.$kaavioElement2[0], kaavioOptions)[0]
   }
 
   /**
-   * Hook render events. Display diffViewer only when both pvjses are ready
+   * Hook render events. Display diffViewer only when both kaavios are ready
    * Hook for error events so to know when to display a message instead of diffViewer
    * Hook zoom and pan events in order to keep both pathways synchronized
-   * Hook main pvjs destroy event in order to know when to destroy second pathway
+   * Hook main kaavio destroy event in order to know when to destroy second pathway
    */
   PvjsDiffViewer.prototype.hookEvents = function() {
     var that = this
-      , pvjsRendered = false
-      , pvjs2Rendered = false
+      , kaavioRendered = false
+      , kaavio2Rendered = false
       , noDiff = false
 
-    // pvjs renderer barrier
-    this.pvjs.on('rendered', function(){
-      pvjsRendered = true
-      if (pvjs2Rendered && !noDiff) {
+    // kaavio renderer barrier
+    this.kaavio.on('rendered', function(){
+      kaavioRendered = true
+      if (kaavio2Rendered && !noDiff) {
         that.onPvjsesRendered()
       }
     })
-    this.pvjs2.on('rendered', function(){
-      pvjs2Rendered = true
-      if (pvjsRendered && !noDiff) {
+    this.kaavio2.on('rendered', function(){
+      kaavio2Rendered = true
+      if (kaavioRendered && !noDiff) {
         that.onPvjsesRendered()
       }
     })
 
-    this.pvjs.on('error.sourceData', function(){
+    this.kaavio.on('error.sourceData', function(){
       if (!noDiff) {
-        that.onNoDiff('One or both pathways were not rendered. Most probably one pathways uses old format that is not supported by pvjs.')
+        that.onNoDiff('One or both pathways were not rendered. Most probably one pathways uses old format that is not supported by kaavio.')
       }
 
       noDiff = true
     })
-    this.pvjs2.on('error.sourceData', function(){
+    this.kaavio2.on('error.sourceData', function(){
       if (!noDiff) {
-        that.onNoDiff('One or both pathways were not rendered. Most probably one pathways uses old format that is not supported by pvjs.')
+        that.onNoDiff('One or both pathways were not rendered. Most probably one pathways uses old format that is not supported by kaavio.')
       }
 
       noDiff = true
     })
 
-    // On destroy pvjs
-    this.pvjs.on('destroy.pvjs', function(){
-      that.pvjs2.destroy()
-      // Put back pvjs element container
-      that.$pvjsElement.insertBefore(that.$diffviewer)
+    // On destroy kaavio
+    this.kaavio.on('destroy.kaavio', function(){
+      that.kaavio2.destroy()
+      // Put back kaavio element container
+      that.$kaavioElement.insertBefore(that.$diffviewer)
       that.$diffviewer.remove()
     })
 
     // Pan and zoom events
-    var pvjsPanned = false
-      , pvjsZoomed = false
-      , pvjs2Panned = false
-      , pvjs2Zoomed = false
+    var kaavioPanned = false
+      , kaavioZoomed = false
+      , kaavio2Panned = false
+      , kaavio2Zoomed = false
 
-    this.pvjs.on('zoomed.renderer', function(level){
-      if (pvjs2Zoomed) { // prevent recursive call
-        pvjs2Zoomed = false
+    this.kaavio.on('zoomed.renderer', function(level){
+      if (kaavio2Zoomed) { // prevent recursive call
+        kaavio2Zoomed = false
         return
       }
-      pvjsZoomed = true
+      kaavioZoomed = true
 
-      that.pvjs2.zoom(level / that.zoomScale)
-      that.pvjs.panBy({x: 0, y: 0}) // trigger pan to sync pathways
-      that.pvjs2.pan(that.pvjs.getPan())
+      that.kaavio2.zoom(level / that.zoomScale)
+      that.kaavio.panBy({x: 0, y: 0}) // trigger pan to sync pathways
+      that.kaavio2.pan(that.kaavio.getPan())
     })
 
-    this.pvjs.on('panned.renderer', function(point){
-      if (pvjs2Panned) {
-        pvjs2Panned = false
+    this.kaavio.on('panned.renderer', function(point){
+      if (kaavio2Panned) {
+        kaavio2Panned = false
         return
       }
-      pvjsPanned = true
-      that.pvjs2.pan(point)
+      kaavioPanned = true
+      that.kaavio2.pan(point)
     })
 
-    this.pvjs2.on('zoomed.renderer', function(level){
-      if (pvjsZoomed) {
-        pvjsZoomed = false
+    this.kaavio2.on('zoomed.renderer', function(level){
+      if (kaavioZoomed) {
+        kaavioZoomed = false
         return
       }
-      pvjs2Zoomed = true
+      kaavio2Zoomed = true
 
-      that.pvjs.zoom(level * that.zoomScale)
-      that.pvjs2.panBy({x: 0, y: 0}) // trigger pan to sync pathways
-      that.pvjs.pan(that.pvjs2.getPan())
+      that.kaavio.zoom(level * that.zoomScale)
+      that.kaavio2.panBy({x: 0, y: 0}) // trigger pan to sync pathways
+      that.kaavio.pan(that.kaavio2.getPan())
     })
 
-    this.pvjs2.on('panned.renderer', function(point){
-      if (pvjsPanned) {
-        pvjsPanned = false
+    this.kaavio2.on('panned.renderer', function(point){
+      if (kaavioPanned) {
+        kaavioPanned = false
         return
       }
-      pvjs2Panned = true
-      that.pvjs.pan(point)
+      kaavio2Panned = true
+      that.kaavio.pan(point)
     })
   }
 
@@ -189,7 +189,7 @@ var css = fs.readFileSync(
   }
 
   /**
-   * When both pvjses are rendered
+   * When both kaavios are rendered
    */
   PvjsDiffViewer.prototype.onPvjsesRendered = function() {
     if (this.checkPvjsesData()) {
@@ -201,11 +201,11 @@ var css = fs.readFileSync(
   }
 
   /**
-   * Check if both pvjses have pvjson objects
-   * @return {Boolean} True if pvjson is avaliable for both pvjses
+   * Check if both kaavios have pvjson objects
+   * @return {Boolean} True if pvjson is avaliable for both kaavios
    */
   PvjsDiffViewer.prototype.checkPvjsesData = function() {
-    return (this.pvjs.getSourceData().pvjson && this.pvjs2.getSourceData().pvjson)
+    return (this.kaavio.getSourceData().pvjson && this.kaavio2.getSourceData().pvjson)
   }
 
   /** @type {Number} zoom scale between pathways */
@@ -215,15 +215,15 @@ var css = fs.readFileSync(
    * Detect and cache zoom scale between pathways
    */
   PvjsDiffViewer.prototype.getZoomScale = function() {
-    this.zoomScale = this.pvjs.getZoom() / this.pvjs2.getZoom()
+    this.zoomScale = this.kaavio.getZoom() / this.kaavio2.getZoom()
   }
 
   /**
    * Entry point of diffViewer rendering and highlighting differences
    */
   PvjsDiffViewer.prototype.displayDiff = function() {
-    this.elements = this.pvjs.getSourceData().pvjson.elements
-    this.elements2 = this.pvjs2.getSourceData().pvjson.elements
+    this.elements = this.kaavio.getSourceData().pvjson.elements
+    this.elements2 = this.kaavio2.getSourceData().pvjson.elements
     this.elementsMerge = this.mergeElements(this.elements2, this.elements) // New elements have priority
 
     var diff = this.computeDiff()
@@ -281,7 +281,7 @@ var css = fs.readFileSync(
   }
 
   /**
-   * Compute difference between elements of both pvjses
+   * Compute difference between elements of both kaavios
    * @return {Object} An object with 3 arrays: updated, added and removed
    */
   PvjsDiffViewer.prototype.computeDiff = function() {
@@ -753,8 +753,8 @@ var css = fs.readFileSync(
     var $paneCenter = this.$paneCenter
       , that = this
       , isFocused = false
-      , initialZoom = this.pvjs.getZoom()
-      , initialZoom2 = this.pvjs2.getZoom()
+      , initialZoom = this.kaavio.getZoom()
+      , initialZoom2 = this.kaavio2.getZoom()
 
     this.initHighlighting()
 
@@ -937,8 +937,8 @@ var css = fs.readFileSync(
     var type = getTitleType($active)
       , relativeZoom = type === 'added' ? relativeZoom2 : relativeZoom1
       , zoom = relativeZoom
-      , pvjs = type === 'added' ? this.pvjs2 : this.pvjs
-      , selector = pvjs.getSourceData().selector
+      , kaavio = type === 'added' ? this.kaavio2 : this.kaavio
+      , selector = kaavio.getSourceData().selector
       , bBox = selector.getBBox()
       , ids = this.getTitleIds($active)
       , highlightSelector = selector.filteredByCallback(function(element){
@@ -948,7 +948,7 @@ var css = fs.readFileSync(
 
     // If updated get BBox of element from both screens
     if (type === 'updated') {
-      highlightSelector = this.pvjs2.getSourceData().selector.filteredByCallback(function(element){
+      highlightSelector = this.kaavio2.getSourceData().selector.filteredByCallback(function(element){
         return (element.id !== void 0 && ids.indexOf(element.id) !== -1)
       })
       var highlightBBox2 = highlightSelector.getBBox()
@@ -966,15 +966,15 @@ var css = fs.readFileSync(
     // Lower zoom by 30%
     zoom *= 0.7
 
-    pvjs.zoom(zoom)
+    kaavio.zoom(zoom)
 
     // Get real set zoom
-    var boundedZoom = pvjs.getZoom()
-      // Center pvjs (it is necessary to pan by 15 because of previous zoom out by 30%)
+    var boundedZoom = kaavio.getZoom()
+      // Center kaavio (it is necessary to pan by 15 because of previous zoom out by 30%)
       , x = -highlightBBox.left * boundedZoom + (highlightBBox.width * boundedZoom * 0.15)
       , y = -highlightBBox.top * boundedZoom + (highlightBBox.height * boundedZoom * 0.15)
 
-    pvjs.pan({x: x, y: y})
+    kaavio.pan({x: x, y: y})
   }
 
   /**
@@ -1040,8 +1040,8 @@ var css = fs.readFileSync(
    * Store highlighter instances as this.h1 and this.h2
    */
   PvjsDiffViewer.prototype.initHighlighting = function() {
-    this.hi = window.pvjsHighlighter(this.pvjs, {displayInputField: false})
-    this.hi2 = window.pvjsHighlighter(this.pvjs2, {displayInputField: false})
+    this.hi = window.kaavioHighlighter(this.kaavio, {displayInputField: false})
+    this.hi2 = window.kaavioHighlighter(this.kaavio2, {displayInputField: false})
   }
 
   /**
@@ -1053,7 +1053,7 @@ var css = fs.readFileSync(
   }
 
   /**
-   * Expose plugin globally as pvjsDiffviewer
+   * Expose plugin globally as kaavioDiffviewer
    */
-  window.pvjsDiffviewer = init
+  window.kaavioDiffviewer = init
 })(window, window.jQuery || window.Zepto)

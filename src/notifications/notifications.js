@@ -14,26 +14,26 @@ var css = fs.readFileSync(
 
   /**
    * Init plugin
-   * @param {pvjs instance} pvjs
+   * @param {kaavio instance} kaavio
    * @param {object} options
    * @return {object} PvjsNotifications instance
    */
-  function init(pvjs, options) {
+  function init(kaavio, options) {
     // Create new instance if it does not exist
-    if (!instancesMap.hasOwnProperty(pvjs.instanceId)) {
-      instancesMap[pvjs.instanceId] = new PvjsNotifications(pvjs, options)
+    if (!instancesMap.hasOwnProperty(kaavio.instanceId)) {
+      instancesMap[kaavio.instanceId] = new PvjsNotifications(kaavio, options)
     }
 
-    return instancesMap[pvjs.instanceId]
+    return instancesMap[kaavio.instanceId]
   }
 
   /**
    * Plugin constructor
-   * @param {pvjs instance} pvjs
+   * @param {kaavio instance} kaavio
    * @param {objects} options
    */
-  function PvjsNotifications(pvjs, options) {
-    var $notifications = $('<div class="pvjs-notifications">').appendTo($(pvjs.$element[0][0]))
+  function PvjsNotifications(kaavio, options) {
+    var $notifications = $('<div class="kaavio-notifications">').appendTo($(kaavio.$element[0][0]))
       , options = options || {}
       , notifications = []
       , lastNotification = {type: null, message: '', counter: 0, $element: null}
@@ -46,13 +46,13 @@ var css = fs.readFileSync(
     }
 
     if (options.displayErrors) {
-      pvjs.on('error', function(data){
+      kaavio.on('error', function(data){
         addPvjsNotification($notifications, 'danger', '<strong>Error!</strong> ' + data.message, notifications)
       })
     }
 
     if (options.displayWarnings) {
-      pvjs.on('warning', function(data){
+      kaavio.on('warning', function(data){
         addPvjsNotification($notifications, 'warning', '<strong>Warning!</strong> ' + data.message, notifications)
       })
     }
@@ -134,5 +134,5 @@ var css = fs.readFileSync(
   /**
    * Expose plugin globally
    */
-  window.pvjsNotifications = init
+  window.kaavioNotifications = init
 })(window)

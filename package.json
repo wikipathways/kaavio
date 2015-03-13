@@ -1,8 +1,8 @@
 {
-  "name": "pvjs",
-  "version": "2.2.0",
-  "description": "Diagram viewer and editor for biological pathways.",
-  "main": "./src/js/pvjs.js",
+  "name": "kaavio",
+  "version": "1.0.0",
+  "description": "Diagram viewer and editor.",
+  "main": "./lib/index.js",
   "engines": {
     "node": ">= 0.10.0"
   },
@@ -10,16 +10,13 @@
     "test": "test"
   },
   "scripts": {
-    "test": "grunt nodeunit"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wikipathways/pvjs.git"
+    "url": "https://github.com/ariutta/kaavio.git"
   },
   "keywords": [
-    "pathway",
     "network",
-    "biology",
     "node",
     "edge",
     "diagram"
@@ -27,9 +24,9 @@
   "author": "Pvjs team",
   "license": "Apache 2",
   "bugs": {
-    "url": "https://github.com/wikipathways/pvjs/issues"
+    "url": "https://github.com/ariutta/kaavio/issues"
   },
-  "homepage": "http://wikipathways.github.io/pvjs",
+  "homepage": "http://ariutta.github.io/kaavio",
   "gitHead": "044be6618ee72b932fcb90f4369eb61706f3cfb9",
   "readmeFilename": "README.md",
   "style": [
@@ -49,6 +46,7 @@
     "colors": "~0.6.2",
     "connect": "~2.14.3",
     "deglobalify": "~0.2.0",
+    "es6ify": "~1.6.0",
     "event-stream": "~3.1.7",
     "express": "~3.4.7",
     "grunt": "~0.4.1",
@@ -127,8 +125,6 @@
     "jsonld": "~0.2.17",
     "svg-pan-zoom": "git://github.com/ariutta/svg-pan-zoom.git",
     "tower-strcase": "~0.5.0",
-    "gpml2json": "git://github.com/wikipathways/gpml2json.git",
-    "blueimp-load-image": "~1.13.0",
     "cross-platform-text": "git://github.com/ariutta/cross-platform-text.git",
     "insert-css": "~0.2.0",
     "highland": "~2.3.0",
@@ -139,7 +135,9 @@
     "iconv-lite": "~0.4.7",
     "select2": "~3.5.2-browserify",
     "spectrum-colorpicker": "~1.6.1",
-    "wikipathways-api-client": "git://github.com/wikipathways/wikipathways-api-client-js.git",
-    "custom-event-polyfill": "~0.1.2"
+    "custom-event-polyfill": "~0.1.2",
+    "machina": "~1.0.0-1",
+    "simple-modal": "~0.1.4",
+    "traceur": "0.0.86"
   }
 }

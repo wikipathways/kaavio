@@ -7,46 +7,44 @@ var fs = require('fs');
 var highland = require('highland');
 var insertCss = require('insert-css');
 var m = require('mithril');
-var PvjsHighlighter = require('./highlighter/highlighter.js');
-var promisescript = require('promisescript');
+var KaavioHighlighter = require('./highlighter/highlighter.js');
 var Utils = require('./utils');
 var DiagramRenderer = require('./diagram-renderer/diagram-renderer');
-var FormatConverter = require('./format-converter/format-converter');
 var Spinner = require('spin.js');
 
 // Make IE work with the CustomEvent interface standard
 require('custom-event-polyfill');
 
 var css = [
-  fs.readFileSync(__dirname + '/pvjs.css')
+  fs.readFileSync(__dirname + '/kaavio.css')
 ];
 
 /**
- * initPvjs
+ * Initialize the global constructor for Kaavio
  *
  * @param {object} window
  * @param {object} $
  * @return
  */
-function initPvjs(window, $) {
+module.exports = function(window, $) {
   'use strict';
 
   // TODO should we check for whether the user requested the highlighter
   // before loading it?
-  if (window.hasOwnProperty('initPvjsHighlighter')) {
-    window.initPvjsHighlighter(window, $);
+  if (window.hasOwnProperty('initKaavioHighlighter')) {
+    window.initKaavioHighlighter(window, $);
   }
 
   var diagramRenderer = new DiagramRenderer();
   css.map(insertCss);
 
   /**
-   * Pvjs constructor
+   * Kaavio constructor
    *
    * @param {object} element Dom element
    * @param {object} options
    */
-  var Pvjs = function(element, options) {
+  var Kaavio = function(element, options) {
     this.init(element, options);
   };
 
@@ -60,12 +58,12 @@ function initPvjs(window, $) {
   };
 
   /**
-   * Pvjs initialisation
+   * Kaavio initialisation
    *
    * @param  {object} element Dom element
    * @param  {object} options
    */
-  Pvjs.prototype.init = function(element, options) {
+  Kaavio.prototype.init = function(element, options) {
     this.$element = d3.select(element).html(''); // select and empty the element
 
     var spinnerOptions = {
@@ -114,31 +112,31 @@ function initPvjs(window, $) {
    * Adds loading state to container.
    * Adds hook for loaded event to remove loading state
    */
-  Pvjs.prototype.initContainer = function() {
-    var pvjs = this;
+  Kaavio.prototype.initContainer = function() {
+    var kaavio = this;
 
     var containerElement = this.$element[0][0];
-    pvjs.editor = new Editor(pvjs);
-    var diagramComponent = new DiagramComponent(pvjs);
+    kaavio.editor = new Editor(kaavio);
+    var diagramComponent = new DiagramComponent(kaavio);
 
-    var pvjsComponent = {};
+    var kaavioComponent = {};
 
-    pvjsComponent.controller = function() {
+    kaavioComponent.controller = function() {
       this.onunload = function() {
-        console.log('unloading pvjsComponent module');
+        console.log('unloading kaavioComponent module');
 
         //diagramComponent.vm.onunload();
-        pvjs.editor.vm.onunload();
+        kaavio.editor.vm.onunload();
       };
-      pvjs.editor.vm.init(pvjs);
+      kaavio.editor.vm.init(kaavio);
     };
 
-    pvjsComponent.view = function(controller) {
+    kaavioComponent.view = function(controller) {
       return [
         m('div.diagram-container.editor-' + m.route.param('editorState'), [
           diagramComponent.view,
         ]),
-        pvjs.editor.view(),
+        kaavio.editor.view(),
         m('div.annotation.ui-draggable.editor-' + m.route.param('editorState'), {}, [
           m('header.annotation-header', {}, [
             m('span.annotation-header-move', {}, [
@@ -170,43 +168,30 @@ function initPvjs(window, $) {
 
     //define a route
     m.route(containerElement, '/editor/closed', {
-      '/editor/:editorState': pvjsComponent,
-      '/test': pvjsComponent
+      '/editor/:editorState': kaavioComponent,
+      '/test': kaavioComponent
     });
 
-    // Set ID to $element if it has no ID
-    this.$element.attr('id', this.$element.attr('id') ||
-        'pvjs-' + this.instanceId);
+    // Set ID to container element if it has no ID
+    var containerElementId = containerElement.getAttribute('id') || 'kaavio-' + this.instanceId;
+    containerElement.setAttribute('id', containerElementId);
 
     // TODO Look into allowing user to override our default styling,
     // possibly via a custom stylesheet.
-    Utils.addClassForD3(this.$element, 'pvjs-container');
+    Utils.addClassForD3(this.$element, 'kaavio-container');
 
     // Set loading class
     Utils.addClassForD3(this.$element, 'loading');
 
-    // Remove loading state after pvjs is loaded
+    // Remove loading state after kaavio is loaded
     this.on('rendered', function() {
-      Utils.removeClassForD3(pvjs.$element, 'loading');
+      Utils.removeClassForD3(kaavio.$element, 'loading');
 
       // Initialize Highlighter plugin
-      pvjs.publicInstance.highlighter = new PvjsHighlighter(pvjs.publicInstance);
+      kaavio.publicInstance.highlighter = new KaavioHighlighter(kaavio.publicInstance);
 
-      var vm = pvjs.$element[0][0];
-      var diagramContainerElement = vm.querySelector(
+      var diagramContainerElement = containerElement.querySelector(
           '.diagram-container');
-
-      /*
-      // TODO set this correctly the first time
-      var testingHeight = diagramContainerElement.clientHeight;
-      diagramContainerElement.setAttribute('style',
-        'padding: 3px 6px 30px 3px; ' +
-        'height: ' + (testingHeight - 200) + 'px; ');
-      pvjs.publicInstance.resizeDiagram();
-      //*/
-
-      var svgElement = diagramContainerElement.querySelector(
-        '#pvjs-diagram-' + pvjs.publicInstance.instanceId);
 
       var createEventListenerStream = function(type, eventTarget) {
         var addEventListenerCurried =
@@ -251,11 +236,9 @@ function initPvjs(window, $) {
             diagramContainerElement.setAttribute('style',
               'width: ' + element.clientWidth + 'px; ' +
               'height: ' + element.clientHeight + 'px; ')
-            svgElement.setAttribute('width', '100%')
-            svgElement.setAttribute('height', '100%')
           }
           //*/
-          pvjs.publicInstance.resizeDiagram();
+          kaavio.publicInstance.resizeDiagram();
         });
 
         // TODO This seems kludgey.
@@ -302,18 +285,18 @@ function initPvjs(window, $) {
         return wrapCallbackUnending(curried);
       };
 
-      createElementResizeListener(vm)
+      createElementResizeListener(containerElement)
         .debounce(refreshInterval)
         .each(function(element) {
           console.log('element resized');
-          pvjs.publicInstance.resizeDiagram();
+          kaavio.publicInstance.resizeDiagram();
         });
 
       /*// TODO read the URL query parameters and also the
         // highlight="[{}, {}]" attribute to get these values
 
       // Initialize Highlighter plugin
-      var hi = pvjsHighlighter(pvjs.publicInstance);
+      var hi = kaavioHighlighter(kaavio.publicInstance);
       // TODO don't use hi in global namespace
       window.hi = hi;
 
@@ -339,7 +322,7 @@ function initPvjs(window, $) {
     });
 
     // Get container sizes
-    var boundingRect = this.$element[0][0].getBoundingClientRect();
+    var boundingRect = containerElement.getBoundingClientRect();
 
     // TODO take in account paddings, margins and border
     this.elementWidth = +boundingRect.width;
@@ -352,70 +335,43 @@ function initPvjs(window, $) {
   /**
    * Init and render
    */
-  Pvjs.prototype.render = function() {
-    var pvjs = this;
+  Kaavio.prototype.render = function() {
+    var kaavio = this;
 
     // Init sourceData object
-    this.sourceData = {
-      sourceIndex: -1,
-      uri: null, // resource uri
-      fileType: '',
+    kaavio.sourceData = {
       pvjson: null, // pvjson object
       selector: null, // selector instance
       rendererEngine: null // renderer engine name
     };
 
-    this.checkAndRenderNextSource();
+    var src = kaavio.options.src;
+
+    if (_.isPlainObject(src)) {
+      kaavio.sourceData.pvjson = src;
+      diagramRenderer.render(kaavio);
+    } else if (_.isString(src)) {
+      d3.json(src, function(err, pvjson) {
+        if (err) {
+          throw err;
+        }
+        kaavio.sourceData.pvjson = pvjson;
+        diagramRenderer.render(kaavio);
+      });
+    } else {
+      throw new Error('Cannot handle provided src. Please provide an IRI or a parsed JSON object.')
+    }
 
     // Listen for renderer errors
     this.on('error.renderer', function() {
-      diagramRenderer.destroyRender(pvjs, pvjs.sourceData);
-      pvjs.checkAndRenderNextSource();
+      diagramRenderer.destroyRender(kaavio, kaavio.sourceData);
     });
   };
 
-  Pvjs.prototype.checkAndRenderNextSource = function() {
-    var pvjs = this;
-
-    this.sourceData.sourceIndex += 1;
-
-    // Check if any sources left
-    if (this.options.sourceData.length < this.sourceData.sourceIndex + 1) {
-      this.trigger('error.sourceData', {
-        message: 'No more renderable sources'
-      });
-      return;
-    }
-
-    this.sourceData.uri = this.options.sourceData[
-      this.sourceData.sourceIndex].uri;
-    this.sourceData.fileType = this.options.sourceData[
-      this.sourceData.sourceIndex].fileType;
-
-    if (diagramRenderer.canRender(this.sourceData)) {
-      if (diagramRenderer.needDataConverted(this.sourceData)) {
-        FormatConverter.loadAndConvert(pvjs, function(error, pvjson) {
-          if (error) {
-            pvjs.trigger('error.pvjson', {message: error});
-            pvjs.checkAndRenderNextSource();
-          } else {
-            pvjs.sourceData.pvjson = pvjson;
-            diagramRenderer.render(pvjs);
-          }
-        });
-      } else {
-        diagramRenderer.render(pvjs);
-      }
-    } else {
-      // try next source
-      this.checkAndRenderNextSource();
-    }
-  };
-
-  Pvjs.prototype.destroy = function() {
+  Kaavio.prototype.destroy = function() {
     // Send destroy message
     this.trigger(
-        'destroy.pvjs', {message: 'User requested pvjs destroy'}, false)
+        'destroy.kaavio', {message: 'User requested kaavio destroy'}, false)
 
     // Destroy renderer
     diagramRenderer.destroyRender(this, this.sourceData)
@@ -429,7 +385,7 @@ function initPvjs(window, $) {
     this.$element[0][0].data = undefined
 
     if ($) {
-      $(this.$element[0][0]).removeData('pvjs')
+      $(this.$element[0][0]).removeData('kaavio')
     }
 
     // Clean HTML
@@ -442,7 +398,7 @@ function initPvjs(window, $) {
    * Returns an instance for public usage
    * @return {object}
    */
-  Pvjs.prototype.getPublicInstance = function() {
+  Kaavio.prototype.getPublicInstance = function() {
     var that = this;
 
     if (this.publicInstance === undefined) {
@@ -480,9 +436,6 @@ function initPvjs(window, $) {
         getSourceData: function() {
           // return _.clone(that.sourceData, true);
           return {
-            sourceIndex: that.sourceData.sourceIndex,
-            uri: that.sourceData.uri,
-            fileType: that.sourceData.fileType,
             pvjson: _.clone(that.sourceData.pvjson, true),
             selector: that.sourceData.selector.getClone(),
             rendererEngine: that.sourceData.rendererEngine
@@ -500,7 +453,7 @@ function initPvjs(window, $) {
    * @param  {string}   topic
    * @param  {Function} callback
    */
-  Pvjs.prototype.on = function(topic, callback) {
+  Kaavio.prototype.on = function(topic, callback) {
     var namespace = null;
     var eventName = topic;
 
@@ -528,7 +481,7 @@ function initPvjs(window, $) {
    * @param  {Function} callback
    * @return {bool}
    */
-  Pvjs.prototype.off = function(topic, callback) {
+  Kaavio.prototype.off = function(topic, callback) {
     var namespace = null;
     var eventName = topic;
     var flagRemove = true;
@@ -565,7 +518,7 @@ function initPvjs(window, $) {
    * @param  {bool} async By default true
    * @return {bool}
    */
-  Pvjs.prototype.trigger = function(topic, message, async) {
+  Kaavio.prototype.trigger = function(topic, message, async) {
     var namespace = null;
     var eventName = topic;
 
@@ -612,28 +565,28 @@ function initPvjs(window, $) {
   if ($) {
     /**
      * jQuery plugin entry point. Only if jQuery is defined.
-     * If option is 'get' then returns an array of pvjs public instances.
+     * If option is 'get' then returns an array of kaavio public instances.
      * Otherwise returns an jQuery object to allow chaining.
      *
      * @param  {string} option
      * @return {object} array || jQuery object
      */
-    $.fn.pvjs = function(option) {
-      // Instantiate Pvjs for all elements
+    $.fn.kaavio = function(option) {
+      // Instantiate Kaavio for all elements
       var $return = this.each(function() {
         var $this = $(this);
-        var data = $this.data('pvjs');
+        var data = $this.data('kaavio');
         var options = typeof option == 'object' && option;
 
         if (!data) {
-          $this.data('pvjs', (new Pvjs(this, options)));
+          $this.data('kaavio', (new Kaavio(this, options)));
         }
       });
 
       if (option === 'get') {
-        // Return an array of Pvjs instances
+        // Return an array of Kaavio instances
         return $.map(this, function(a) {
-          return $(a).data('pvjs').getPublicInstance();
+          return $(a).data('kaavio').getPublicInstance();
         });
       } else {
         // Return jQuery object
@@ -650,7 +603,7 @@ function initPvjs(window, $) {
    * @param  {object} option
    * @return {array}
    */
-  window.pvjs = function(selector, option) {
+  window.kaavio = function(selector, option) {
     var $elements;
 
     if (Utils.isElement(selector)) {
@@ -665,10 +618,10 @@ function initPvjs(window, $) {
       var data;
       var options = typeof option == 'object' ? option : {};
 
-      if (element.data.pvjs === undefined) {
-        element.data.pvjs = (data = new Pvjs(element, options));
+      if (element.data.kaavio === undefined) {
+        element.data.kaavio = (data = new Kaavio(element, options));
       } else {
-        data = element.data.pvjs;
+        data = element.data.kaavio;
       }
 
       return data.getPublicInstance();
@@ -676,106 +629,6 @@ function initPvjs(window, $) {
   };
 
   if (!!$) {
-    $(window).trigger('pvjsReady');
+    $(window).trigger('kaavioReady');
   }
-}
-
-/*********************************
- * A very simple asset loader. It checks all
- * assets that could be loaded already. If they
- * are loaded already, great. Otherwise, it
- * loads them.
- *
- * It would be nice to use an
- * open-source library for this
- * to ensure it works x-browser.
- * Why did Modernizr/yepnope deprecate this
- * type of strategy?
- * ******************************/
-var assetsToLoad = [
-  {
-    exposed: 'd3',
-    type: 'script',
-    url: '//cdnjs.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js',
-    loaded: (function() {
-      return !!window.d3;
-    })()
-  },
-  {
-    exposed: 'jQuery',
-    type: 'script',
-    url: '//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js',
-    loaded: (function() {
-      return !!window.jQuery;
-    })()
-  },
-  {
-    // TODO figure out the path for the jQuery typeahead.js
-    // plugin, starting from window or document. We need it
-    // to ensure the plugin has loaded.
-    //exposed: '',
-    type: 'script',
-    url: '//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.10.2/' +
-      'typeahead.bundle.min.js',
-    loaded: (function() {
-      return !!window.jQuery && !!window.jQuery('body').typeahead;
-    })()
-  },
-  {
-    exposed: 'document.registerElement',
-    type: 'script',
-    url: '//cdnjs.cloudflare.com/ajax/libs/' +
-        'webcomponentsjs/0.5.2/CustomElements.min.js',
-    loaded: (function() {
-      return !!document.registerElement;
-    })()
-  },
-  {
-    exposed: 'Modernizr.inputtypes.color',
-    type: 'script',
-    url: '//cdnjs.cloudflare.com/ajax/libs/' +
-        'spectrum/1.6.1/spectrum.min.js',
-    loaded: (function() {
-      return !!window.Modernizr.inputtypes.color;
-    })()
-  },
-  {
-    exposed: 'Modernizr.inputtypes.color',
-    type: 'style',
-    url: '//cdnjs.cloudflare.com/ajax/libs/' +
-        'spectrum/1.6.1/spectrum.min.css',
-    loaded: (function() {
-      return !!window.Modernizr.inputtypes.color;
-    })()
-  }
-];
-
-/**
- * Streaming version of promisescript
- * https://www.npmjs.com/package/promisescript
- *
- * @param {object} args
- * @param {string} args.exposed
- * @param {string} args.type script or style
- * @param {string} args.url
- * @return {stream}
- */
-function loadAssetStreaming(args) {
-  return highland(promisescript(args));
-}
-
-highland(assetsToLoad)
-  .filter(function(asset) {
-    return !asset.loaded;
-  })
-  .errors(function(err, push) {
-    push(err);
-  })
-  .flatMap(loadAssetStreaming)
-  .collect()
-  .each(function(result) {
-    console.log('result');
-    console.log(result);
-    initPvjs(window, window.jQuery || null);
-    customElement.registerElement();
-  });
+};

@@ -1,8 +1,8 @@
 var Utils = require('./../utils.js');
 
 module.exports = {
-  getReferenceNumberForDisplay: function(pvjs, rdfId) {
-    var model = pvjs.sourceData.pvjson;
+  getReferenceNumberForDisplay: function(kaavio, rdfId) {
+    var model = kaavio.sourceData.pvjson;
     var displayNumber;
     var referencedElements = model.elements.filter(function(element) {
       return rdfId === element.id && element.type === 'PublicationXref';
@@ -76,28 +76,28 @@ module.exports = {
     return publicationXrefString;
   },
 
-  getPublicationXrefString: function(pvjs, rdfIds, callback) {
+  getPublicationXrefString: function(kaavio, rdfIds, callback) {
     var that = this;
-    var model = pvjs.sourceData.pvjson;
+    var model = kaavio.sourceData.pvjson;
     var displayNumbers = [];
     var publicationXrefString = '';
     // make sure it's an array
     rdfIds = Utils.convertToArray(rdfIds);
     rdfIds.forEach(function(rdfId) {
-      var num = that.getReferenceNumberForDisplay(pvjs, rdfId);
+      var num = that.getReferenceNumberForDisplay(kaavio, rdfId);
       if (typeof(num) !== 'undefined' && num !== null) {
         displayNumbers.push(num);
       }
     });
 
-    if (displayNumbers.length > 0){
+    if (displayNumbers.length > 0) {
       publicationXrefString = this.createPublicationXrefString(displayNumbers);
     }
     callback(publicationXrefString);
   },
 
   //function render(target, targetType, pathway, rdfIds) {
-  render: function(pvjs, containerSelection, targetData) {
+  render: function(kaavio, containerSelection, targetData) {
     var translateX
       , translateY
       , networkType
@@ -115,7 +115,7 @@ module.exports = {
     //*/
 
     var text;
-    this.getPublicationXrefString(pvjs, targetData.xrefs, function(publicationXrefString) {
+    this.getPublicationXrefString(kaavio, targetData.xrefs, function(publicationXrefString) {
       var textLength = publicationXrefString.toString().length;
       if (networkType === 'node') {
         // TODO targetData.width, x, and y are not available yet here, so the translateX and translateY will always be 0.

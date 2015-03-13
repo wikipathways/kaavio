@@ -1,32 +1,32 @@
-.pvjs-diffviewer {
+.kaavio-diffviewer {
   position: relative;
   height: 500px;
   border: 1px solid #000;
 }
 
-.pvjs-diffviewer .pane {
+.kaavio-diffviewer .pane {
   float: left;
   overflow: hidden;
   width: 50%;
   height: 100%;
 }
 
-.pvjs-diffviewer .pane.pane-left {
+.kaavio-diffviewer .pane.pane-left {
 }
 
-.pvjs-diffviewer .pane.pane-left .pane-inner {
+.kaavio-diffviewer .pane.pane-left .pane-inner {
   margin-right: 120px;
 }
 
 
-.pvjs-diffviewer .pane.pane-right {
+.kaavio-diffviewer .pane.pane-right {
 }
 
-.pvjs-diffviewer .pane.pane-right .pane-inner {
+.kaavio-diffviewer .pane.pane-right .pane-inner {
   margin-left: 120px;
 }
 
-.pvjs-diffviewer .pane.pane-center {
+.kaavio-diffviewer .pane.pane-center {
   position: absolute;
   top: 0;
   left: 50%;
@@ -36,7 +36,7 @@
   overflow-y: auto;
 }
 
-.pvjs-diffviewer .pane-inner {
+.kaavio-diffviewer .pane-inner {
   height: 100%;
 }
 
@@ -44,7 +44,7 @@
   Overlay
  **************/
 
-.pvjs-diffviewer > .overlay {
+.kaavio-diffviewer > .overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -53,32 +53,32 @@
   background: #fff;
 }
 
-.pvjs-diffviewer > .overlay .alert{
+.kaavio-diffviewer > .overlay .alert{
   padding: 9px 15px;
   margin: 4px;
   border: 1px solid transparent;
   border-radius: 4px;
 }
 
-.pvjs-diffviewer > .overlay .alert.alert-success{
+.kaavio-diffviewer > .overlay .alert.alert-success{
   background-color: #dff0d8;
   border-color: #d6e9c6;
   color: #3c763d;
 }
 
-.pvjs-diffviewer > .overlay .alert.alert-info{
+.kaavio-diffviewer > .overlay .alert.alert-info{
   background-color: #d9edf7;
   border-color: #bce8f1;
   color: #31708f;
 }
 
-.pvjs-diffviewer > .overlay .alert.alert-warning{
+.kaavio-diffviewer > .overlay .alert.alert-warning{
   background-color: #fcf8e3;
   border-color: #faebcc;
   color: #8a6d3b;
 }
 
-.pvjs-diffviewer > .overlay .alert.alert-danger{
+.kaavio-diffviewer > .overlay .alert.alert-danger{
   background-color: #f2dede;
   border-color: #ebccd1;
   color: #a94442;

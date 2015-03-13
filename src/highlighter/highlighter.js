@@ -23,36 +23,36 @@ var optionsDefault = {
 /**
  * Init plugin
  *
- * @param {pvjs instance} pvjs
+ * @param {kaavio instance} kaavio
  * @param {objects} options
  */
-function init(pvjs, options) {
+function init(kaavio, options) {
   // Create new instance if it does not exist
-  if (!instancesMap.hasOwnProperty(pvjs.instanceId)) {
-    instancesMap[pvjs.instanceId] = new PvjsHighlighter(pvjs, options);
+  if (!instancesMap.hasOwnProperty(kaavio.instanceId)) {
+    instancesMap[kaavio.instanceId] = new PvjsHighlighter(kaavio, options);
   }
 
-  return instancesMap[pvjs.instanceId].getPublicInstance();
+  return instancesMap[kaavio.instanceId].getPublicInstance();
 }
 
 /**
  * Costructor
  *
- * @param {Object} pvjs
+ * @param {Object} kaavio
  */
-var PvjsHighlighter = function(pvjs, options) {
+var PvjsHighlighter = function(kaavio, options) {
   this.options = $.extend({}, optionsDefault, options);
 
-  this.pvjs = pvjs;
-  this.$pvjsElement = $(this.pvjs.$element[0][0])
-  this.pvjsSourceData = this.pvjs.getSourceData();
+  this.kaavio = kaavio;
+  this.$kaavioElement = $(this.kaavio.$element[0][0])
+  this.kaavioSourceData = this.kaavio.getSourceData();
   this.isInitiated = false
 
   // Right now working only with SVG renderer
-  if (this.pvjsSourceData.rendererEngine === 'svg') {
+  if (this.kaavioSourceData.rendererEngine === 'svg') {
     this.isInitiated = true
-    this.selector = this.pvjsSourceData.selector;
-    this.elements = this.pvjsSourceData.pvjson.elements;
+    this.selector = this.kaavioSourceData.selector;
+    this.elements = this.kaavioSourceData.pvjson.elements;
 
     this.groups = {};
 
@@ -297,12 +297,12 @@ PvjsHighlighter.prototype.initInputField = function() {
   var that = this;
 
   // Currently works only with svg renderer
-  if (this.pvjsSourceData.rendererEngine !== 'svg') {
+  if (this.kaavioSourceData.rendererEngine !== 'svg') {
     return;
   }
 
   // Init dom elements
-  this.$element = $('<div class="pvjs-highlighter"/>').appendTo(this.$pvjsElement);
+  this.$element = $('<div class="kaavio-highlighter"/>').appendTo(this.$kaavioElement);
   this.$input = $('<input type="text"/>').appendTo(this.$element)
     .attr('placeholder', 'Enter node name to highlight')
     .attr('class', 'highlighter-input');
@@ -441,13 +441,13 @@ function generateStyleString(styles, except) {
 
 /**
  * Expose plugin, as module if in CommonJS and as
- * pvjsHighlighter (globally) if in browser
+ * kaavioHighlighter (globally) if in browser
  */
 
 (function() {
   if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     //in browser environment
-    window.pvjsHighlighter = init;
+    window.kaavioHighlighter = init;
   }
 
   if (!!module && !!module.exports) {

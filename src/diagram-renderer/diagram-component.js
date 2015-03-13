@@ -4,7 +4,7 @@
 
 var m = require('mithril');
 
-function DiagramComponent(pvjs) {
+function DiagramComponent(internalInstance) {
   var isInitializedHere = false;
   var diagramComponent = {};
 
@@ -56,8 +56,8 @@ function DiagramComponent(pvjs) {
 
   /*
   diagramContainerElement.setAttribute(
-      'style', 'height: ' + (pvjs.elementHeight - 120) + 'px;');
-  pvjs.panZoom.resizeDiagram();
+      'style', 'height: ' + (internalInstance.elementHeight - 120) + 'px;');
+  internalInstance.panZoom.resizeDiagram();
   //*/
 
   //this view implements a color-picker input for both
@@ -71,18 +71,18 @@ function DiagramComponent(pvjs) {
           //integrate with the auto-redrawing system...
           //*
           m.startComputation();
-          //pvjs.diagramRendererInstance.render(pvjs);
-          pvjs.render();
-          pvjs.on('rendered', function() {
+          //internalInstance.diagramRendererInstance.render(internalInstance);
+          internalInstance.render();
+          internalInstance.on('rendered', function() {
             m.endComputation();
           });
           //*/
         } else if (!isInitialized) {
-          pvjs.render();
-          //pvjs.diagramRendererInstance.render(pvjs);
+          internalInstance.render();
+          //internalInstance.diagramRendererInstance.render(internalInstance);
           /*
           m.startComputation();
-          pvjs.diagramRendererInstance.render(pvjs);
+          internalInstance.diagramRendererInstance.render(internalInstance);
           m.endComputation();
           //*/
         }
@@ -91,14 +91,14 @@ function DiagramComponent(pvjs) {
         if (!isInitialized) {
           //integrate with the auto-redrawing system...
           m.startComputation();
-          //pvjs.diagramRendererInstance.render(pvjs);
-          pvjs.render();
-          pvjs.on('rendered', function() {
+          //internalInstance.diagramRendererInstance.render(internalInstance);
+          internalInstance.render();
+          internalInstance.on('rendered', function() {
             m.endComputation();
           });
         } else {
           m.startComputation();
-          pvjs.diagramRendererInstance.render(pvjs);
+          internalInstance.diagramRendererInstance.render(internalInstance);
           m.endComputation();
         }
         //*/

@@ -13,9 +13,9 @@ require('cross-platform-shapes');
 
 var RendererSvg = Object.create(RendererPrototype)
 
-RendererSvg.init = function(pvjs) {
-  this.pvjs = pvjs
-  this.diagramId = 'pvjs-diagram-' + pvjs.instanceId
+RendererSvg.init = function(kaavio) {
+  this.kaavio = kaavio
+  this.diagramId = 'kaavio-diagram-' + kaavio.instanceId
 
   /**
    * As keys serve elements ids.
@@ -25,12 +25,12 @@ RendererSvg.init = function(pvjs) {
    */
   this._elementsHash = {}
 
-  var containerBoundingClientRect = pvjs.$element[0][0].getBoundingClientRect();
-  // TODO pvjs.$element is a d3 selection with the overall pvjs-container.
+  var containerBoundingClientRect = kaavio.$element[0][0].getBoundingClientRect();
+  // TODO kaavio.$element is a d3 selection with the overall kaavio-container.
   // We should instead be working with the diagram container in here, but it isn't
   // full size when created, so the following code doesn't work:
   /*
-  var containerBoundingClientRect = pvjs.$element
+  var containerBoundingClientRect = kaavio.$element
     .select('.diagram-container')[0][0].getBoundingClientRect()
   //*/
   var containerWidth = containerBoundingClientRect.width;
@@ -41,7 +41,7 @@ RendererSvg.init = function(pvjs) {
   var containerHeight = containerBoundingClientRect.height;
 
   this.crossPlatformShapesInstance = crossPlatformShapes.getInstance({
-      targetSelector: '#' + pvjs.$element.attr('id') + ' .diagram-container'
+      targetSelector: '#' + kaavio.$element.attr('id') + ' .diagram-container'
     , id: this.diagramId
     , format: 'svg'
     , width: containerWidth
@@ -67,7 +67,7 @@ RendererSvg.init = function(pvjs) {
     targetSelector: '#' + this.diagramId
   })
 
-  this.$svg = this.pvjs.$element.select('#' + this.diagramId)
+  this.$svg = this.kaavio.$element.select('#' + this.diagramId)
 
   initStyles(this)
 }
@@ -76,8 +76,8 @@ function initStyles(renderer) {
   var cssData
     , $defs = renderer.$svg.select('defs')
 
-  if (renderer.pvjs.options.cssUri) {
-    d3.text(renderer.pvjs.options.cssUri, 'text/css', function(cssData) {
+  if (renderer.kaavio.options.cssUri) {
+    d3.text(renderer.kaavio.options.cssUri, 'text/css', function(cssData) {
     $defs.append('style').attr('type', "text/css").text(cssData)
     });
   }
@@ -126,7 +126,7 @@ function render(renderer, pvjsonElement) {
 }
 
 function renderShape(renderer, pvjsonElement) {
-  var pvjson = renderer.pvjs.sourceData.pvjson;
+  var pvjson = renderer.kaavio.sourceData.pvjson;
   var shapeName = Strcase.camelCase(pvjsonElement.shape)
 
   // TODO move this checking into plugin
@@ -136,11 +136,11 @@ function renderShape(renderer, pvjsonElement) {
     shapeName = shapeName.replace(/double$/gi, '')
 
     if (renderer.crossPlatformShapesInstance.hasOwnProperty(shapeName)) {
-      renderer.pvjs.trigger('warning.renderer', {
+      renderer.kaavio.trigger('warning.renderer', {
         message: 'Requested path "' + pvjsonElement.shape + '" is not available with linetype of "Double". Using linetype of "Solid" instead'
       })
     } else {
-      renderer.pvjs.trigger('warning.renderer', {
+      renderer.kaavio.trigger('warning.renderer', {
         message: 'Requested path "' + pvjsonElement.shape + '" is not available. Using path "rounded-rectangle" instead'
       })
 
@@ -177,7 +177,7 @@ function renderShape(renderer, pvjsonElement) {
         // If BridgeDB handles pathway entities of this type
         if (['Protein', 'Dna', 'Rna', 'SmallMolecule'].indexOf(pvjsonElement.type) !== -1) {
           // Get all xrefs with given id
-          var selector = renderer.pvjs.sourceData.selector.filteredByXRef('id:'+entityReference).getFirst()
+          var selector = renderer.kaavio.sourceData.selector.filteredByXRef('id:'+entityReference).getFirst()
           // If any xref found
           if (!selector.isEmpty()) {
             // If first element has xrefs field
@@ -195,7 +195,7 @@ function renderShape(renderer, pvjsonElement) {
           }
         }
 
-        EntityReference.render(renderer.pvjs, {
+        EntityReference.render(renderer.kaavio, {
           metadata: {
             label: pvjsonElement.textContent
           , description: pvjsonElement.type
@@ -239,7 +239,7 @@ function renderText(renderer, pvjsonElement) {
     })
     .on("mouseup", function(d,i) {
       if (notDragged) {
-        EntityReference.render(renderer.pvjs, entityReferenceRendererArguments);
+        EntityReference.render(renderer.kaavio, entityReferenceRendererArguments);
       }
     });
   } else {
@@ -482,10 +482,10 @@ RendererSvg.getElementBBox = function(pvjsonElement) {
 }
 
 module.exports = {
-  init: function(pvjs){
+  init: function(kaavio){
     var renderer = Object.create(RendererSvg)
 
-    renderer.init(pvjs)
+    renderer.init(kaavio)
 
     return renderer
   }
