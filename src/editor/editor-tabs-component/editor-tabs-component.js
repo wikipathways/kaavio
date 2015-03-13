@@ -10,19 +10,6 @@ module.exports = function(pvjs) {
   var editorTabsComponentContainerElement = containerElement.querySelector(
       '.pvjs-editor-tabs');
 
-  function onClickDiagramContainer(selectedPvjsElement) {
-    annotationTab.vm.onClickDiagramContainer(selectedPvjsElement);
-    propertiesTab.vm.onClickDiagramContainer(selectedPvjsElement);
-  }
-
-  function open() {
-    m.module(editorTabsComponentContainerElement, editorTabsComponent);
-  }
-
-  function close() {
-    editorTabsComponentContainerElement.innerHTML = '';
-  }
-
   //module for editorTabsComponent
   //for simplicity, we use this module to namespace the model classes
   var editorTabsComponent = {};
@@ -57,30 +44,43 @@ module.exports = function(pvjs) {
 
   //the view-model,
   editorTabsComponent.vm = (function() {
-    var vm = {}
+    var vm = {};
+
+    vm.onClickDiagramContainer = function(selectedPvjsElement) {
+      annotationTab.vm.onClickDiagramContainer(selectedPvjsElement);
+      propertiesTab.vm.onClickDiagramContainer(selectedPvjsElement);
+    }
+
+    // TODO is this needed?
+    vm.open = function() {
+    };
+
+    vm.close = function() {
+      //editorTabsComponentContainerElement.innerHTML = '';
+    };
 
     vm.tabList = new editorTabsComponent.TabList();
-    vm.currentTab = m.prop(vm.tabList[0])
+    vm.currentTab = m.prop(vm.tabList[0]);
 
     vm.init = function() {
       annotationTab.vm.init(pvjs);
       propertiesTab.vm.init(pvjs);
-    }
+    };
 
     vm.changeTab = function(title) {
       vm.currentTab(_.find(vm.tabList, function(tab) {
         return tab.title() === title;
       }));
-    }
+    };
 
-    return vm
+    return vm;
   }());
 
   //the controller defines what part of the model is relevant for the current page
   //in our case, there's only one view-model that handles everything
   editorTabsComponent.controller = function() {
     editorTabsComponent.vm.init();
-  }
+  };
 
   //here's the view
   editorTabsComponent.view = function() {
@@ -95,31 +95,27 @@ module.exports = function(pvjs) {
               onclick: m.withAttr('value', editorTabsComponent.vm.changeTab),
               value: tab.title()
             }, tab.title())
-          ])
+          ]);
         })
       ]),
-      m('span.glyphicon.glyphicon-remove.btn.btn-sm.editor-close-control', {
+      /*
+      m('span.glyphicon.glyphicon-remove.btn.navbar-right[style="color: #aaa; transform: translateY(-10px);"]', {
         onclick: annotationTab.vm.cancel
       }),
-      editorTabsComponent.vm.currentTab().view()
-      /*
-      m('div', {}, [
-        editorTabsComponent.vm.tabList.filter(function(tab) {
-          return tab.title() === editorTabsComponent.vm.currentTab().title();
-        })
-        .map(function(tab) {
-          return tab.view();
-        })
-      ])
       //*/
-      //m(editorTabsComponent.vm.currentTab().view(), {})
+      m('a[href="/editor/closed"]', {
+        config: m.route,
+        /*
+        onclick: m.withAttr('value', editorComponent.vm.open),
+        value: editorComponent.vm.tester()
+        //*/
+      }, [
+        m('span.editor-close-control.glyphicon.glyphicon-remove.btn.navbar-right')
+      ]),
+      editorTabsComponent.vm.currentTab().view()
     ];
   };
 
-  return {
-    onClickDiagramContainer: onClickDiagramContainer,
-    open: open,
-    close: close
-  };
+  return editorTabsComponent;
 
 };

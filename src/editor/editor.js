@@ -9,16 +9,113 @@ var css = [
 ];
 
 module.exports = function(pvjs) {
+  var containerElement = pvjs.$element[0][0];
+  var diagramContainerElement;
+  var editorTabsComponentContainerElement;
   css.map(insertCss);
 
   var editorTabsComponent = new EditorTabsComponent(pvjs);
-  var containerElement = pvjs.$element[0][0];
-  var diagramContainerElement = containerElement.querySelector('.diagram-container');
-  var editorOpenControl = containerElement.querySelector('.editor-open-control');
 
-  editorOpenControl.addEventListener('click', function(event) {
-    open();
-  }, false);
+  //module for editorComponent
+  //for simplicity, we use this module to namespace the model classes
+  var editorComponent = {};
+
+  //the view-model,
+  editorComponent.vm = (function() {
+    var vm = {};
+
+    vm.init = function(pvjs) {
+      vm.editorState = m.route.param('editorState');
+
+      vm.onunload = function() {
+        console.log('unloading editor module');
+        console.log(m.route.param('editorState'));
+        vm[m.route.param('editorState')]();
+        console.log(m.route.param('editorState'));
+      };
+
+      vm.tester = m.prop('');
+
+      // react to user updating tester value
+      vm.updateTester = function(newTester) {
+        if (!!newTester) {
+          vm.tester = m.prop(newTester);
+        }
+      };
+
+      vm.open = function() {
+        diagramContainerElement = containerElement.querySelector('.diagram-container');
+        editorTabsComponentContainerElement = containerElement.querySelector(
+            '.pvjs-editor-tabs');
+
+        /*
+        m.startComputation();
+        diagramContainerElement.addEventListener('click', function(e) {
+          console.log(e);
+        }, false);
+        m.endComputation();
+        //*/
+
+        //*
+        window.setTimeout(function() {
+          document.querySelector('.diagram-container').addEventListener(
+              'click', onClickDiagramContainer, false);
+          pvjs.panZoom.resizeDiagram();
+        }, 1000);
+        //*/
+
+        editorTabsComponent.vm.init(pvjs);
+      };
+
+      vm.closed = function() {
+        diagramContainerElement.removeEventListener('click');
+        clearSelection();
+
+        pvjs.panZoom.resizeDiagram();
+
+        editorTabsComponent.vm.close();
+      };
+
+    };
+    return vm;
+  }());
+
+  //the controller defines what part of the model is relevant for the current page
+  //in our case, there's only one view-model that handles everything
+  editorComponent.controller = function() {
+    editorComponent.vm.init();
+  };
+
+  //here's the view
+  editorComponent.view = function() {
+    console.log('editorState');
+    console.log(editorComponent.vm.editorState);
+    if (editorComponent.vm.editorState === 'disabled') {
+      return;
+    } else if (editorComponent.vm.editorState === 'closed') {
+      return m('div.editor-open-control.editor-' + editorComponent.vm.editorState +
+          '.label.label-default', {}, [
+        m('a[href="/editor/open"]', {
+          config: m.route,
+          /*
+          onclick: m.withAttr('value', editorComponent.vm.open),
+          value: editorComponent.vm.tester()
+          //*/
+        }, [
+          m('span.glyphicon.glyphicon-chevron-up[aria-hidden="true"]', {}, 'Quick Edit'),
+        ])
+      ]);
+    } else if (editorComponent.vm.editorState === 'open') {
+      return [
+        m('div.pvjs-editor-tabs', {
+          onchange: m.withAttr('value',
+                      editorComponent.vm.updateTester),
+          value: editorComponent.vm.tester()
+        }),
+        editorTabsComponent.view()
+      ];
+    }
+  };
 
   /***********************************************
    * DataNode onclick event handler
@@ -48,7 +145,7 @@ module.exports = function(pvjs) {
       return;
     }
 
-    editorTabsComponent.onClickDiagramContainer(pvjs.editor.selectedPvjsElement);
+    editorTabsComponent.vm.onClickDiagramContainer(pvjs.editor.selectedPvjsElement);
 
     m.endComputation();
   }
@@ -64,57 +161,6 @@ module.exports = function(pvjs) {
   function cancel() {
     clearSelection();
     close();
-  }
-
-  function open() {
-    diagramContainerElement.addEventListener('click', onClickDiagramContainer, false);
-
-    var annotationDetailsPanel = document.querySelector('.annotation');
-    annotationDetailsPanel.setAttribute('class', 'annotation ui-draggable editor-open');
-    /*
-    // TODO this is a kludge. refactor how we avoid displaying annotation panel in edit mode.
-    document.querySelector('.annotation').style.display = 'none';
-    document.querySelector('.annotation').style.visibility = 'hidden';
-    //*/
-
-    diagramContainerElement.setAttribute('class', 'diagram-container editor-open');
-    /*
-    diagramContainerElement.setAttribute(
-        'style', 'height: ' + (pvjs.elementHeight - 120) + 'px;');
-    //*/
-    pvjs.panZoom.resizeDiagram();
-
-    var editorOpenControlClassString = editorOpenControl.getAttribute('class');
-    editorOpenControl.setAttribute('class', editorOpenControlClassString + ' editor-open');
-
-    editorTabsComponent.open();
-  }
-
-  function close() {
-    diagramContainerElement.removeEventListener('click', onClickDiagramContainer);
-
-    clearSelection();
-
-    var annotationDetailsPanel = document.querySelector('.annotation');
-    annotationDetailsPanel.setAttribute('class', 'annotation ui-draggable');
-    /*
-    // TODO this is a kludge. refactor how we avoid displaying annotation panel in edit mode.
-    document.querySelector('.annotation').style.display = null;
-    document.querySelector('.annotation').style.visibility = 'hidden';
-    //*/
-
-    diagramContainerElement.setAttribute('class', 'diagram-container editor-closed');
-    /*
-    diagramContainerElement.setAttribute(
-        'style', 'height: ' + pvjs.elementHeight + 'px;');
-    //*/
-    pvjs.panZoom.resizeDiagram();
-
-    var editorOpenControlClassString = editorOpenControl.getAttribute('class');
-    editorOpenControl.setAttribute('class',
-        editorOpenControlClassString.replace(' editor-open', ''));
-
-    editorTabsComponent.close();
   }
 
   function save(gpmlDoc) {
@@ -148,12 +194,17 @@ module.exports = function(pvjs) {
     containerElement.dispatchEvent(pvjsdatachangeEvent);
   }
 
+  return editorComponent;
+
+  /*
   return {
+    init: editorComponent.vm.init,
     open: open,
     close: close,
     cancel: cancel,
     clearSelection: clearSelection,
     save: save
   };
+  //*/
 
 };
