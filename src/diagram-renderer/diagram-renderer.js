@@ -41,6 +41,7 @@ module.exports = function renderer() {
     sourceData.selector =
         Selector.init(kaavio.sourceData.pvjson.elements, renderer)
 
+    var containerElement = kaavio.$element[0][0];
     var viewport = kaavio.$element.select('g.viewport')
 
     // InfoBox
@@ -58,10 +59,7 @@ module.exports = function renderer() {
     }
 
     // TODO refactor this to make sure it works multi-instance
-    var kaavioContainerElement =
-        document.querySelector('.kaavio-container');
-    var diagramContainerElement = kaavioContainerElement.querySelector(
-        '.diagram-container');
+    var diagramContainerElement = containerElement.querySelector('.diagram-container');
 
     // Svg-pan-zoom
     // Should come last as it is fitting and centering viewport
@@ -123,7 +121,7 @@ module.exports = function renderer() {
       svgPanZoom.center();
     };
 
-    kaavio.trigger('rendered.renderer')
+    kaavio.trigger('rendered.renderer');
   }
 
   return {
