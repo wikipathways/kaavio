@@ -60,11 +60,13 @@ module.exports = function(window, $) {
   /**
    * Kaavio initialisation
    *
-   * @param  {object} element Dom element
+   * @param  {object} element DOM element
    * @param  {object} options
    */
   Kaavio.prototype.init = function(element, options) {
-    this.$element = d3.select(element).html(''); // select and empty the element
+    var privateInstance = this;
+    privateInstance.$element = d3.select(element).html(''); // select and empty the element
+    privateInstance.containerElement = element;
 
     var spinnerOptions = {
       lines: 13, // The number of lines to draw
@@ -88,21 +90,21 @@ module.exports = function(window, $) {
     var spinner = new Spinner(spinnerOptions).spin(element);
 
     // Clone and fill options
-    this.options = _.clone(optionsDefault, true);
-    this.options = _.assign(this.options, options);
+    privateInstance.options = _.clone(optionsDefault, true);
+    privateInstance.options = _.assign(privateInstance.options, options);
 
-    // Make this instance unique
-    this.instanceId = ++instanceCounter;
+    // Make privateInstance unique
+    privateInstance.instanceId = ++instanceCounter;
 
     // Init events object
-    this.events = {};
+    privateInstance.events = {};
 
-    this.initContainer();
+    privateInstance.initContainer();
 
-    /*
+    //*
     // Check if render should be called now or it will be done later manually
-    if (!this.options.manualRender) {
-      this.render(this);
+    if (!privateInstance.options.manualRender) {
+      privateInstance.render(privateInstance);
     }
     //*/
   };
@@ -113,11 +115,11 @@ module.exports = function(window, $) {
    * Adds hook for loaded event to remove loading state
    */
   Kaavio.prototype.initContainer = function() {
-    var kaavio = this;
+    var privateInstance = this;
 
-    var containerElement = this.$element[0][0];
-    kaavio.editor = new Editor(kaavio);
-    var diagramComponent = new DiagramComponent(kaavio);
+    var containerElement = privateInstance.containerElement;
+    privateInstance.editor = new Editor(privateInstance);
+    var diagramComponent = new DiagramComponent(privateInstance);
 
     var kaavioComponent = {};
 
@@ -126,9 +128,9 @@ module.exports = function(window, $) {
         console.log('unloading kaavioComponent module');
 
         //diagramComponent.vm.onunload();
-        kaavio.editor.vm.onunload();
+        privateInstance.editor.vm.onunload();
       };
-      kaavio.editor.vm.init(kaavio);
+      privateInstance.editor.vm.init(privateInstance);
     };
 
     kaavioComponent.view = function(controller) {
@@ -136,7 +138,7 @@ module.exports = function(window, $) {
         m('div.diagram-container.editor-' + m.route.param('editorState'), [
           diagramComponent.view,
         ]),
-        kaavio.editor.view(),
+        privateInstance.editor.view(),
         m('div.annotation.ui-draggable.editor-' + m.route.param('editorState'), {}, [
           m('header.annotation-header', {}, [
             m('span.annotation-header-move', {}, [
@@ -173,22 +175,25 @@ module.exports = function(window, $) {
     });
 
     // Set ID to container element if it has no ID
-    var containerElementId = containerElement.getAttribute('id') || 'kaavio-' + this.instanceId;
+    var containerElementId = containerElement.getAttribute('id') ||
+        'kaavio-' + privateInstance.instanceId;
     containerElement.setAttribute('id', containerElementId);
 
     // TODO Look into allowing user to override our default styling,
     // possibly via a custom stylesheet.
-    Utils.addClassForD3(this.$element, 'kaavio-container');
+    Utils.addClassForD3(privateInstance.$element, 'kaavio-container');
 
     // Set loading class
-    Utils.addClassForD3(this.$element, 'loading');
+    Utils.addClassForD3(privateInstance.$element, 'loading');
 
-    // Remove loading state after kaavio is loaded
-    this.on('rendered', function() {
-      Utils.removeClassForD3(kaavio.$element, 'loading');
+    // Remove loading state after privateInstance is loaded
+    privateInstance.on('rendered.renderer', function() {
+      console.log('rendered');
+      Utils.removeClassForD3(privateInstance.$element, 'loading');
 
       // Initialize Highlighter plugin
-      kaavio.publicInstance.highlighter = new KaavioHighlighter(kaavio.publicInstance);
+      privateInstance.publicInstance.highlighter = new KaavioHighlighter(
+          privateInstance.publicInstance);
 
       var diagramContainerElement = containerElement.querySelector(
           '.diagram-container');
@@ -238,7 +243,7 @@ module.exports = function(window, $) {
               'height: ' + element.clientHeight + 'px; ')
           }
           //*/
-          kaavio.publicInstance.resizeDiagram();
+          privateInstance.publicInstance.resizeDiagram();
         });
 
         // TODO This seems kludgey.
@@ -289,14 +294,14 @@ module.exports = function(window, $) {
         .debounce(refreshInterval)
         .each(function(element) {
           console.log('element resized');
-          kaavio.publicInstance.resizeDiagram();
+          privateInstance.publicInstance.resizeDiagram();
         });
 
       /*// TODO read the URL query parameters and also the
         // highlight="[{}, {}]" attribute to get these values
 
       // Initialize Highlighter plugin
-      var hi = kaavioHighlighter(kaavio.publicInstance);
+      var hi = kaavioHighlighter(privateInstance.publicInstance);
       // TODO don't use hi in global namespace
       window.hi = hi;
 
@@ -325,10 +330,10 @@ module.exports = function(window, $) {
     var boundingRect = containerElement.getBoundingClientRect();
 
     // TODO take in account paddings, margins and border
-    this.elementWidth = +boundingRect.width;
+    privateInstance.elementWidth = +boundingRect.width;
 
     // TODO take in account paddings, margins and border
-    this.elementHeight = +boundingRect.height;
+    privateInstance.elementHeight = +boundingRect.height;
 
   };
 
@@ -336,62 +341,64 @@ module.exports = function(window, $) {
    * Init and render
    */
   Kaavio.prototype.render = function() {
-    var kaavio = this;
+    var privateInstance = this;
 
     // Init sourceData object
-    kaavio.sourceData = {
+    privateInstance.sourceData = {
       pvjson: null, // pvjson object
       selector: null, // selector instance
       rendererEngine: null // renderer engine name
     };
 
-    var pvjson = kaavio.options.pvjson;
-    var src = kaavio.options.src;
+    var pvjson = privateInstance.options.pvjson;
+    var src = privateInstance.options.src;
 
     if (!!pvjson) {
-      kaavio.sourceData.pvjson = pvjson;
-      diagramRenderer.render(kaavio);
+      privateInstance.sourceData.pvjson = pvjson;
+      diagramRenderer.render(privateInstance);
     } else if (!!src) {
       d3.json(src, function(err, pvjson) {
         if (err) {
           throw err;
         }
-        kaavio.sourceData.pvjson = pvjson;
-        diagramRenderer.render(kaavio);
+        privateInstance.sourceData.pvjson = pvjson;
+        diagramRenderer.render(privateInstance);
       });
     } else {
       throw new Error('Cannot handle provided src. Please provide an IRI or a parsed JSON object.')
     }
 
     // Listen for renderer errors
-    this.on('error.renderer', function() {
-      diagramRenderer.destroyRender(kaavio, kaavio.sourceData);
+    privateInstance.on('error.renderer', function() {
+      diagramRenderer.destroyRender(privateInstance, privateInstance.sourceData);
     });
   };
 
   Kaavio.prototype.destroy = function() {
+    var privateInstance = this;
+
     // Send destroy message
-    this.trigger(
+    privateInstance.trigger(
         'destroy.kaavio', {message: 'User requested kaavio destroy'}, false)
 
     // Destroy renderer
-    diagramRenderer.destroyRender(this, this.sourceData)
+    diagramRenderer.destroyRender(privateInstance, privateInstance.sourceData)
 
     // Off all events
-    for (var e in this.events) {
-      this.off(e)
+    for (var e in privateInstance.events) {
+      privateInstance.off(e)
     }
 
     // Clean data
-    this.$element[0][0].data = undefined
+    privateInstance.containerElement.data = undefined
 
     if ($) {
-      $(this.$element[0][0]).removeData('kaavio')
+      $(privateInstance.containerElement).removeData('kaavio')
     }
 
     // Clean HTML
     // jQuery
-    $(this.$element[0][0]).empty()
+    $(privateInstance.containerElement).empty()
 
   }
 
@@ -400,52 +407,60 @@ module.exports = function(window, $) {
    * @return {object}
    */
   Kaavio.prototype.getPublicInstance = function() {
-    var that = this;
+    var privateInstance = this;
 
-    if (this.publicInstance === undefined) {
+    if (privateInstance.publicInstance === undefined) {
       // Initialise public instance
-      this.publicInstance = {
-        instanceId: this.instanceId,
-        $element: this.$element,
-        destroy: Utils.proxy(this.destroy, this),
-        on: Utils.proxy(this.on, this),
-        off: Utils.proxy(this.off, this),
-        trigger: Utils.proxy(this.trigger, this),
-        render: Utils.proxy(this.render, this),
-        pan: function(point) {if (that.panZoom) {that.panZoom.pan(point);}},
-        panBy: function(point) {if (that.panZoom) {that.panZoom.panBy(point);}},
-        getPan: function() {return that.panZoom.getPan();},
-        resizeDiagram: function() {return that.panZoom.resizeDiagram();},
-        zoom: function(scale) {if (that.panZoom) {that.panZoom.zoom(scale);}},
+      privateInstance.publicInstance = {
+        instanceId: privateInstance.instanceId,
+        $element: privateInstance.$element,
+        destroy: Utils.proxy(privateInstance.destroy, privateInstance),
+        on: Utils.proxy(privateInstance.on, privateInstance),
+        off: Utils.proxy(privateInstance.off, privateInstance),
+        trigger: Utils.proxy(privateInstance.trigger, privateInstance),
+        render: Utils.proxy(privateInstance.render, privateInstance),
+        pan: function(point) {
+          if (privateInstance.panZoom) {
+            privateInstance.panZoom.pan(point);
+          }
+        },
+        panBy: function(point) {
+          if (privateInstance.panZoom) {
+            privateInstance.panZoom.panBy(point);
+          }
+        },
+        getPan: function() {return privateInstance.panZoom.getPan();},
+        resizeDiagram: function() {return privateInstance.panZoom.resizeDiagram();},
+        zoom: function(scale) {if (privateInstance.panZoom) {privateInstance.panZoom.zoom(scale);}},
         zoomBy: function(scale) {
-          if (that.panZoom) {
-            that.panZoom.zoomBy(scale);
+          if (privateInstance.panZoom) {
+            privateInstance.panZoom.zoomBy(scale);
           }
         },
         zoomAtPoint: function(scale, point) {
-          if (that.panZoom) {
-            that.panZoom.zoomAtPoint(scale, point);
+          if (privateInstance.panZoom) {
+            privateInstance.panZoom.zoomAtPoint(scale, point);
           }
         },
         zoomAtPointBy: function(scale, point) {
-          if (that.panZoom) {
-            that.panZoom.zoomAtPointBy(scale, point);
+          if (privateInstance.panZoom) {
+            privateInstance.panZoom.zoomAtPointBy(scale, point);
           }
         },
-        getZoom: function() {return that.panZoom.getZoom();},
-        getOptions: function() {return _.clone(that.options, true);},
+        getZoom: function() {return privateInstance.panZoom.getZoom();},
+        getOptions: function() {return _.clone(privateInstance.options, true);},
         getSourceData: function() {
-          // return _.clone(that.sourceData, true);
+          // return _.clone(privateInstance.sourceData, true);
           return {
-            pvjson: _.clone(that.sourceData.pvjson, true),
-            selector: that.sourceData.selector.getClone(),
-            rendererEngine: that.sourceData.rendererEngine
+            pvjson: _.clone(privateInstance.sourceData.pvjson, true),
+            selector: privateInstance.sourceData.selector.getClone(),
+            rendererEngine: privateInstance.sourceData.rendererEngine
           };
         }
       };
     }
 
-    return this.publicInstance;
+    return privateInstance.publicInstance;
   };
 
   /**
@@ -455,6 +470,8 @@ module.exports = function(window, $) {
    * @param  {Function} callback
    */
   Kaavio.prototype.on = function(topic, callback) {
+    var privateInstance = this;
+
     var namespace = null;
     var eventName = topic;
 
@@ -464,11 +481,11 @@ module.exports = function(window, $) {
       namespace = pieces[1];
     }
 
-    if (!this.events.hasOwnProperty(eventName)) {
-      this.events[eventName] = [];
+    if (!privateInstance.events.hasOwnProperty(eventName)) {
+      privateInstance.events[eventName] = [];
     }
 
-    this.events[eventName].push({
+    privateInstance.events[eventName].push({
       callback: callback,
       namespace: namespace
     });
@@ -483,6 +500,8 @@ module.exports = function(window, $) {
    * @return {bool}
    */
   Kaavio.prototype.off = function(topic, callback) {
+    var privateInstance = this;
+
     var namespace = null;
     var eventName = topic;
     var flagRemove = true;
@@ -495,8 +514,8 @@ module.exports = function(window, $) {
     }
 
     // Check if such an event is registered
-    if (!this.events.hasOwnProperty(eventName)) {return false;}
-    var queue = this.events[topic];
+    if (!privateInstance.events.hasOwnProperty(eventName)) {return false;}
+    var queue = privateInstance.events[topic];
 
     for (var i = queue.length - 1; i >= 0; i--) {
       flagRemove = true;
@@ -520,6 +539,8 @@ module.exports = function(window, $) {
    * @return {bool}
    */
   Kaavio.prototype.trigger = function(topic, message, async) {
+    var privateInstance = this;
+
     var namespace = null;
     var eventName = topic;
 
@@ -529,9 +550,9 @@ module.exports = function(window, $) {
       namespace = pieces[1];
     }
 
-    if (!this.events.hasOwnProperty(eventName)) {return false;}
+    if (!privateInstance.events.hasOwnProperty(eventName)) {return false;}
 
-    var queue = this.events[eventName];
+    var queue = privateInstance.events[eventName];
     if (queue.length === 0) {return false;}
 
     if (async === undefined) {
@@ -614,7 +635,9 @@ module.exports = function(window, $) {
     }
 
     return _.map($elements[0], function(element) {
-      if (element.data === undefined) {element.data = {};}
+      if (element.data === undefined) {
+        element.data = {};
+      }
 
       var data;
       var options = typeof option == 'object' ? option : {};
