@@ -118,7 +118,7 @@ function initPvjs(window, $) {
     var pvjs = this;
 
     var containerElement = this.$element[0][0];
-    //pvjs.editor = new Editor(pvjs);
+    pvjs.editor = new Editor(pvjs);
     var diagramComponent = new DiagramComponent(pvjs);
 
     var pvjsComponent = {};
@@ -126,16 +126,19 @@ function initPvjs(window, $) {
     pvjsComponent.controller = function() {
       this.onunload = function() {
         console.log('unloading pvjsComponent module');
-        diagramComponent.vm.onunload();
-        //pvjs.editor.vm.onunload();
+
+        //diagramComponent.vm.onunload();
+        pvjs.editor.vm.onunload();
       };
-      //pvjs.editor.vm.init(privateInstance);
+      pvjs.editor.vm.init(pvjs);
     };
 
     pvjsComponent.view = function(controller) {
       return [
-        diagramComponent.view(),
-        //pvjs.editor.view(),
+        m('div.diagram-container.editor-' + m.route.param('editorState'), [
+          diagramComponent.view,
+        ]),
+        pvjs.editor.view(),
         m('div.annotation.ui-draggable.editor-' + m.route.param('editorState'), {}, [
           m('header.annotation-header', {}, [
             m('span.annotation-header-move', {}, [

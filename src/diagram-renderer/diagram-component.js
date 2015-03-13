@@ -8,6 +8,20 @@ function DiagramComponent(pvjs) {
   var isInitializedHere = false;
   var diagramComponent = {};
 
+  //here's an example plugin that determines whether data has changes.
+  //in this case, it simply assumes data has changed the first time, and never changes after that.
+  var renderOnce = (function() {
+    var cache = {};
+    return function(view) {
+      if (!cache[view.toString()]) {
+        cache[view.toString()] = true;
+        return view(cache);
+      } else {
+        return {subtree: 'retain'};
+      }
+    };
+  }());
+
   diagramComponent.vm = (function() {
     var vm = {};
     vm.init = function() {
@@ -48,8 +62,8 @@ function DiagramComponent(pvjs) {
 
   //this view implements a color-picker input for both
   //browers that support it natively and those that don't
-  diagramComponent.view = function(ctrl) {
-    return m('div.diagram-container.editor-' + m.route.param('editorState'), {
+  diagramComponent.view = renderOnce(function(cache) {
+    return m('div', {
       //*
       config: function(el, isInitialized) {
         if (!isInitializedHere && !isInitialized) {
@@ -97,7 +111,7 @@ function DiagramComponent(pvjs) {
       value: diagramComponent.vm.color()
       //*/
     });
-  };
+  });
 
   return diagramComponent;
 }
