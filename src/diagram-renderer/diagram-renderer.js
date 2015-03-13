@@ -23,38 +23,38 @@ module.exports = function renderer() {
    * Ask renderer to remove everything what is rendered
    * Useful when rendering a specific type or source failed and next one will be tried
    *
-   * @param  {Object} kaavio Instance Object
+   * @param  {Object} privateInstance kaavio private Instance Object
    * @return {boolean} success state
    */
-  function destroyRender(kaavio, sourceData) {
+  function destroyRender(privateInstance, sourceData) {
     // TODO
     return true
   }
 
   /**
    * Renders a given sourceData object
-   * @param  {Object} kaavio       kaavio Instance Object
+   * @param  {Object} privateInstance kaavio private Instance Object
    */
-  function render(kaavio) {
-    var sourceData = kaavio.sourceData;
-    var renderer = RendererSvg.init(kaavio)
+  function render(privateInstance) {
+    var sourceData = privateInstance.sourceData;
+    var renderer = RendererSvg.init(privateInstance)
     sourceData.selector =
-        Selector.init(kaavio.sourceData.pvjson.elements, renderer)
+        Selector.init(privateInstance.sourceData.pvjson.elements, renderer)
 
-    var containerElement = kaavio.$element[0][0];
-    var viewport = kaavio.$element.select('g.viewport')
+    var containerElement = privateInstance.containerElement;
+    var viewport = privateInstance.$element.select('g.viewport')
 
     // InfoBox
-    InfoBox.render(viewport, kaavio.sourceData.pvjson);
+    InfoBox.render(viewport, privateInstance.sourceData.pvjson);
 
     // Publication Xref
-    var elementsWithPublicationXrefs = kaavio.sourceData.pvjson.elements
+    var elementsWithPublicationXrefs = privateInstance.sourceData.pvjson.elements
     .filter(function(element) {return !!element.xrefs;});
 
     if (elementsWithPublicationXrefs.length > 0) {
       elementsWithPublicationXrefs.forEach(
           function(elementWithPublicationXrefs) {
-        PublicationXref.render(kaavio, viewport, elementWithPublicationXrefs);
+        PublicationXref.render(privateInstance, viewport, elementWithPublicationXrefs);
       });
     }
 
@@ -63,7 +63,7 @@ module.exports = function renderer() {
 
     // Svg-pan-zoom
     // Should come last as it is fitting and centering viewport
-    var svgSelection = d3.select('#' + 'kaavio-diagram-' + kaavio.instanceId);
+    var svgSelection = d3.select('#' + 'kaavio-diagram-' + privateInstance.instanceId);
     var svgElement = svgSelection[0][0];
     var svgPanZoom = SvgPanZoom(svgElement, {
       controlIconsEnabled: true,
@@ -73,10 +73,10 @@ module.exports = function renderer() {
       maxZoom: 20.0,
       zoomEnabled: false,
       onZoom: function(scale) {
-        kaavio.trigger('zoomed.renderer', scale)
+        privateInstance.trigger('zoomed.renderer', scale)
       },
       onPan: function(x, y) {
-        kaavio.trigger('panned.renderer', {x: x, y: y})
+        privateInstance.trigger('panned.renderer', {x: x, y: y})
       }
     });
 
@@ -107,10 +107,10 @@ module.exports = function renderer() {
     });
 
     // Expose panZoom to other objects
-    kaavio.panZoom = svgPanZoom;
+    privateInstance.panZoom = svgPanZoom;
 
     // Make SVG resizable
-    kaavio.panZoom.resizeDiagram = function() {
+    privateInstance.panZoom.resizeDiagram = function() {
       svgElement.setAttribute('width', diagramContainerElement.clientWidth)
       svgElement.setAttribute('height',
           diagramContainerElement.clientHeight)
@@ -121,7 +121,7 @@ module.exports = function renderer() {
       svgPanZoom.center();
     };
 
-    kaavio.trigger('rendered.renderer');
+    privateInstance.trigger('rendered.renderer');
   }
 
   return {
