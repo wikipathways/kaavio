@@ -7,11 +7,8 @@
     overflow: hidden;
   }
 
-  .diagram-container.editor-open {
+  .diagram-container.footer-open {
     height: calc(100% - 134px);
-    /* try this
-    height: auto;
-    */
   }
 
 	svg {

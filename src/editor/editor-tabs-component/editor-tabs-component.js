@@ -6,7 +6,7 @@ var m = require('mithril');
 
 module.exports = function(pvjs) {
 
-  var containerElement = pvjs.$element[0][0];
+  var containerElement = pvjs.containerElement;
   var editorTabsComponentContainerElement = containerElement.querySelector(
       '.pvjs-editor-tabs');
 

@@ -2,20 +2,22 @@ var _ = require('lodash');
 var customElement = require('./custom-element');
 var DiagramComponent = require('./diagram-renderer/diagram-component');
 var Editor = require('./editor/editor');
+var EditorOpenButton = require('./editor/editor-open-button');
 var ElementResizeDetector = require('element-resize-detector');
+var Footer = require('./footer');
 var fs = require('fs');
 var highland = require('highland');
 var insertCss = require('insert-css');
 var m = require('mithril');
 var KaavioHighlighter = require('./highlighter/highlighter.js');
 var Utils = require('./utils');
-var DiagramRenderer = require('./diagram-renderer/diagram-renderer');
 var Spinner = require('spin.js');
 
 // Make IE work with the CustomEvent interface standard
 require('custom-event-polyfill');
 
 var css = [
+  fs.readFileSync(__dirname + '/stripped-bootstrap.css'),
   fs.readFileSync(__dirname + '/kaavio.css')
 ];
 
@@ -23,7 +25,7 @@ var css = [
  * Initialize the global constructor for Kaavio
  *
  * @param {object} window
- * @param {object} $
+ * @param {object} [$] optional jQuery or Zepto instance
  * @return
  */
 module.exports = function(window, $) {
@@ -35,59 +37,41 @@ module.exports = function(window, $) {
     window.initKaavioHighlighter(window, $);
   }
 
-  var diagramRenderer = new DiagramRenderer();
   css.map(insertCss);
-
-  /**
-   * Kaavio constructor
-   *
-   * @param {object} element Dom element
-   * @param {object} options
-   */
-  var Kaavio = function(element, options) {
-    this.init(element, options);
-  };
 
   var instanceCounter = 0;
   var optionsDefault = {
     fitToContainer: true,
-    sourceData: [],
     manualRender: false,
     //editor: 'open'
     editor: 'closed'
   };
 
   /**
-   * Kaavio initialisation
+   * Kaavio constructor
    *
-   * @param  {object} element DOM element
-   * @param  {object} options
+   * @param  {object} containerElement DOM element that is already present
+   *                    on the page. The user specifies this element as
+   *                    the container for all the kaavio content. It can be
+   *                    any container, such as a div, section or
+   *                    ariutta-kaavio custom element.
+   * @param {object} options
+   * @param {object} [pvjson] Source data. If this is not specified, src must be.
+   * @param {string} [src] IRI (URL) to the pvjson. If this is not specified,
+   *                        pvjson must be.
+   * @param {string} [editor='closed'] Initial editor state. Can be closed, open
+   *                  or disabled.
+   * @param {boolean} [manualRender=false] If you want to specify when to render,
+   *                    set this to true and then run kaavio.render when you
+   *                    choose.
+   * @param {boolean} [fitToContainer=true]
    */
-  Kaavio.prototype.init = function(element, options) {
+  var Kaavio = function(containerElement, options) {
     var privateInstance = this;
-    privateInstance.$element = d3.select(element).html(''); // select and empty the element
-    privateInstance.containerElement = element;
+    // select and empty the containerElement
+    privateInstance.$element = d3.select(containerElement).html('');
 
-    var spinnerOptions = {
-      lines: 13, // The number of lines to draw
-      length: 20, // The length of each line
-      width: 10, // The line thickness
-      radius: 30, // The radius of the inner circle
-      corners: 1, // Corner roundness (0..1)
-      rotate: 0, // The rotation offset
-      direction: 1, // 1: clockwise, -1: counterclockwise
-      color: '#000', // #rgb or #rrggbb or array of colors
-      speed: 1, // Rounds per second
-      trail: 60, // Afterglow percentage
-      shadow: false, // Whether to render a shadow
-      hwaccel: false, // Whether to use hardware acceleration
-      className: 'spinner', // The CSS class to assign to the spinner
-      zIndex: 2e9, // The z-index (defaults to 2000000000)
-      top: '50%', // Top position relative to parent
-      left: '50%' // Left position relative to parent
-    };
-
-    var spinner = new Spinner(spinnerOptions).spin(element);
+    privateInstance.containerElement = containerElement;
 
     // Clone and fill options
     privateInstance.options = _.clone(optionsDefault, true);
@@ -99,46 +83,99 @@ module.exports = function(window, $) {
     // Init events object
     privateInstance.events = {};
 
-    privateInstance.initContainer();
-
-    //*
-    // Check if render should be called now or it will be done later manually
+    // Check whether init should be called now or it will be done later manually
     if (!privateInstance.options.manualRender) {
-      privateInstance.render(privateInstance);
+      privateInstance.init();
     }
-    //*/
   };
 
   /**
    * Creates DOM container and parses its sizes.
    * Adds loading state to container.
-   * Adds hook for loaded event to remove loading state
+   * Adds hook for loaded event to remove loading state.
    */
-  Kaavio.prototype.initContainer = function() {
+  Kaavio.prototype.init = function() {
     var privateInstance = this;
 
     var containerElement = privateInstance.containerElement;
-    privateInstance.editor = new Editor(privateInstance);
-    var diagramComponent = new DiagramComponent(privateInstance);
 
-    var kaavioComponent = {};
+    // Get container sizes
+    var boundingRect = containerElement.getBoundingClientRect();
+
+    // TODO take in account paddings, margins and border
+    privateInstance.elementWidth = +boundingRect.width;
+
+    // TODO take in account paddings, margins and border
+    privateInstance.elementHeight = +boundingRect.height;
+
+    /*********************************************
+     * Mithril code for setting up container
+     ********************************************/
+
+    var kaavioComponent = privateInstance.kaavioComponent = {};
+
+    kaavioComponent.vm = (function() {
+      var vm = {};
+
+      vm.state = {
+        header: m.prop('closed'),
+        leftSidebar: m.prop('closed'),
+        rightSidebar: m.prop('closed'),
+        body: m.prop('open'),
+        footer: m.prop('closed')
+      };
+
+      vm.init = function() {
+        privateInstance.editor = new Editor(privateInstance);
+        privateInstance.diagramComponent = new DiagramComponent(privateInstance);
+
+        privateInstance.diagramComponent.vm.init();
+        privateInstance.editor.vm.init(privateInstance);
+
+        privateInstance.editorOpenButton = new EditorOpenButton(privateInstance);
+        privateInstance.editorOpenButton.vm.init(privateInstance);
+
+        privateInstance.footer = new Footer(privateInstance);
+        privateInstance.footer.vm.init(privateInstance);
+
+        vm.onunload = function() {
+          privateInstance.diagramComponent.vm.onunload();
+          privateInstance.editor.vm.onunload();
+        };
+
+        vm.onClickHandler = function(el) {
+          if (!!el) {
+            console.log('el');
+            console.log(el);
+          }
+        };
+
+        vm.reset = function() {
+        };
+      };
+
+      return vm;
+    })();
 
     kaavioComponent.controller = function() {
+      kaavioComponent.vm.init();
+    };
+
+    kaavioComponent.controller = function() {
+      kaavioComponent.vm.init();
       this.onunload = function() {
         console.log('unloading kaavioComponent module');
-
-        //diagramComponent.vm.onunload();
-        privateInstance.editor.vm.onunload();
+        kaavioComponent.vm.onunload();
       };
-      privateInstance.editor.vm.init(privateInstance);
     };
 
     kaavioComponent.view = function(controller) {
       return [
-        m('div.diagram-container.editor-' + m.route.param('editorState'), [
-          diagramComponent.view,
+        m('div.diagram-container.footer-' + kaavioComponent.vm.state.footer(), [
+          privateInstance.diagramComponent.view,
         ]),
-        privateInstance.editor.view(),
+        privateInstance.editorOpenButton.view(),
+        privateInstance.footer.view(),
         m('div.annotation.ui-draggable.editor-' + m.route.param('editorState'), {}, [
           m('header.annotation-header', {}, [
             m('span.annotation-header-move', {}, [
@@ -174,6 +211,32 @@ module.exports = function(window, $) {
       '/test': kaavioComponent
     });
 
+    /*********************************************
+     * Non-Mithril code for putting container
+     * into loading state
+     ********************************************/
+
+    var spinnerOptions = {
+      lines: 13, // The number of lines to draw
+      length: 20, // The length of each line
+      width: 10, // The line thickness
+      radius: 30, // The radius of the inner circle
+      corners: 1, // Corner roundness (0..1)
+      rotate: 0, // The rotation offset
+      direction: 1, // 1: clockwise, -1: counterclockwise
+      color: '#000', // #rgb or #rrggbb or array of colors
+      speed: 1, // Rounds per second
+      trail: 60, // Afterglow percentage
+      shadow: false, // Whether to render a shadow
+      hwaccel: false, // Whether to use hardware acceleration
+      className: 'spinner', // The CSS class to assign to the spinner
+      zIndex: 2e9, // The z-index (defaults to 2000000000)
+      top: '50%', // Top position relative to parent
+      left: '50%' // Left position relative to parent
+    };
+
+    var spinner = new Spinner(spinnerOptions).spin(containerElement);
+
     // Set ID to container element if it has no ID
     var containerElementId = containerElement.getAttribute('id') ||
         'kaavio-' + privateInstance.instanceId;
@@ -186,15 +249,17 @@ module.exports = function(window, $) {
     // Set loading class
     Utils.addClassForD3(privateInstance.$element, 'loading');
 
-    // Remove loading state after privateInstance is loaded
+    /*********************************************
+     * Remove loading state after diagram is loaded
+     * and add listeners and highlighting (optional).
+     ********************************************/
+
     privateInstance.on('rendered.renderer', function() {
-      console.log('rendered');
+      // Remove loading state
       Utils.removeClassForD3(privateInstance.$element, 'loading');
+      spinner.stop();
 
-      // Initialize Highlighter plugin
-      privateInstance.publicInstance.highlighter = new KaavioHighlighter(
-          privateInstance.publicInstance);
-
+      // Add resize listeners
       var diagramContainerElement = containerElement.querySelector(
           '.diagram-container');
 
@@ -233,16 +298,6 @@ module.exports = function(window, $) {
         windowResizeListener.fork()
         .debounce(refreshInterval)
         .each(function() {
-          /* Change this so it works. This was pulled from the element resize listener.
-          if (_.isElement(element)) {
-            diagramContainerElement.setAttribute('style',
-              'width: ' + element.clientWidth + 'px; ' +
-              'height: ' + element.clientHeight + 'px; ')
-            diagramContainerElement.setAttribute('style',
-              'width: ' + element.clientWidth + 'px; ' +
-              'height: ' + element.clientHeight + 'px; ')
-          }
-          //*/
           privateInstance.publicInstance.resizeDiagram();
         });
 
@@ -297,6 +352,10 @@ module.exports = function(window, $) {
           privateInstance.publicInstance.resizeDiagram();
         });
 
+      // Initialize Highlighter plugin
+      privateInstance.publicInstance.highlighter = new KaavioHighlighter(
+          privateInstance.publicInstance);
+
       /*// TODO read the URL query parameters and also the
         // highlight="[{}, {}]" attribute to get these values
 
@@ -325,53 +384,6 @@ module.exports = function(window, $) {
       });
       //*/
     });
-
-    // Get container sizes
-    var boundingRect = containerElement.getBoundingClientRect();
-
-    // TODO take in account paddings, margins and border
-    privateInstance.elementWidth = +boundingRect.width;
-
-    // TODO take in account paddings, margins and border
-    privateInstance.elementHeight = +boundingRect.height;
-
-  };
-
-  /**
-   * Init and render
-   */
-  Kaavio.prototype.render = function() {
-    var privateInstance = this;
-
-    // Init sourceData object
-    privateInstance.sourceData = {
-      pvjson: null, // pvjson object
-      selector: null, // selector instance
-      rendererEngine: null // renderer engine name
-    };
-
-    var pvjson = privateInstance.options.pvjson;
-    var src = privateInstance.options.src;
-
-    if (!!pvjson) {
-      privateInstance.sourceData.pvjson = pvjson;
-      diagramRenderer.render(privateInstance);
-    } else if (!!src) {
-      d3.json(src, function(err, pvjson) {
-        if (err) {
-          throw err;
-        }
-        privateInstance.sourceData.pvjson = pvjson;
-        diagramRenderer.render(privateInstance);
-      });
-    } else {
-      throw new Error('Cannot handle provided src. Please provide an IRI or a parsed JSON object.')
-    }
-
-    // Listen for renderer errors
-    privateInstance.on('error.renderer', function() {
-      diagramRenderer.destroyRender(privateInstance, privateInstance.sourceData);
-    });
   };
 
   Kaavio.prototype.destroy = function() {
@@ -382,7 +394,7 @@ module.exports = function(window, $) {
         'destroy.kaavio', {message: 'User requested kaavio destroy'}, false)
 
     // Destroy renderer
-    diagramRenderer.destroyRender(privateInstance, privateInstance.sourceData)
+    privateInstance.diagramComponent.vm.destroy()
 
     // Off all events
     for (var e in privateInstance.events) {
@@ -392,14 +404,15 @@ module.exports = function(window, $) {
     // Clean data
     privateInstance.containerElement.data = undefined
 
-    if ($) {
-      $(privateInstance.containerElement).removeData('kaavio')
+    if (typeof $ !== undefined) {
+      $(privateInstance.containerElement).removeData('kaavio');
+      // Clean HTML
+      // jQuery
+      $(privateInstance.containerElement).empty();
+    } else {
+      // Clean HTML
+      privateInstance.containerElement.innerHTML = '';
     }
-
-    // Clean HTML
-    // jQuery
-    $(privateInstance.containerElement).empty()
-
   }
 
   /**
@@ -453,8 +466,7 @@ module.exports = function(window, $) {
           // return _.clone(privateInstance.sourceData, true);
           return {
             pvjson: _.clone(privateInstance.sourceData.pvjson, true),
-            selector: privateInstance.sourceData.selector.getClone(),
-            rendererEngine: privateInstance.sourceData.rendererEngine
+            selector: privateInstance.sourceData.selector.getClone()
           };
         }
       };
@@ -584,7 +596,7 @@ module.exports = function(window, $) {
   /**
    *
    */
-  if ($) {
+  if (typeof $ !== undefined) {
     /**
      * jQuery plugin entry point. Only if jQuery is defined.
      * If option is 'get' then returns an array of kaavio public instances.

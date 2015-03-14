@@ -92,7 +92,7 @@ datasetControl.vm = (function() {
       vm.datasetList = highland.compose(
           mithrilUtils.promisify, propify,
           getPrimaryDatasets)();
-    }, 50);
+    }, 100);
 
     vm.filterDatasetListByXrefType = function(xrefType) {
       vm.datasetList = propifyArray(vm.datasetListFull().filter(function(dataset) {
