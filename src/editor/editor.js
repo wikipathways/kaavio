@@ -8,26 +8,29 @@ var css = [
   fs.readFileSync(__dirname + '/editor.css')
 ];
 
-module.exports = function(pvjs) {
-  var containerElement = pvjs.$element[0][0];
+module.exports = function(privateInstance) {
+  var containerElement = privateInstance.containerElement;
   var diagramContainerElement;
   var editorTabsComponentContainerElement;
   css.map(insertCss);
 
-  var editorTabsComponent = new EditorTabsComponent(pvjs);
+  var editorTabsComponent = new EditorTabsComponent(privateInstance);
 
-  //module for editorComponent
+  //module for editor
   //for simplicity, we use this module to namespace the model classes
-  var editorComponent = {};
+  var editor = {};
 
   //the view-model,
-  editorComponent.vm = (function() {
+  editor.vm = (function() {
     var vm = {};
 
-    vm.init = function(pvjs) {
-      vm.editorState = m.route.param('editorState');
+    vm.init = function(privateInstance) {
+      vm.state = m.route.param('editorState');
+
+      editorTabsComponent.vm.init(privateInstance);
 
       vm.onunload = function() {
+        vm.state = m.route.param('editorState');
         console.log('unloading editor module');
         console.log(m.route.param('editorState'));
         vm[m.route.param('editorState')]();
@@ -44,9 +47,10 @@ module.exports = function(pvjs) {
       };
 
       vm.open = function() {
+        privateInstance.kaavioComponent.vm.state.footer('open');
         diagramContainerElement = containerElement.querySelector('.diagram-container');
         editorTabsComponentContainerElement = containerElement.querySelector(
-            '.pvjs-editor-tabs');
+            '.kaavio-editor-tabs');
 
         /*
         m.startComputation();
@@ -56,64 +60,54 @@ module.exports = function(pvjs) {
         m.endComputation();
         //*/
 
-        //*
+        //* TODO this is kludgy.
         window.setTimeout(function() {
           document.querySelector('.diagram-container').addEventListener(
               'click', onClickDiagramContainer, false);
-          pvjs.panZoom.resizeDiagram();
+          privateInstance.panZoom.resizeDiagram();
         }, 1000);
         //*/
 
-        editorTabsComponent.vm.init(pvjs);
       };
 
       vm.closed = function() {
-        diagramContainerElement.removeEventListener('click');
-        clearSelection();
+        privateInstance.kaavioComponent.vm.state.footer('closed');
 
-        pvjs.panZoom.resizeDiagram();
-
-        editorTabsComponent.vm.close();
+        if (!!diagramContainerElement) {
+          diagramContainerElement.removeEventListener('click');
+          clearSelection();
+          privateInstance.panZoom.resizeDiagram();
+          editorTabsComponent.vm.close();
+        }
       };
 
+      vm[m.route.param('editorState')]();
     };
+
     return vm;
   }());
 
   //the controller defines what part of the model is relevant for the current page
   //in our case, there's only one view-model that handles everything
-  editorComponent.controller = function() {
-    editorComponent.vm.init();
+  editor.controller = function() {
+    editor.vm.init();
   };
 
   //here's the view
-  editorComponent.view = function() {
-    console.log('editorState');
-    console.log(editorComponent.vm.editorState);
-    if (editorComponent.vm.editorState === 'disabled') {
-      return;
-    } else if (editorComponent.vm.editorState === 'closed') {
-      return m('div.editor-open-control.editor-' + editorComponent.vm.editorState +
-          '.label.label-default', {}, [
-        m('a[href="/editor/open"]', {
-          config: m.route,
-          /*
-          onclick: m.withAttr('value', editorComponent.vm.open),
-          value: editorComponent.vm.tester()
-          //*/
-        }, [
-          m('span.glyphicon.glyphicon-chevron-up[aria-hidden="true"]', {}, 'Quick Edit'),
-        ])
-      ]);
-    } else if (editorComponent.vm.editorState === 'open') {
+  editor.view = function() {
+    console.log('state');
+    console.log(editor.vm.state);
+    if (editor.vm.state === 'open') {
       return [
-        m('div.pvjs-editor-tabs', {
+        m('div.kaavio-editor-tabs', {
           onchange: m.withAttr('value',
-                      editorComponent.vm.updateTester),
-          value: editorComponent.vm.tester()
+                      editor.vm.updateTester),
+          value: editor.vm.tester()
         }),
         editorTabsComponent.view()
       ];
+    } else {
+      return;
     }
   };
 
@@ -125,37 +119,40 @@ module.exports = function(pvjs) {
 
     var selectedElementId = event.target.id;
 
-    if (!!pvjs.editor.selectedPvjsElement) {
-      pvjs.publicInstance.highlighter.attenuate('#' + pvjs.editor.selectedPvjsElement.id);
+    if (!!privateInstance.editor.selectedPvjsElement) {
+      privateInstance.publicInstance.highlighter.attenuate(
+          '#' + privateInstance.editor.selectedPvjsElement.id);
     }
 
-    pvjs.publicInstance.highlighter.highlight('#' + selectedElementId, null, {
+    privateInstance.publicInstance.highlighter.highlight('#' + selectedElementId, null, {
       backgroundColor: 'white', borderColor: 'green'
     });
 
-    pvjs.editor.selectedPvjsElement = pvjs.sourceData.pvjson.elements.filter(function(pvjsElement) {
+    privateInstance.editor.selectedPvjsElement = privateInstance.sourceData.pvjson.elements.filter(
+        function(pvjsElement) {
       return pvjsElement.id === selectedElementId;
     })
     .map(function(pvjsElement) {
       return pvjsElement;
     })[0];
 
-    if (!pvjs.editor.selectedPvjsElement) {
+    if (!privateInstance.editor.selectedPvjsElement) {
       m.endComputation();
       return;
     }
 
-    editorTabsComponent.vm.onClickDiagramContainer(pvjs.editor.selectedPvjsElement);
+    editorTabsComponent.vm.onClickDiagramContainer(privateInstance.editor.selectedPvjsElement);
 
     m.endComputation();
   }
 
   function clearSelection() {
-    if (pvjs.editor.selectedPvjsElement) {
-      pvjs.publicInstance.highlighter.attenuate('#' + pvjs.editor.selectedPvjsElement.id);
+    if (privateInstance.editor.selectedPvjsElement) {
+      privateInstance.publicInstance.highlighter.attenuate(
+          '#' + privateInstance.editor.selectedPvjsElement.id);
     }
 
-    pvjs.editor.selectedPvjsElement = null;
+    privateInstance.editor.selectedPvjsElement = null;
   }
 
   function cancel() {
@@ -194,17 +191,6 @@ module.exports = function(pvjs) {
     containerElement.dispatchEvent(pvjsdatachangeEvent);
   }
 
-  return editorComponent;
-
-  /*
-  return {
-    init: editorComponent.vm.init,
-    open: open,
-    close: close,
-    cancel: cancel,
-    clearSelection: clearSelection,
-    save: save
-  };
-  //*/
+  return editor;
 
 };

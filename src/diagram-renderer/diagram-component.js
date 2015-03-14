@@ -1,11 +1,11 @@
+var DiagramRenderer = require('./diagram-renderer');
 /***********************************
  * diagramComponent
  **********************************/
 
 var m = require('mithril');
 
-function DiagramComponent(internalInstance) {
-  var isInitializedHere = false;
+function DiagramComponent(privateInstance) {
   var diagramComponent = {};
 
   //here's an example plugin that determines whether data has changes.
@@ -25,8 +25,16 @@ function DiagramComponent(internalInstance) {
   diagramComponent.vm = (function() {
     var vm = {};
     vm.init = function() {
+      vm.diagramRenderer = new DiagramRenderer();
 
-      vm.color = m.prop('');
+      // Listen for renderer errors
+      privateInstance.on('error.renderer', function() {
+        vm.diagramRenderer.destroyRender(privateInstance, privateInstance.sourceData);
+      });
+
+      vm.destroy = function() {
+        vm.diagramRenderer.destroyRender(privateInstance, privateInstance.sourceData);
+      };
 
       vm.onClickHandler = function(el) {
         if (!!el) {
@@ -35,15 +43,11 @@ function DiagramComponent(internalInstance) {
         }
       };
 
-      // react to user updating color value
-      vm.updateColor = function(newColor) {
-        if (!!newColor) {
-          vm.color(newColor);
-        }
+      vm.onunload = function() {
+        console.log('diagramComponent unloaded');
       };
 
       vm.reset = function() {
-        vm.color('');
       };
     };
 
@@ -54,62 +58,49 @@ function DiagramComponent(internalInstance) {
     diagramComponent.vm.init();
   };
 
-  /*
-  diagramContainerElement.setAttribute(
-      'style', 'height: ' + (internalInstance.elementHeight - 120) + 'px;');
-  internalInstance.panZoom.resizeDiagram();
-  //*/
-
-  //this view implements a color-picker input for both
-  //browers that support it natively and those that don't
   diagramComponent.view = renderOnce(function(cache) {
     return m('div', {
-      //*
       config: function(el, isInitialized) {
-        if (!isInitializedHere && !isInitialized) {
-          //isInitializedHere = true;
-          //integrate with the auto-redrawing system...
-          //*
-          m.startComputation();
-          //internalInstance.diagramRendererInstance.render(internalInstance);
-          internalInstance.render();
-          internalInstance.on('rendered', function() {
-            m.endComputation();
-          });
-          //*/
-        } else if (!isInitialized) {
-          internalInstance.render();
-          //internalInstance.diagramRendererInstance.render(internalInstance);
-          /*
-          m.startComputation();
-          internalInstance.diagramRendererInstance.render(internalInstance);
-          m.endComputation();
-          //*/
-        }
-
-        /*
         if (!isInitialized) {
           //integrate with the auto-redrawing system...
           m.startComputation();
-          //internalInstance.diagramRendererInstance.render(internalInstance);
-          internalInstance.render();
-          internalInstance.on('rendered', function() {
+
+          // Init sourceData object
+          privateInstance.sourceData = {
+            pvjson: null, // pvjson object
+            selector: null, // selector instance
+          };
+
+          var pvjson = privateInstance.options.pvjson;
+          var src = privateInstance.options.src;
+
+          if (!!pvjson) {
+            privateInstance.sourceData.pvjson = pvjson;
+            diagramComponent.vm.diagramRenderer.render(privateInstance);
+          } else if (!!src) {
+            d3.json(src, function(err, pvjson) {
+              if (err) {
+                throw err;
+              }
+              privateInstance.sourceData.pvjson = pvjson;
+              diagramComponent.vm.diagramRenderer.render(privateInstance);
+            });
+          } else {
+            throw new Error('Missing or invalid source pvjson data. The input options ' +
+                'require either a "src" property with a string value representing ' +
+                'an IRI to a pvjson JSON resource ' +
+                'or a "pvjson" property with a parsed JavaScript object representing a ' +
+                'pvjson JSON resource.')
+          }
+
+          //
+          privateInstance.on('rendered', function() {
             m.endComputation();
           });
-        } else {
-          m.startComputation();
-          internalInstance.diagramRendererInstance.render(internalInstance);
-          m.endComputation();
+        } else if (!isInitialized) {
+          privateInstance.render();
         }
-        //*/
-      },
-      //*/
-      //onclick: diagramComponent.vm.onClickHandler,
-      //config: diagramComponent.config(ctrl),
-      /*
-      onchange: m.withAttr('value', diagramComponent.vm.updateColor),
-      value: diagramComponent.vm.color()
-      //*/
+      }
     });
   });
 
