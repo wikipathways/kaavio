@@ -1,7 +1,7 @@
 kaavio
 ====================
 
-The diagram viewer/editor functionality for [pvjs](https://github.com/wikipathways/pvjs).
+The diagram viewer/editor functionality for [pvjs](https://github.com/wikipathways/pvjs). "Kaavio" is the Finnish word for diagram.
 
 License
 =======
