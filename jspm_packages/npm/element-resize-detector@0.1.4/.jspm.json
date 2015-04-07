@@ -1,0 +1,57 @@
+{
+  "name": "element-resize-detector",
+  "version": "0.1.4",
+  "description": "resize event emitter for elements.",
+  "homepage": "https://github.com/wnr/element-resize-detector",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wnr/element-resize-detector.git"
+  },
+  "main": "src/element-resize-detector.js",
+  "private": false,
+  "license": "MIT",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-banner": "^0.3.1",
+    "grunt-browserify": "^3.3.0",
+    "grunt-contrib-jshint": "^0.11.0",
+    "grunt-contrib-uglify": "^0.7.0",
+    "jquery": "^2.1.3",
+    "load-grunt-tasks": "^3.0.0"
+  },
+  "scripts": {
+    "build": "grunt build",
+    "dist": "grunt dist",
+    "test": "grunt test"
+  },
+  "gitHead": "c66584f817ceec21b2b82a2bf3f1871748306f22",
+  "bugs": {
+    "url": "https://github.com/wnr/element-resize-detector/issues"
+  },
+  "_id": "element-resize-detector@0.1.4",
+  "_shasum": "b852d2bf3a0a28d6ba010ca1ad016c6a9262418d",
+  "_from": ".",
+  "_npmVersion": "2.1.16",
+  "_nodeVersion": "0.10.34",
+  "_npmUser": {
+    "name": "lwnr",
+    "email": "lucas@wiener.se"
+  },
+  "maintainers": [
+    {
+      "name": "lwnr",
+      "email": "lucas@wiener.se"
+    }
+  ],
+  "dist": {
+    "shasum": "b852d2bf3a0a28d6ba010ca1ad016c6a9262418d",
+    "tarball": "http://registry.npmjs.org/element-resize-detector/-/element-resize-detector-0.1.4.tgz"
+  },
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "dependencies": {}
+}

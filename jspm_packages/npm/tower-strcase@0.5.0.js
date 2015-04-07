@@ -1,0 +1,1 @@
+module.exports = require("npm:tower-strcase@0.5.0/index");

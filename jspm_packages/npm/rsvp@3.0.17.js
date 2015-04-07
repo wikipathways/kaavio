@@ -1,0 +1,1 @@
+module.exports = require("npm:rsvp@3.0.17/dist/rsvp");

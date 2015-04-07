@@ -1,0 +1,1 @@
+module.exports = require("npm:cookie-jar@0.3.0/index");

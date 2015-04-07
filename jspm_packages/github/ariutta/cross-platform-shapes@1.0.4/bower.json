@@ -1,0 +1,7 @@
+{
+  "name": "cross-platform-shapes",
+  "version": "1.0.4",
+  "main": [
+    "index.js"
+  ]
+}

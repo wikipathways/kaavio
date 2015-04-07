@@ -1,0 +1,1 @@
+module.exports = require("npm:select2@3.5.2-browserify/select2");

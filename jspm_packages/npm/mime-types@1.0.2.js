@@ -1,0 +1,1 @@
+module.exports = require("npm:mime-types@1.0.2/lib");

@@ -1,0 +1,1 @@
+module.exports = require("npm:jsonld@0.2.17/js/jsonld");

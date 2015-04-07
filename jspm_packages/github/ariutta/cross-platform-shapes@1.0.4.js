@@ -1,0 +1,1 @@
+module.exports = require("github:ariutta/cross-platform-shapes@1.0.4/index");

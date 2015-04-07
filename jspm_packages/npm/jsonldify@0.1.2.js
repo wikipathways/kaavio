@@ -1,0 +1,1 @@
+module.exports = require("npm:jsonldify@0.1.2/index");

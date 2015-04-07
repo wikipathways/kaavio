@@ -1,0 +1,1 @@
+module.exports = require("npm:promisescript@1.1.0/index");

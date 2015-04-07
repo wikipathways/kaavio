@@ -1,5 +1,5 @@
-var customElement = require('./src/custom-element');
-var initKaavio = require('./src/kaavio');
+var customElement = require('./lib/custom-element');
+var initKaavio = require('./lib/main');
 var highland = require('highland');
 var promisescript = require('promisescript');
 

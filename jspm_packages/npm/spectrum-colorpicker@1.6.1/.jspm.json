@@ -1,0 +1,57 @@
+{
+  "name": "spectrum-colorpicker",
+  "description": "Spectrum: the no hassle jQuery colorpicker",
+  "version": "1.6.1",
+  "keywords": [
+    "jquery-plugin",
+    "ecosystem:jquery",
+    "color",
+    "colorpicker",
+    "ui"
+  ],
+  "homepage": "http://bgrins.github.com/spectrum",
+  "repository": {
+    "type": "git",
+    "url": "https://bgrins.github.com/spectrum"
+  },
+  "author": {
+    "name": "Brian Grinstead",
+    "email": "briangrinstead@gmail.com",
+    "url": "http://briangrinstead.com/"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.0",
+    "grunt-contrib-jshint": "~0.4.3",
+    "grunt-contrib-qunit": "~0.2.0",
+    "grunt-contrib-uglify": "~0.2.0"
+  },
+  "gitHead": "788bcd3da11c68c58970eead5220d7976856dae6",
+  "_id": "spectrum-colorpicker@1.6.1",
+  "scripts": {},
+  "_shasum": "c3ad11518510601603fa33b58c07ad2abc61e8d0",
+  "_from": ".",
+  "_npmVersion": "1.4.23",
+  "_npmUser": {
+    "name": "bgrins",
+    "email": "briangrinstead@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "bgrins",
+      "email": "briangrinstead@gmail.com"
+    }
+  ],
+  "dist": {
+    "shasum": "c3ad11518510601603fa33b58c07ad2abc61e8d0",
+    "tarball": "http://registry.npmjs.org/spectrum-colorpicker/-/spectrum-colorpicker-1.6.1.tgz"
+  },
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "dependencies": {
+    "process": "github:jspm/nodelibs-process@^0.1.0"
+  }
+}

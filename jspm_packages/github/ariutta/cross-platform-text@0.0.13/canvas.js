@@ -1,0 +1,3 @@
+canvas = {};
+
+module.exporst = canvas;

@@ -1,0 +1,76 @@
+{
+  "name": "request",
+  "description": "Simplified HTTP request client.",
+  "tags": [
+    "http",
+    "simple",
+    "util",
+    "utility"
+  ],
+  "version": "2.22.0",
+  "author": {
+    "name": "Mikeal Rogers",
+    "email": "mikeal.rogers@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/mikeal/request.git"
+  },
+  "bugs": {
+    "url": "http://github.com/mikeal/request/issues"
+  },
+  "engines": [
+    "node >= 0.8.0"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "_id": "request@2.22.0",
+  "dist": {
+    "shasum": "b883a769cc4a909571eb5004b344c43cf7e51592",
+    "tarball": "http://registry.npmjs.org/request/-/request-2.22.0.tgz"
+  },
+  "_from": ".",
+  "_npmVersion": "1.2.18",
+  "_npmUser": {
+    "name": "mikeal",
+    "email": "mikeal.rogers@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "mikeal",
+      "email": "mikeal.rogers@gmail.com"
+    }
+  ],
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "dependencies": {
+    "qs": "qs@~0.6.0",
+    "json-stringify-safe": "json-stringify-safe@~4.0.0",
+    "forever-agent": "forever-agent@~0.5.0",
+    "tunnel-agent": "tunnel-agent@~0.3.0",
+    "http-signature": "http-signature@~0.10.0",
+    "hawk": "hawk@~0.13.0",
+    "aws-sign": "aws-sign@~0.3.0",
+    "oauth-sign": "oauth-sign@~0.3.0",
+    "cookie-jar": "cookie-jar@~0.3.0",
+    "node-uuid": "node-uuid@~1.4.0",
+    "mime": "mime@~1.2.9",
+    "form-data": "form-data@0.0.8",
+    "http": "github:jspm/nodelibs-http@^1.7.0",
+    "url": "github:jspm/nodelibs-url@^0.1.0",
+    "util": "github:jspm/nodelibs-util@^0.1.0",
+    "stream": "github:jspm/nodelibs-stream@^0.1.0",
+    "querystring": "github:jspm/nodelibs-querystring@^0.1.0",
+    "crypto": "github:jspm/nodelibs-crypto@^0.1.0",
+    "https": "github:jspm/nodelibs-https@^0.1.0",
+    "tls": "github:jspm/nodelibs-tls@^0.1.0",
+    "buffer": "github:jspm/nodelibs-buffer@^0.1.0",
+    "process": "github:jspm/nodelibs-process@^0.1.0"
+  }
+}

@@ -1,0 +1,1 @@
+module.exports = require("npm:es6-promise@1.0.0/dist/commonjs/main");

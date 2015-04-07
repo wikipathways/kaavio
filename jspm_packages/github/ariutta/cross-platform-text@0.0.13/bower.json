@@ -1,0 +1,7 @@
+{
+  "name": "cross-platform-text",
+  "version": "0.0.12",
+  "main": [
+    "./dist/lib/cross-platform-text/js/cross-platform-text.min.js"
+  ]
+}

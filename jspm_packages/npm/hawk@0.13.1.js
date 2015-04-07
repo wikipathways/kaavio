@@ -1,0 +1,1 @@
+module.exports = require("npm:hawk@0.13.1/index");

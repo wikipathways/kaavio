@@ -1,0 +1,1 @@
+module.exports = require("github:ariutta/cross-platform-text@0.0.13/cross-platform-text");

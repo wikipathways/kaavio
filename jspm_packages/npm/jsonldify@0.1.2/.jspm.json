@@ -1,0 +1,55 @@
+{
+  "name": "jsonldify",
+  "version": "0.1.2",
+  "description": "A wrapper for using jsonld library with browserify",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nopnop/jsonldify.git"
+  },
+  "keywords": [
+    "jsonld",
+    "browserify",
+    "browserify-transform"
+  ],
+  "author": {
+    "name": "Jean Ponchon",
+    "email": "jean.ponchon@novadiscovery.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nopnop/jsonldify/issues"
+  },
+  "homepage": "https://github.com/nopnop/jsonldify",
+  "publishConfig": {
+    "registry": "http://registry.npmjs.org/"
+  },
+  "_id": "jsonldify@0.1.2",
+  "dist": {
+    "shasum": "cfb0e1ce1346258c57b216c87d25065e805fe8e5",
+    "tarball": "http://registry.npmjs.org/jsonldify/-/jsonldify-0.1.2.tgz"
+  },
+  "_from": ".",
+  "_npmVersion": "1.4.6",
+  "_npmUser": {
+    "name": "jponchon",
+    "email": "jean.ponchon@novadiscovery.com"
+  },
+  "maintainers": [
+    {
+      "name": "jponchon",
+      "email": "jean.ponchon@novadiscovery.com"
+    }
+  ],
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "dependencies": {
+    "through": "through@~2.3.4",
+    "path": "github:jspm/nodelibs-path@^0.1.0",
+    "buffer": "github:jspm/nodelibs-buffer@^0.1.0"
+  }
+}

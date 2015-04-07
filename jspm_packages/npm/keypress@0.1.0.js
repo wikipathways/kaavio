@@ -1,0 +1,1 @@
+module.exports = require("npm:keypress@0.1.0/index");

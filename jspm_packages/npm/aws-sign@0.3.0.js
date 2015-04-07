@@ -1,0 +1,1 @@
+module.exports = require("npm:aws-sign@0.3.0/index");

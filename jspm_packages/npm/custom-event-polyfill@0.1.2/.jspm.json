@@ -1,0 +1,48 @@
+{
+  "name": "custom-event-polyfill",
+  "version": "0.1.2",
+  "author": "",
+  "keywords": [
+    "polyfill",
+    "custom-event",
+    "CustomEvent",
+    "Web API Interface"
+  ],
+  "main": "./custom-event-polyfill.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:krambuhl/custom-event-polyfill.git"
+  },
+  "gitHead": "eeb828bf89631ae4dc91efc1e8f508910ab41961",
+  "description": "Polyfill for creating CustomEvents on IE9/10/11 if native implementation is missing.",
+  "bugs": {
+    "url": "https://github.com/krambuhl/custom-event-polyfill/issues"
+  },
+  "homepage": "https://github.com/krambuhl/custom-event-polyfill",
+  "_id": "custom-event-polyfill@0.1.2",
+  "scripts": {},
+  "_shasum": "50736c8c54de5a6b09436e7a51ef2c1a025ec43a",
+  "_from": "./",
+  "_npmVersion": "1.4.21",
+  "_npmUser": {
+    "name": "krambuhl",
+    "email": "evan.krambuhl@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "krambuhl",
+      "email": "evan.krambuhl@gmail.com"
+    }
+  ],
+  "dist": {
+    "shasum": "50736c8c54de5a6b09436e7a51ef2c1a025ec43a",
+    "tarball": "http://registry.npmjs.org/custom-event-polyfill/-/custom-event-polyfill-0.1.2.tgz"
+  },
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "dependencies": {}
+}

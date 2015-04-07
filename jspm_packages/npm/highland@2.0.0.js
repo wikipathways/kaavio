@@ -1,0 +1,1 @@
+module.exports = require("npm:highland@2.0.0/lib/index");

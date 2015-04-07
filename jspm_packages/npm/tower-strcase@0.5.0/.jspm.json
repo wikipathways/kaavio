@@ -1,0 +1,36 @@
+{
+  "name": "tower-strcase",
+  "version": "0.5.0",
+  "main": "./index.js",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/tower/strcase.git"
+  },
+  "readme": "# Tower String Case\n\nConvert strings to `camelCase`, `snake_case`, `CONSTANT_CASE`, and other useful code-cases. **< 0.4kb** minified and gzipped.\n\n## Install\n\nnode:\n\n```\nnpm install tower-strcase\n```\n\nbrowser:\n\n``` html\ncomponent install tower/strcase\n```\n\n## Usage\n\n``` javascript\nvar strcase = require('tower-strcase')\n  , cases = [\n      'fooBar'\n    , 'foo_bar'\n    , 'FOO_BAR'\n    , 'FooBar'\n    , 'Foo.Bar'\n    , 'Foo Bar'\n    , 'foo-bar'\n    , 'foo/bar'\n    , 'foo.bar'\n  ]\n\ncases.forEach(function(string) {\n  strcase.camelCase(string)      // \"fooBar\"\n  strcase.snakeCase(string)      // \"foo_bar\"\n  strcase.constantCase(string)   // \"FOO_BAR\"\n  strcase.classCase(string)      // \"FooBar\"\n  strcase.namespaceCase(string)  // \"Foo.Bar\"\n  strcase.titleCase(string)      // \"Foo Bar\"\n  strcase.paramCase(string)      // \"foo-bar\"\n  strcase.pathCase(string)       // \"foo/bar\"\n  strcase.dotCase(string)        // \"foo.bar\"\n});\n```\n\n### Test\n\n```\nmocha\n```\n\n## License\n\nMIT",
+  "readmeFilename": "README.md",
+  "_id": "tower-strcase@0.5.0",
+  "description": "Convert strings to `camelCase`, `snake_case`, `CONSTANT_CASE`, and other useful code-cases. **< 0.4kb** minified and gzipped.",
+  "dist": {
+    "shasum": "8480f21a8d84e574e7df1d6cd1669678cf390b9b",
+    "tarball": "http://registry.npmjs.org/tower-strcase/-/tower-strcase-0.5.0.tgz"
+  },
+  "_from": ".",
+  "_npmVersion": "1.2.18",
+  "_npmUser": {
+    "name": "viatropos",
+    "email": "lancejpollard@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "viatropos",
+      "email": "lancejpollard@gmail.com"
+    }
+  ],
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "dependencies": {}
+}

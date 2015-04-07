@@ -1,0 +1,1 @@
+module.exports = require("npm:boom@0.4.2/index");

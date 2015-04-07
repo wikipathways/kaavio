@@ -1,0 +1,1 @@
+module.exports = require("npm:bridgedb@4.1.0/index");

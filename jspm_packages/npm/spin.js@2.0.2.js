@@ -1,0 +1,1 @@
+module.exports = require("npm:spin.js@2.0.2/spin");

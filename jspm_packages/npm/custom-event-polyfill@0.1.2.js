@@ -1,0 +1,1 @@
+module.exports = require("npm:custom-event-polyfill@0.1.2/custom-event-polyfill");

@@ -1,0 +1,1 @@
+module.exports = require("npm:svg-pan-zoom@3.1.3/src/browserify");

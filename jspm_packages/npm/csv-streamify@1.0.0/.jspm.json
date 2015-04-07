@@ -1,0 +1,68 @@
+{
+  "name": "csv-streamify",
+  "version": "1.0.0",
+  "description": "Streaming CSV Parser. Made entirely out of streams.",
+  "author": {
+    "name": "Clemens Stolle"
+  },
+  "main": "csv-streamify.js",
+  "scripts": {
+    "test": "mocha -R spec"
+  },
+  "bin": {
+    "csv-streamify": "cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/klaemo/csv-stream"
+  },
+  "keywords": [
+    "csv",
+    "parser",
+    "stream",
+    "cli"
+  ],
+  "license": "BSD",
+  "devDependencies": {
+    "mocha": "1.14.x",
+    "iconv-lite": "~0.2.11",
+    "csv-spectrum": "~0.2.0"
+  },
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "bugs": {
+    "url": "https://github.com/klaemo/csv-stream/issues"
+  },
+  "homepage": "https://github.com/klaemo/csv-stream",
+  "_id": "csv-streamify@1.0.0",
+  "dist": {
+    "shasum": "023aec7d5cd0c4c88cca69d9c2bab17a1253fa33",
+    "tarball": "http://registry.npmjs.org/csv-streamify/-/csv-streamify-1.0.0.tgz"
+  },
+  "_from": ".",
+  "_npmVersion": "1.4.3",
+  "_npmUser": {
+    "name": "klaemo",
+    "email": "clemens.stolle@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "klaemo",
+      "email": "clemens.stolle@gmail.com"
+    }
+  ],
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "dependencies": {
+    "readable-stream": "readable-stream@~1.1.0",
+    "fs": "github:jspm/nodelibs-fs@^0.1.0",
+    "process": "github:jspm/nodelibs-process@^0.1.0",
+    "stream": "github:jspm/nodelibs-stream@^0.1.0",
+    "util": "github:jspm/nodelibs-util@^0.1.0"
+  }
+}

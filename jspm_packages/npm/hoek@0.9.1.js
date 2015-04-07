@@ -1,0 +1,1 @@
+module.exports = require("npm:hoek@0.9.1/index");

@@ -1,0 +1,1 @@
+module.exports = require("npm:element-resize-detector@0.1.4/src/element-resize-detector");

@@ -1,0 +1,155 @@
+{
+  "name": "machina",
+  "description": "A library for creating powerful and flexible finite state machines. Loosely inspired by Erlang/OTP's gen_fsm behavior.",
+  "version": "1.0.0-2",
+  "homepage": "http://machina-js.org/",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ifandelse/machina.js.git"
+  },
+  "author": {
+    "name": "Jim Cowart",
+    "url": "http://ifandelse.com"
+  },
+  "contributors": [
+    {
+      "name": "Jim Cowart",
+      "email": "jim@ifandelse.com",
+      "url": "http://ifandelse.com"
+    },
+    {
+      "name": "Doug Neiner",
+      "email": "doug@dougneiner.com",
+      "url": "http://code.dougneiner.com"
+    },
+    {
+      "name": "Friedemann Altrock",
+      "email": "frodenius@gmail.com",
+      "url": "https://github.com/fwg"
+    },
+    {
+      "name": "Michiel Trimpe",
+      "email": "michiel@trimpe.nl",
+      "url": "https://github.com/mtrimpe"
+    },
+    {
+      "name": "Brian Mavity",
+      "url": "https://github.com/bmavity"
+    },
+    {
+      "name": "Alex Robson",
+      "email": "arobson@gmail.com",
+      "url": "http://github.com/arobson"
+    },
+    {
+      "name": "Dominic Barnes",
+      "email": "dominic@dbarnes.info",
+      "url": "http://github.com/dominicbarnes"
+    },
+    {
+      "name": "Tim Harper",
+      "email": "timcharper@gmail.com",
+      "url": "http://tim.theenchanter.com/"
+    },
+    {
+      "name": "James Pooton",
+      "email": "james@codelica.com",
+      "url": "http://github.com/codelica"
+    },
+    {
+      "name": "Brad Fol",
+      "url": "https://github.com/bradfol"
+    }
+  ],
+  "keywords": [
+    "state machine",
+    "finite state machine",
+    "fsm",
+    "async",
+    "workflow",
+    "state",
+    "machina",
+    "machina-js",
+    "machina.js",
+    "machinajs",
+    "hierarchical",
+    "state chart",
+    "state charts"
+  ],
+  "bugs": {
+    "url": "http://github.com/ifandelse/machina.js/issues",
+    "email": "jim@ifandelse.com"
+  },
+  "main": "lib/machina.js",
+  "engines": {
+    "node": ">=0.4.0"
+  },
+  "devDependencies": {
+    "bower": "~1.2.8",
+    "express": "~3.4.7",
+    "gulp": "~3.8.10",
+    "gulp-beautify": "~1.0.3",
+    "gulp-header": "~1.0.2",
+    "gulp-hint-not": "~0.0.3",
+    "gulp-imports": "~0.0.1",
+    "gulp-plato": "~0.1.0",
+    "gulp-rename": "~0.2.1",
+    "gulp-spawn-mocha": "^0.5.1",
+    "gulp-uglify": "~0.1.0",
+    "gulp-util": "~2.2.12",
+    "istanbul": "^0.3.2",
+    "mocha": "^2.0.1",
+    "open": "~0.0.4",
+    "should": "^4.0.4",
+    "sinon": "1.11.1"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    },
+    {
+      "type": "GPL",
+      "url": "http://opensource.org/licenses/GPL-2.0"
+    }
+  ],
+  "scripts": {
+    "build": "gulp",
+    "start": "gulp server",
+    "test": "./node_modules/mocha/bin/mocha -r spec/helpers/node-setup.js spec",
+    "coverage": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -x 'spec/**/*'  -- -r spec/helpers/node-setup.js spec spec/*.spec.js",
+    "show-coverage": "open ./coverage/lcov-report/index.html"
+  },
+  "gitHead": "a6916dfea8dee6ad36f7156400ad294ccf7dc60d",
+  "_id": "machina@1.0.0-2",
+  "_shasum": "9b9ecc386fb8dfe390b140e8112105820dae2c0c",
+  "_from": ".",
+  "_npmVersion": "2.3.0",
+  "_nodeVersion": "0.10.36",
+  "_npmUser": {
+    "name": "ifandelse",
+    "email": "jim@ifandelse.com"
+  },
+  "maintainers": [
+    {
+      "name": "ifandelse",
+      "email": "jim@ifandelse.com"
+    }
+  ],
+  "dist": {
+    "shasum": "9b9ecc386fb8dfe390b140e8112105820dae2c0c",
+    "tarball": "http://registry.npmjs.org/machina/-/machina-1.0.0-2.tgz"
+  },
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "dependencies": {
+    "lodash": "lodash@~3.3.1",
+    "systemjs-json": "github:systemjs/plugin-json@^0.1.0",
+    "path": "github:jspm/nodelibs-path@^0.1.0",
+    "process": "github:jspm/nodelibs-process@^0.1.0"
+  }
+}

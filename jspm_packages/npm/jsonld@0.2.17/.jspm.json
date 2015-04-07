@@ -1,0 +1,133 @@
+{
+  "name": "jsonld",
+  "version": "0.2.17",
+  "description": "A JSON-LD Processor and API implementation in JavaScript.",
+  "homepage": "http://github.com/digitalbazaar/jsonld.js",
+  "author": {
+    "name": "Digital Bazaar, Inc.",
+    "email": "support@digitalbazaar.com",
+    "url": "http://digitalbazaar.com/"
+  },
+  "contributors": [
+    {
+      "name": "Dave Longley",
+      "email": "dlongley@digitalbazaar.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/digitalbazaar/jsonld.js"
+  },
+  "bugs": {
+    "url": "https://github.com/digitalbazaar/jsonld.js/issues",
+    "email": "support@digitalbazaar.com"
+  },
+  "licenses": [
+    {
+      "type": "BSD",
+      "url": "https://github.com/digitalbazaar/jsonld.js/raw/master/LICENSE"
+    }
+  ],
+  "main": "js/jsonld.js",
+  "devDependencies": {
+    "chai": "~1.7.0",
+    "phantomjs": "~1.9.0",
+    "mocha": "~1.15.0",
+    "mocha-phantomjs": "~3.1.0",
+    "visionmedia-jscoverage": "~1.0.0"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "keywords": [
+    "JSON",
+    "Linked Data",
+    "JSON-LD",
+    "RDF",
+    "Semantic Web",
+    "jsonld"
+  ],
+  "bin": {
+    "jsonld": "./bin/jsonld"
+  },
+  "scripts": {
+    "test-node": "mocha -R spec tests/test.js",
+    "test-browser": "phantomjs tests/test.js",
+    "test": "npm run test-node; npm run test-browser",
+    "lint": "jshint js/jsonld.js js/request.js tests/*.js",
+    "coverage": "make test-cov"
+  },
+  "browser": {
+    "./js/request.js": "./browser/ignore.js",
+    "request": "./browser/ignore.js",
+    "xmldom": "./browser/ignore.js",
+    "util": "./browser/ignore.js",
+    "crypto": "./browser/ignore.js",
+    "url": "./browser/ignore.js",
+    "http": "./browser/ignore.js"
+  },
+  "browserify": {
+    "transform": [
+      "jsonldify"
+    ]
+  },
+  "gitHead": "33841bfa17d0ff2f971f47eaf43a7bb562b186a9",
+  "_id": "jsonld@0.2.17",
+  "_shasum": "e6a3371b90bdf26bbc60bf99468109bca12166ed",
+  "_from": ".",
+  "_npmVersion": "1.4.14",
+  "_npmUser": {
+    "name": "dlongley",
+    "email": "dlongley@digitalbazaar.com"
+  },
+  "maintainers": [
+    {
+      "name": "davidlehn",
+      "email": "dil@lehn.org"
+    },
+    {
+      "name": "dlongley",
+      "email": "dlongley@digitalbazaar.com"
+    },
+    {
+      "name": "msporny",
+      "email": "msporny@digitalbazaar.com"
+    }
+  ],
+  "dist": {
+    "shasum": "e6a3371b90bdf26bbc60bf99468109bca12166ed",
+    "tarball": "http://registry.npmjs.org/jsonld/-/jsonld-0.2.17.tgz"
+  },
+  "jspm": {},
+  "registry": "npm",
+  "format": "cjs",
+  "ignore": [
+    "node_modules"
+  ],
+  "map": {
+    "request": "./browser/ignore",
+    "xmldom": "./browser/ignore",
+    "util": "./browser/ignore",
+    "crypto": "./browser/ignore",
+    "url": "./browser/ignore",
+    "http": "./browser/ignore"
+  },
+  "dependencies": {
+    "async": "async@~0.2.6",
+    "commander": "commander@~1.3.0",
+    "es6-promise": "es6-promise@~1.0.0",
+    "jsdom": "jsdom@~0.7.0",
+    "pkginfo": "pkginfo@~0.3.0",
+    "request": "request@~2.22.0",
+    "xmldom": "xmldom@0.1.16",
+    "through": "through@~2.3.4",
+    "jsonldify": "jsonldify@~0.1.0",
+    "process": "github:jspm/nodelibs-process@^0.1.0",
+    "fs": "github:jspm/nodelibs-fs@^0.1.0",
+    "buffer": "github:jspm/nodelibs-buffer@^0.1.0",
+    "http": "github:jspm/nodelibs-http@^1.7.0",
+    "util": "github:jspm/nodelibs-util@^0.1.0",
+    "crypto": "github:jspm/nodelibs-crypto@^0.1.0",
+    "url": "github:jspm/nodelibs-url@^0.1.0"
+  }
+}

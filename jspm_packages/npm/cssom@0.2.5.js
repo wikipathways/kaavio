@@ -1,0 +1,1 @@
+module.exports = require("npm:cssom@0.2.5/lib/index");

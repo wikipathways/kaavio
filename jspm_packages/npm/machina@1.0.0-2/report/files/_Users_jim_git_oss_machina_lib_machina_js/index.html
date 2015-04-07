@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title></title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome-ie7.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/jsoverson/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>/Users/Jim/git/oss/machina/lib/machina.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"></i></a></h2>
+      <p class="stat">108.72</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC"></i></h2>
+      <p class="stat">599</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty"></i></a></h2>
+      <p class="stat">107.33</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs"></i></a></h2>
+      <p class="stat">6.34</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">/**
+ * machina - A library for creating powerful and flexible finite state machines. Loosely inspired by Erlang/OTP&#039;s gen_fsm behavior.
+ * Author: Jim Cowart (http://ifandelse.com)
+ * Version: v1.0.0-1
+ * Url: http://machina-js.org/
+ * License(s): MIT, GPL
+ */
+
+(function (root, factory) { /* istanbul ignore if  */
+    if (typeof define === &quot;function&quot; &amp;&amp; define.amd) {
+        // AMD. Register as an anonymous module.
+        define([&quot;lodash&quot;], function (_) {
+            return factory(_, root);
+        }); /* istanbul ignore else  */
+    } else if (typeof module === &quot;object&quot; &amp;&amp; module.exports) {
+        // Node, or CommonJS-Like environments
+        module.exports = factory(require(&quot;lodash&quot;));
+    } else {
+        // Browser globals
+        root.machina = factory(root._, root);
+    }
+}(this, function (_, global, undefined) {
+    var slice = [].slice;
+    var NEXT_TRANSITION = &quot;transition&quot;;
+    var HANDLING = &quot;handling&quot;;
+    var HANDLED = &quot;handled&quot;;
+    var NO_HANDLER = &quot;nohandler&quot;;
+    var TRANSITION = &quot;transition&quot;;
+    var INVALID_STATE = &quot;invalidstate&quot;;
+    var DEFERRED = &quot;deferred&quot;;
+    var NEW_FSM = &quot;newfsm&quot;;
+
+    function getDefaultBehavioralOptions() {
+        return {
+            initialState: &quot;uninitialized&quot;,
+            eventListeners: {
+                &quot;*&quot;: []
+            },
+            states: {},
+            namespace: utils.makeFsmNamespace(),
+            useSafeEmit: false,
+            hierarchy: {},
+            pendingDelegations: {}
+        };
+    }
+
+    function getDefaultClientMeta() {
+        return {
+            inputQueue: [],
+            targetReplayState: &quot;&quot;,
+            state: undefined,
+            priorState: undefined,
+            priorAction: &quot;&quot;,
+            currentAction: &quot;&quot;,
+            currentActionArgs: undefined,
+            inExitHandler: false
+        };
+    }
+
+    function getLeaklessArgs(args, startIdx) {
+        var result = [];
+        for (var i = (startIdx || 0); i &lt; args.length; i++) {
+            result[i] = args[i];
+        }
+        return result;
+    }
+
+    function getChildFsmInstance(config) {
+        if (!config) {
+            return;
+        }
+        var childFsmDefinition = {};
+        if (typeof config === &quot;object&quot;) {
+            // is this a config object with a factory?
+            if (config.factory) {
+                childFsmDefinition = config;
+            } else {
+                // assuming this is a machina instance
+                childFsmDefinition.factory = function () {
+                    return config;
+                };
+            }
+        } else if (typeof config === &quot;function&quot;) {
+            childFsmDefinition.factory = config;
+        }
+        childFsmDefinition.instance = childFsmDefinition.factory();
+        return childFsmDefinition;
+    }
+
+    function listenToChild(fsm, child) {
+        return child.on(&quot;*&quot;, function (eventName, data) {
+            switch (eventName) {
+            case &quot;nohandler&quot;:
+                if (!data.ticket &amp;&amp; !data.delegated &amp;&amp; data.namespace !== fsm.namespace) {
+                    // Ok - we&#039;re dealing w/ a child handling input that should bubble up
+                    data.args[1].bubbling = true;
+                }
+                // we do NOT bubble _reset inputs up to the parent
+                if (data.inputType !== &quot;_reset&quot;) {
+                    fsm.handle.apply(fsm, data.args);
+                }
+                break;
+            case &quot;handling&quot;:
+                var ticket = data.ticket;
+                if (ticket &amp;&amp; fsm.pendingDelegations[ticket]) {
+                    delete fsm.pendingDelegations[ticket];
+                }
+                fsm.emit(eventName, data); // possibly transform payload?
+                break;
+            default:
+                fsm.emit(eventName, data); // possibly transform payload?
+                break;
+            }
+        });
+    }
+
+    // _machKeys are members we want to track across the prototype chain of an extended FSM constructor
+    // Since we want to eventually merge the aggregate of those values onto the instance so that FSMs
+    // that share the same extended prototype won&#039;t share state *on* those prototypes.
+    var _machKeys = [&quot;states&quot;, &quot;initialState&quot;];
+    var extend = function (protoProps, staticProps) {
+        var parent = this;
+        var fsm; // placeholder for instance constructor
+        var machObj = {}; // object used to hold initialState &amp; states from prototype for instance-level merging
+        var ctor = function () {}; // placeholder ctor function used to insert level in prototype chain
+        // The constructor function for the new subclass is either defined by you
+        // (the &quot;constructor&quot; property in your `extend` definition), or defaulted
+        // by us to simply call the parent&#039;s constructor.
+        if (protoProps &amp;&amp; protoProps.hasOwnProperty(&#039;constructor&#039;)) {
+            fsm = protoProps.constructor;
+        } else {
+            // The default machina constructor (when using inheritance) creates a
+            // deep copy of the states/initialState values from the prototype and
+            // extends them over the instance so that they&#039;ll be instance-level.
+            // If an options arg (args[0]) is passed in, a states or intialState
+            // value will be preferred over any data pulled up from the prototype.
+            fsm = function () {
+                var args = slice.call(arguments, 0);
+                args[0] = args[0] || {};
+                var blendedState;
+                var instanceStates = args[0].states || {};
+                blendedState = _.merge(_.cloneDeep(machObj), {
+                    states: instanceStates
+                });
+                blendedState.initialState = args[0].initialState || this.initialState;
+                _.extend(args[0], blendedState);
+                parent.apply(this, args);
+            };
+        }
+
+        // Inherit class (static) properties from parent.
+        _.merge(fsm, parent);
+
+        // Set the prototype chain to inherit from `parent`, without calling
+        // `parent`&#039;s constructor function.
+        ctor.prototype = parent.prototype;
+        fsm.prototype = new ctor();
+
+        // Add prototype properties (instance properties) to the subclass,
+        // if supplied.
+        if (protoProps) {
+            _.extend(fsm.prototype, protoProps);
+            _.merge(machObj, _.transform(protoProps, function (accum, val, key) {
+                if (_machKeys.indexOf(key) !== -1) {
+                    accum[key] = val;
+                }
+            }));
+        }
+
+        // Add static properties to the constructor function, if supplied.
+        if (staticProps) {
+            _.merge(fsm, staticProps);
+        }
+
+        // Correctly set child&#039;s `prototype.constructor`.
+        fsm.prototype.constructor = fsm;
+
+        // Set a convenience property in case the parent&#039;s prototype is needed later.
+        fsm.__super__ = parent.prototype;
+        return fsm;
+    };
+
+    function createUUID() {
+        var s = [];
+        var hexDigits = &quot;0123456789abcdef&quot;;
+        for (var i = 0; i &lt; 36; i++) {
+            s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+        }
+        s[14] = &quot;4&quot;; // bits 12-15 of the time_hi_and_version field to 0010
+        s[19] = hexDigits.substr((s[19] &amp; 0x3) | 0x8, 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
+        s[8] = s[13] = s[18] = s[23] = &quot;-&quot;;
+        return s.join(&quot;&quot;);
+    }
+
+    var utils = {
+        makeFsmNamespace: (function () {
+            var machinaCount = 0;
+            return function () {
+                return &quot;fsm.&quot; + machinaCount++;
+            };
+        })(),
+        listenToChild: listenToChild,
+        getLeaklessArgs: getLeaklessArgs,
+        getDefaultOptions: getDefaultBehavioralOptions,
+        getDefaultClientMeta: getDefaultClientMeta,
+        createUUID: createUUID
+    };
+
+    var emitter = {
+
+        emit: function (eventName) {
+            var args = getLeaklessArgs(arguments);
+            if (this.eventListeners[&quot;*&quot;]) {
+                _.each(this.eventListeners[&quot;*&quot;], function (callback) {
+                    if (!this.useSafeEmit) {
+                        callback.apply(this, args);
+                    } else {
+                        try {
+                            callback.apply(this, args);
+                        } catch (exception) { /* istanbul ignore else  */
+                            if (console &amp;&amp; typeof console.log !== &quot;undefined&quot;) {
+                                console.log(exception.stack);
+                            }
+                        }
+                    }
+                }, this);
+            }
+            if (this.eventListeners[eventName]) {
+                _.each(this.eventListeners[eventName], function (callback) {
+                    if (!this.useSafeEmit) {
+                        callback.apply(this, args.slice(1));
+                    } else {
+                        try {
+                            callback.apply(this, args.slice(1));
+                        } catch (exception) { /* istanbul ignore else  */
+                            if (console &amp;&amp; typeof console.log !== &quot;undefined&quot;) {
+                                console.log(exception.stack);
+                            }
+                        }
+                    }
+                }, this);
+            }
+        },
+
+        on: function (eventName, callback) {
+            var self = this;
+            self.eventListeners = self.eventListeners || {
+                &quot;*&quot;: []
+            };
+            if (!self.eventListeners[eventName]) {
+                self.eventListeners[eventName] = [];
+            }
+            self.eventListeners[eventName].push(callback);
+            return {
+                eventName: eventName,
+                callback: callback,
+                off: function () {
+                    self.off(eventName, callback);
+                }
+            };
+        },
+
+        off: function (eventName, callback) {
+            this.eventListeners = this.eventListeners || {
+                &quot;*&quot;: []
+            };
+            if (!eventName) {
+                this.eventListeners = {};
+            } else {
+                if (callback) {
+                    this.eventListeners[eventName] = _.without(this.eventListeners[eventName], callback);
+                } else {
+                    this.eventListeners[eventName] = [];
+                }
+            }
+        },
+    };
+
+    var MACHINA_PROP = &quot;__machina__&quot;;
+
+    function BehavioralFsm(options) {
+        _.extend(this, options);
+        _.defaults(this, getDefaultBehavioralOptions());
+        this.initialize.apply(this, arguments);
+        machina.emit(NEW_FSM, this);
+    }
+
+    _.extend(BehavioralFsm.prototype, {
+        initialize: function () {},
+
+        initClient: function initClient(client) {
+            var initialState = this.initialState;
+            if (!initialState) {
+                throw new Error(&quot;You must specify an initial state for this FSM&quot;);
+            }
+            if (!this.states[initialState]) {
+                throw new Error(&quot;The initial state specified does not exist in the states object.&quot;);
+            }
+            this.transition(client, initialState);
+        },
+
+        ensureClientMeta: function ensureClientMeta(client) {
+            if (typeof client !== &quot;object&quot;) {
+                throw new Error(&quot;An FSM client must be an object.&quot;);
+            }
+            client[MACHINA_PROP] = client[MACHINA_PROP] || {};
+            if (!client[MACHINA_PROP][this.namespace]) {
+                client[MACHINA_PROP][this.namespace] = _.cloneDeep(utils.getDefaultClientMeta());
+                this.initClient(client);
+            }
+            return client[MACHINA_PROP][this.namespace];
+        },
+
+        buildEventPayload: function (client, data) {
+            if (_.isPlainObject(data)) {
+                return _.extend(data, {
+                    client: client,
+                    namespace: this.namespace
+                });
+            } else {
+                return {
+                    client: client,
+                    data: data || null,
+                    namespace: this.namespace
+                };
+            }
+        },
+
+        getHandlerArgs: function (args, isCatchAll) {
+            // index 0 is the client, index 1 is inputType
+            // if we&#039;re in a catch-all handler, input type needs to be included in the args
+            // inputType might be an object, so we need to just get the inputType string if so
+            var _args = args.slice(0);
+            var input = _args[1];
+            if (typeof input === &quot;object&quot;) {
+                _args.splice(1, 1, input.inputType);
+            }
+            return isCatchAll ? _args : [_args[0]].concat(_args.slice(2));
+        },
+
+        handle: function (client, input) {
+            var inputType;
+            var delegated;
+            var ticket;
+            var inputDef = input;
+            if (typeof input === &quot;string&quot;) {
+                inputDef = {
+                    inputType: input,
+                    delegated: false,
+                    ticket: undefined
+                };
+            }
+            var clientMeta = this.ensureClientMeta(client);
+            var args = getLeaklessArgs(arguments);
+            if (typeof input !== &quot;object&quot;) {
+                args.splice(1, 1, inputDef);
+            }
+            clientMeta.currentActionArgs = args.slice(1);
+            var currentState = clientMeta.state;
+            var stateObj = this.states[currentState];
+            var handlerName;
+            var handler;
+            var isCatchAll = false;
+            var child;
+            var result;
+            if (!clientMeta.inExitHandler) {
+                child = stateObj._child &amp;&amp; stateObj._child.instance;
+                if (child &amp;&amp; !this.pendingDelegations[inputDef.ticket] &amp;&amp; !inputDef.bubbling) {
+                    inputDef.ticket = (inputDef.ticket || utils.createUUID());
+                    inputDef.delegated = true;
+                    this.pendingDelegations[inputDef.ticket] = {
+                        delegatedTo: child.namespace
+                    };
+                    // WARNING - returning a value from `handle` on child FSMs is not really supported.
+                    // If you need to return values from child FSM input handlers, use events instead.
+                    result = child.handle.apply(child, args);
+                } else {
+                    if (inputDef.ticket &amp;&amp; this.pendingDelegations[inputDef.ticket]) {
+                        delete this.pendingDelegations[inputDef.ticket];
+                    }
+                    handlerName = stateObj[inputDef.inputType] ? inputDef.inputType : &quot;*&quot;;
+                    isCatchAll = (handlerName === &quot;*&quot;);
+                    handler = (stateObj[handlerName] || this[handlerName]) || this[&quot;*&quot;];
+                    action = clientMeta.state + &quot;.&quot; + handlerName;
+                    clientMeta.currentAction = action;
+                    var eventPayload = this.buildEventPayload(
+                    client, {
+                        inputType: inputDef.inputType,
+                        delegated: inputDef.delegated,
+                        ticket: inputDef.ticket
+                    });
+                    if (!handler) {
+                        this.emit(NO_HANDLER, _.extend({
+                            args: args
+                        }, eventPayload));
+                    } else {
+                        this.emit(HANDLING, eventPayload);
+                        if (typeof handler === &quot;function&quot;) {
+                            result = handler.apply(this, this.getHandlerArgs(args, isCatchAll));
+                        } else {
+                            result = handler;
+                            this.transition(client, handler);
+                        }
+                        this.emit(HANDLED, eventPayload);
+                    }
+                    clientMeta.priorAction = clientMeta.currentAction;
+                    clientMeta.currentAction = &quot;&quot;;
+                }
+            }
+            return result;
+        },
+
+        transition: function (client, newState) {
+            var clientMeta = this.ensureClientMeta(client);
+            var curState = clientMeta.state;
+            var curStateObj = this.states[curState];
+            var newStateObj = this.states[newState];
+            var childDef;
+            var child;
+            if (!clientMeta.inExitHandler &amp;&amp; newState !== curState) {
+                if (newStateObj) {
+                    if (newStateObj._child) {
+                        newStateObj._child = getChildFsmInstance(newStateObj._child);
+                        child = newStateObj._child &amp;&amp; newStateObj._child.instance;
+                    }
+                    if (curStateObj &amp;&amp; curStateObj._onExit) {
+                        clientMeta.inExitHandler = true;
+                        curStateObj._onExit.call(this, client);
+                        clientMeta.inExitHandler = false;
+                    }
+                    if (curStateObj &amp;&amp; curStateObj._child &amp;&amp; curStateObj._child.instance &amp;&amp; this.hierarchy[curStateObj._child.instance.namespace]) {
+                        this.hierarchy[curStateObj._child.instance.namespace].off();
+                    }
+                    clientMeta.targetReplayState = newState;
+                    clientMeta.priorState = curState;
+                    clientMeta.state = newState;
+                    if (child) {
+                        this.hierarchy[child.namespace] = utils.listenToChild(this, child);
+                    }
+                    var eventPayload = this.buildEventPayload(client, {
+                        fromState: clientMeta.priorState,
+                        action: clientMeta.currentAction,
+                        toState: newState
+                    });
+                    this.emit(TRANSITION, eventPayload);
+                    if (newStateObj._onEnter) {
+                        newStateObj._onEnter.call(this, client);
+                    }
+                    if (child) {
+                        child.handle(client, &quot;_reset&quot;);
+                    }
+                    if (clientMeta.targetReplayState === newState) {
+                        this.processQueue(client, NEXT_TRANSITION);
+                    }
+                    return;
+                }
+                this.emit(INVALID_STATE, this.buildEventPayload(client, {
+                    state: clientMeta.state,
+                    attemptedState: newState
+                }));
+            }
+        },
+
+        deferUntilTransition: function (client, stateName) {
+            var clientMeta = this.ensureClientMeta(client);
+            if (clientMeta.currentActionArgs) {
+                var queued = {
+                    type: NEXT_TRANSITION,
+                    untilState: stateName,
+                    args: clientMeta.currentActionArgs
+                };
+                clientMeta.inputQueue.push(queued);
+                var eventPayload = this.buildEventPayload(client, {
+                    state: clientMeta.state,
+                    queuedArgs: queued
+                });
+                this.emit(DEFERRED, eventPayload);
+            }
+        },
+
+        deferAndTransition: function (client, stateName) {
+            this.deferUntilTransition(client, stateName);
+            this.transition(client, stateName);
+        },
+
+        processQueue: function (client) {
+            var clientMeta = this.ensureClientMeta(client);
+            var filterFn = function (item) {
+                return ((!item.untilState) || (item.untilState === clientMeta.state));
+            };
+            var toProcess = _.filter(clientMeta.inputQueue, filterFn);
+            clientMeta.inputQueue = _.difference(clientMeta.inputQueue, toProcess);
+            _.each(toProcess, function (item) {
+                this.handle.apply(this, [client].concat(item.args));
+            }, this);
+        },
+
+        clearQueue: function (client, name) {
+            var clientMeta = this.ensureClientMeta(client);
+            if (!name) {
+                clientMeta.inputQueue = [];
+            } else {
+                var filter = function (evnt) {
+                    return (name ? evnt.untilState !== name : true);
+                };
+                clientMeta.inputQueue = _.filter(clientMeta.inputQueue, filter);
+            }
+        }
+    }, emitter);
+
+    BehavioralFsm.extend = extend;
+
+    var Fsm = BehavioralFsm.extend({
+        constructor: function () {
+            BehavioralFsm.apply(this, arguments);
+            this.ensureClientMeta();
+        },
+        initClient: function initClient() {
+            var initialState = this.initialState;
+            if (!initialState) {
+                throw new Error(&quot;You must specify an initial state for this FSM&quot;);
+            }
+            if (!this.states[initialState]) {
+                throw new Error(&quot;The initial state specified does not exist in the states object.&quot;);
+            }
+            this.transition(initialState);
+        },
+        ensureClientMeta: function ensureClientMeta() {
+            if (!this._stamped) {
+                this._stamped = true;
+                _.defaults(this, _.cloneDeep(getDefaultClientMeta()));
+                this.initClient();
+            }
+            return this;
+        },
+
+        ensureClientArg: function (args) {
+            var _args = args;
+            // we need to test the args and verify that if a client arg has
+            // been passed, it must be this FSM instance (this isn&#039;t a behavioral FSM)
+            if (typeof _args[0] === &quot;object&quot; &amp;&amp; !(&quot;inputType&quot; in _args[0]) &amp;&amp; _args[0] !== this) {
+                _args.splice(0, 1, this);
+            } else if (typeof _args[0] !== &quot;object&quot; || (typeof _args[0] === &quot;object&quot; &amp;&amp; (&quot;inputType&quot; in _args[0]))) {
+                _args.unshift(this);
+            }
+            return _args;
+        },
+
+        getHandlerArgs: function (args, isCatchAll) {
+            // index 0 is the client, index 1 is inputType
+            // if we&#039;re in a catch-all handler, input type needs to be included in the args
+            // inputType might be an object, so we need to just get the inputType string if so
+            var _args = args;
+            var input = _args[1];
+            if (typeof inputType === &quot;object&quot;) {
+                _args.splice(1, 1, input.inputType);
+            }
+            return isCatchAll ? _args.slice(1) : _args.slice(2);
+        },
+        // &quot;classic&quot; machina FSM do not emit the client property on events (which would be the FSM itself)
+        buildEventPayload: function () {
+            var args = this.ensureClientArg(utils.getLeaklessArgs(arguments));
+            var data = args[1];
+            if (_.isPlainObject(data)) {
+                return _.extend(data, {
+                    namespace: this.namespace
+                });
+            } else {
+                return {
+                    data: data || null,
+                    namespace: this.namespace
+                };
+            }
+        },
+        handle: function (inputType) {
+            var args = this.ensureClientArg(utils.getLeaklessArgs(arguments));
+            return BehavioralFsm.prototype.handle.apply(this, args);
+        },
+        transition: function (newState) {
+            var args = this.ensureClientArg(utils.getLeaklessArgs(arguments));
+            return BehavioralFsm.prototype.transition.apply(this, args);
+        },
+        deferUntilTransition: function (stateName) {
+            var args = this.ensureClientArg(utils.getLeaklessArgs(arguments));
+            return BehavioralFsm.prototype.deferUntilTransition.apply(this, args);
+        },
+        processQueue: function () {
+            var args = this.ensureClientArg(utils.getLeaklessArgs(arguments));
+            return BehavioralFsm.prototype.processQueue.apply(this, args);
+        },
+        clearQueue: function (stateName) {
+            var args = this.ensureClientArg(utils.getLeaklessArgs(arguments));
+            return BehavioralFsm.prototype.clearQueue.apply(this, args);
+        }
+    });
+
+    var machina = _.merge(emitter, {
+        Fsm: Fsm,
+        BehavioralFsm: BehavioralFsm,
+        utils: utils,
+        eventListeners: {
+            newFsm: []
+        }
+    });
+
+    return machina;
+}));</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ complexity.cyclomatic }} <br>
+    Length : {{ complexity.halstead.length }} <br>
+    Difficulty : {{ complexity.halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ complexity.halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

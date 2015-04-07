@@ -56,8 +56,8 @@ gulp.task('browserify', function() {
     // Specify the entry point of your app
     entries: ['./tmp/modernizr-custom.js',
       './index.js',
-      './src/notifications/notifications.js',
-      './src/diff-viewer/diff-viewer.js']
+      './lib/notifications/notifications.js',
+      './lib/diff-viewer/diff-viewer.js']
   })
   .ignore('commander')
   .ignore('cheerio')

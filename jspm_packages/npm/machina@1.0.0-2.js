@@ -1,0 +1,1 @@
+module.exports = require("npm:machina@1.0.0-2/lib/machina");
