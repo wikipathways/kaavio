@@ -19,7 +19,7 @@ var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
 var watchify = require('watchify');
 
-gulp.task('browserify', function() {
+gulp.task('browserify', ['browserifyPolyfills'], function() {
 
   // TODO move this into its own file
   var modernizr = require('modernizr');
