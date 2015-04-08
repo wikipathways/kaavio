@@ -55,7 +55,9 @@ gulp.task('browserify', ['browserifyPolyfills'], function() {
   var bundler = bundleMethod({
     // Specify the entry point of your app
     entries: ['./tmp/modernizr-custom.js',
-      './index.js',
+      //'./index.js',
+      './lib/wikipathways-kaavio-element.js',
+      './lib/jquery-plugin.js',
       './lib/notifications/notifications.js',
       './lib/diff-viewer/diff-viewer.js']
   })
@@ -73,6 +75,10 @@ gulp.task('browserify', ['browserifyPolyfills'], function() {
     .bundle({
       insertGlobals : true,
       exclude: 'cheerio',
+      require: {
+        // use 'xhr' module when in browser to reduce file size
+        request: 'xhr'
+      },
       // Enable source maps!
       debug: true
     })
