@@ -3,5 +3,4 @@ tmp/
 .idea/
 gh-pages
 gh-pages/*
-lib/*
 dist/lib/
