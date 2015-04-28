@@ -3,4 +3,6 @@ tmp/
 .idea/
 gh-pages
 gh-pages/*
-dist/lib/
+dist/kaavio-dev-polyfills.bundle.js
+demo/lib/kaavio/kaavio-dev.bundle.js
+demo/lib/kaavio/kaavio-dev-polyfills.bundle.js
