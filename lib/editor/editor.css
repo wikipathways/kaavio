@@ -5,6 +5,7 @@
   display: inline-block;
   margin: 0 auto;
   cursor: pointer;
+  color: white !important;
 }
 
 .editor-open-control.editor-open {
@@ -12,11 +13,10 @@
 }
 
 .editor-close-control {
-  color: #aaa;
-  transform: translateY(-10px);
+  transform: translateX(-16px) translateY(-29px);
 }
 
 .pvjs-editor-tabs>ul {
-margin-top: 0;
-margin-bottom: 10px;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
