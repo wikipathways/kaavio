@@ -24,6 +24,7 @@ gulp.task('bumpGitTag', function bumpGitTag(callback) {
     }
 
     gulp.src(['./dist/*' + version + '*',
+              './demo/lib/kaavio/*' + version + '*',
               './docs/*',
               'README.md']
               .concat(metadataFilePaths)

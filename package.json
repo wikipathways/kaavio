@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "2.2.2",
+  "version": "2.2.1",
   "description": "Diagram viewer and editor.",
   "main": "./lib/index.js",
   "engines": {
