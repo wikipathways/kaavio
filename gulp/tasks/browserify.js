@@ -99,10 +99,6 @@ gulp.task('browserify', ['browserifyPolyfills'], function() {
         // They are too slow to enable
         // during development.
         .through(buffer())
-        // TODO keep an eye on this issue:
-        // https://github.com/floridoo/gulp-sourcemaps/issues/73
-        // It's the reason we're using v1.1.0 of gulp-sourcemaps,
-        // not the latest version.
         .through(sourcemaps.init({loadMaps: true}))
         // Add transformation tasks to the pipeline here.
         .through(uglify())
