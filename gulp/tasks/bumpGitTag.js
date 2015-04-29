@@ -33,10 +33,12 @@ gulp.task('bumpGitTag', function bumpGitTag(callback) {
     .pipe(git.commit('Built and bumped version to ' + version + '.'))
     // TODO the tag happens before the commit! Need to make commit
     // happen first. Commenting it out until it's fixed.
-    //.pipe(gitStreaming.createTag(version, 'Version ' + version))
+    /*
+    .pipe(gitStreaming.createTag(version, 'Version ' + version))
     .last()
     .each(function() {
       return callback();
     });
+    //*/
   });
 });
