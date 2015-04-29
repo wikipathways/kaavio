@@ -1,12 +1,16 @@
 {
   "name": "kaavio",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "Diagram viewer and editor.",
   "main": "./lib/index.js",
   "engines": {
     "node": ">= 0.10.0"
   },
-  "browserify": { "transform": [ "brfs" ] },
+  "browserify": {
+    "transform": [
+      "brfs"
+    ]
+  },
   "directories": {
     "test": "test",
     "lib": "lib",
