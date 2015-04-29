@@ -23,7 +23,7 @@ gulp.task('bumpGitTag', function bumpGitTag(callback) {
       return callback();
     }
 
-    gulp.src(['./dist/*',
+    gulp.src(['./dist/*' + version + '*',
               './docs/*',
               'README.md']
               .concat(metadataFilePaths)
