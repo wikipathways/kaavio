@@ -60,12 +60,7 @@ gulp.task('browserify', ['browserifyPolyfills'], function() {
       './lib/jquery-plugin.js',
       './lib/notifications/notifications.js',
       './lib/diff-viewer/diff-viewer.js']
-  })
-  .ignore('commander')
-  .ignore('cheerio')
-  // enable fs.readFileSync() in browser
-  .transform('brfs')
-  .transform('deglobalify');
+  });
 
   var bundle = function() {
     // Log when bundling starts
@@ -74,11 +69,6 @@ gulp.task('browserify', ['browserifyPolyfills'], function() {
     return bundler
     .bundle({
       insertGlobals : true,
-      exclude: 'cheerio',
-      require: {
-        // use 'xhr' module when in browser to reduce file size
-        request: 'xhr'
-      },
       // Enable source maps!
       debug: true
     })
