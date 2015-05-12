@@ -16,6 +16,7 @@ gulp.task('browserSync', ['build'], function() {
     port: 3000,
     // Don't show any notifications in the browser.
     notify: false,
-    startPath: './test/'
+    //startPath: './test/'
+    startPath: './demo/editor-polyfilled.html'
 	});
 });
