@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Source: editor/editor-tabs-component/tabs/annotation-tab/dataset-control.js</title>
+    
+    
+    
+    
+    
+    <meta property="og:title" content=""/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:image" content=""/>
+    
+    <meta property="og:url" content=""/>
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/jaguar.css">
+    
+    
+    <script>
+    var config = {"monospaceLinks":true,"cleverLinks":true,"default":{"outputSourceFiles":true},"applicationName":"kaavio","disqus":"false","googleAnalytics":"","openGraph":{"title":"","type":"website","image":"","site_name":"","url":""},"meta":{"title":"","description":"","keyword":""},"linenums":false};
+    </script>
+    
+
+    
+</head>
+<body>
+<div id="wrap" class="clearfix">
+    
+<div class="navigation">
+    <h3 class="applicationName"><a href="index.html">kaavio</a></h3>
+
+    <div class="search">
+        <input id="search" type="text" class="form-control input-sm" placeholder="Search Documentations">
+    </div>
+    <ul class="list">
+    
+        <li class="item" data-name="module.exports~simpleModalComponent">
+            <span class="title">
+                <a href="module.exports-simpleModalComponent.html">module.exports~simpleModalComponent</a>
+                
+                <span class="static">static</span>
+                
+            </span>
+            <ul class="members itemMembers">
+            
+            </ul>
+            <ul class="typedefs itemMembers">
+            
+            </ul>
+            <ul class="methods itemMembers">
+            
+            <span class="subtitle">Methods</span>
+            
+                <li data-name="module.exports~simpleModalComponent.config"><a href="module.exports-simpleModalComponent.html#config">config</a></li>
+            
+            </ul>
+            <ul class="events itemMembers">
+            
+            </ul>
+        </li>
+    
+    </ul>
+</div>
+    <div class="main">
+        <h1 class="page-title" data-filename="dataset-control.js.html">Source: editor/editor-tabs-component/tabs/annotation-tab/dataset-control.js</h1>
+        
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source "><code>/***********************************
+ * Datasource Control
+ **********************************/
+
+/**
+ * Module dependencies.
+ */
+
+var _ = require('lodash');
+var BridgeDb = require('bridgedb');
+var editorUtils = require('../../../editor-utils');
+var highland = require('highland');
+var m = require('mithril');
+var mithrilUtils = require('../../../../mithril-utils');
+
+/**
+ * Module variables.
+ * @private
+ */
+// Add some here
+
+var datasetControl = {};
+
+datasetControl.DatasetList = Array;
+
+//a dataset
+datasetControl.Dataset = function(dataset) {
+  this.id = m.prop(dataset.id);
+  this.name = m.prop(dataset.displayName);
+  this.subject = m.prop(dataset.subject);
+}
+
+datasetControl.vm = (function() {
+  var vm = {};
+  vm.disabled = m.prop(false);
+  vm.init = function() {
+
+    var bridgeDb = new BridgeDb({
+      baseIri: 'http://webservice.bridgedb.org/',
+      //baseIri: 'http://pointer.ucsf.edu/d3/r/data-sources/bridgedb.php/',
+      datasetsMetadataIri: 'http://pointer.ucsf.edu/d3/r/data-sources/bridgedb-datasources.php',
+      organism: 'Homo sapiens'
+    });
+
+    var propify = function(highlandStream) {
+      return highlandStream.map(function(item) {
+        return new datasetControl.Dataset(item);
+      });
+    }
+
+    var propifyStream = highland.compose(mithrilUtils.promisify, propify);
+
+    var propifyArray = function(arrayArg) {
+      return propifyStream(highland(arrayArg));
+    }
+
+    var datasetPlaceholder = {
+      'id': '',
+      'displayName': 'Select datasource'
+    };
+
+    //specify placeholder selection
+    vm.currentDataset = new datasetControl.Dataset(datasetPlaceholder);
+
+    var getPrimaryDatasets = highland.compose(
+        function(filteredStream) {
+          return highland([datasetPlaceholder]).concat(filteredStream)
+        },
+        filterDatasetsForPrimaryDataNodes,
+        standardizeDataset,
+        function(expandedStream) {
+          return expandedStream.flatMap(function(value) {
+            return editorUtils.createJsonldCompactStream(value, editorUtils.context);
+          });
+        },
+        function(inputStream) {
+          return inputStream.flatMap(function(value) {
+            return editorUtils.createJsonldExpandStream(value, null);
+          });
+        },
+        bridgeDb.dataset.query);
+
+    vm.datasetList = propifyArray([datasetPlaceholder]);
+
+    // short timeout to allow the editor-tabs toolbar to
+    // open before getting the dataset list from bridgedb.
+    setTimeout(function() {
+      // TODO don't run getPrimaryDatasets twice
+      vm.datasetListFull = highland.compose(
+          mithrilUtils.promisify,
+          getPrimaryDatasets)();
+
+      vm.datasetList = highland.compose(
+          mithrilUtils.promisify, propify,
+          getPrimaryDatasets)();
+    }, 100);
+
+    vm.filterDatasetListByXrefType = function(xrefType) {
+      vm.datasetList = propifyArray(vm.datasetListFull().filter(function(dataset) {
+        // pass of true means "do not filter out this dataset"
+        var pass = true;
+
+        var currentDatasetSubjects = dataset.subject;
+        currentDatasetSubjects = editorUtils.arrayifyClean(currentDatasetSubjects);
+
+        // We show all Datasets when GPML DataNode Type is not selected or is "gpml:Unknown"
+        var alwaysPassGpmlNodeTypeIds = [
+          '',
+          'gpml:Unknown'
+        ];
+        if (alwaysPassGpmlNodeTypeIds.indexOf(xrefType) === -1) {
+
+          // We show all datasets that don't have a subject
+          if (!_.isEmpty(currentDatasetSubjects[0])) {
+
+            // We show all datasets with a subject matching the current GPML DataNode Type
+            if (currentDatasetSubjects.indexOf(xrefType) === -1) {
+
+              // When GPML DataNode Type is "gpml:GeneProduct" or "biopax:ProteinReference,"
+              // we show all datasets with subject of "gene" or "protein".
+              var geneProductOrProteinIds = [
+                'gpml:GeneProduct',
+                'biopax:ProteinReference'
+              ]
+              if (_.intersection(
+                    geneProductOrProteinIds, currentDatasetSubjects).length === 0) {
+
+                // if we finally get here, then we filter out this dataset.
+                pass = false;
+              }
+            }
+          }
+        }
+
+        return pass;
+      }));
+      vm.changeDataset(vm.currentDataset.id());
+    }
+
+    vm.changeDataset = function(input) {
+      input = input || '';
+      vm.currentDataset = propifyArray(vm.datasetListFull().filter(function(vmDataset) {
+        return vmDataset.id === input;
+      }))()[0];
+    };
+
+    vm.onChange = function(input) {
+      // do something
+    }
+
+  }
+  return vm;
+
+})();
+
+datasetControl.controller = function() {
+  datasetControl.vm.init();
+}
+
+datasetControl.view = function() {
+  return m('select.pvjs-editor-dataset.form-control.input.input-sm', {
+    onchange: m.withAttr('value', datasetControl.vm.changeDataset),
+    value: datasetControl.vm.currentDataset.id(),
+    disabled: datasetControl.vm.disabled(),
+    style: 'max-width: 135px; ',
+    required: true
+  }, [
+    datasetControl.vm.datasetList()
+      .map(function(dataset, index) {
+        return m('option.form-control', {
+          value: dataset.id(),
+          innerHTML: dataset.name(),
+          selected: dataset.id() === datasetControl.vm.currentDataset.id()
+        })
+        /*
+        return m('option[value=' + dataset.id() + ']',
+          dataset.name());
+        //*/
+      })
+  ]);
+}
+
+function filterDatasetsForPrimaryDataNodes(datasetStream) {
+
+  // Dataset subjects that indicate the dataset should not be used for identifying
+  // an Entity Reference for a gpml:DataNode.
+  var nonApplicableSubjects = [
+    'interaction',
+    'ontology',
+    'probe',
+    'experiment',
+    'publication',
+    'model',
+    'organism'
+  ];
+  return datasetStream
+    .filter(function filter(dataset) {
+      return dataset['bridgedb:_isPrimary'] &amp;&amp;
+          !!dataset.id &amp;&amp;
+          nonApplicableSubjects.indexOf(dataset['bridgedb:_bridgeDbType']) === -1;
+    });
+}
+
+function standardizeDataset(stream) {
+  return stream.map(function(dataset) {
+    dataset.subject = editorUtils.arrayifyClean(dataset.subject);
+    return dataset;
+  });
+}
+
+module.exports = datasetControl;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+
+
+        
+        <!-- disqus code -->
+        <div id="disqus_thread"></div>
+        <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        <!-- // disqus code -->
+        
+
+        <footer>
+            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Thu May 14 2015 14:04:40 GMT-0700 (PDT)
+        </footer>
+    </div>
+</div>
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+<script src="scripts/main.js"></script>
+</body>
+</html>

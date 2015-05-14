@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Source: notifications/notifications.js</title>
+    
+    
+    
+    
+    
+    <meta property="og:title" content=""/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:image" content=""/>
+    
+    <meta property="og:url" content=""/>
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/jaguar.css">
+    
+    
+    <script>
+    var config = {"monospaceLinks":true,"cleverLinks":true,"default":{"outputSourceFiles":true},"applicationName":"kaavio","disqus":"false","googleAnalytics":"","openGraph":{"title":"","type":"website","image":"","site_name":"","url":""},"meta":{"title":"","description":"","keyword":""},"linenums":false};
+    </script>
+    
+
+    
+</head>
+<body>
+<div id="wrap" class="clearfix">
+    
+<div class="navigation">
+    <h3 class="applicationName"><a href="index.html">kaavio</a></h3>
+
+    <div class="search">
+        <input id="search" type="text" class="form-control input-sm" placeholder="Search Documentations">
+    </div>
+    <ul class="list">
+    
+        <li class="item" data-name="module.exports~simpleModalComponent">
+            <span class="title">
+                <a href="module.exports-simpleModalComponent.html">module.exports~simpleModalComponent</a>
+                
+                <span class="static">static</span>
+                
+            </span>
+            <ul class="members itemMembers">
+            
+            </ul>
+            <ul class="typedefs itemMembers">
+            
+            </ul>
+            <ul class="methods itemMembers">
+            
+            <span class="subtitle">Methods</span>
+            
+                <li data-name="module.exports~simpleModalComponent.config"><a href="module.exports-simpleModalComponent.html#config">config</a></li>
+            
+            </ul>
+            <ul class="events itemMembers">
+            
+            </ul>
+        </li>
+    
+    </ul>
+</div>
+    <div class="main">
+        <h1 class="page-title" data-filename="notifications.js.html">Source: notifications/notifications.js</h1>
+        
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source "><code>var fs = require('fs');
+var insertCss = require('insert-css');
+var css = fs.readFileSync(
+    __dirname + '/notifications.css');
+
+insertCss(css);
+
+var optionsDefault = {
+  displayErrors: true,
+  displayWarnings: false
+};
+var instancesMap = {};
+
+/**
+ * Init plugin
+ * @param {kaavio instance} kaavio
+ * @param {object} options
+ * @return {object} KaavioNotifications instance
+ */
+/*
+function init(kaavio, options) {
+  // Create new instance if it does not exist
+  if (!instancesMap.hasOwnProperty(kaavio.instanceId)) {
+    instancesMap[kaavio.instanceId] = new KaavioNotifications(kaavio, options);
+  }
+
+  return instancesMap[kaavio.instanceId];
+}
+//*/
+
+/**
+ * Plugin constructor
+ * @param {kaavio instance} kaavio
+ * @param {objects} options
+ */
+function KaavioNotifications(kaavio, options) {
+  // TODO locate this near the diagram
+  var $notifications = $('&lt;div class="kaavio-notifications">').appendTo($(document.body));
+  /*
+  var $notifications = $('&lt;div class="kaavio-notifications">').appendTo($(kaavio.containerElement));
+  //*/
+  options = options || {};
+  var notifications = [];
+  var lastNotification = {type: null, message: '', counter: 0, $element: null};
+
+  // Copy default options
+  for (var i in optionsDefault) {
+    if (optionsDefault.hasOwnProperty(i) &amp;&amp; !options.hasOwnProperty(i)) {
+      options[i] = optionsDefault[i];
+    }
+  }
+
+  if (options.displayErrors) {
+    kaavio.on('error', function(data) {
+      addKaavioNotification($notifications, 'danger',
+          '&lt;strong>Error!&lt;/strong> ' + data.message, notifications);
+    })
+  }
+
+  if (options.displayWarnings) {
+    kaavio.on('warning', function(data) {
+      addKaavioNotification($notifications, 'warning',
+          '&lt;strong>Warning!&lt;/strong> ' + data.message, notifications);
+    })
+  }
+}
+
+/**
+ * Search for a notification in a list of notifications
+ * @param  {String} type
+ * @param  {String} message
+ * @param  {Array} notifications List of notifications
+ * @return {Object|Null}               Notification or Null
+ */
+function getNotification(type, message, notifications) {
+  for (var n in notifications) {
+    if (notifications[n].type === type &amp;&amp; notifications[n].message === message) {
+      return notifications[n];
+    }
+  }
+
+  return null
+}
+
+/**
+ * Remove a notification from a list of notifications
+ * @param  {Object} notification Notification to search for
+ * @param  {Array} notifications List of notifications
+ */
+function removeNotification(notification, notifications) {
+  for (var n in notifications) {
+    if (notifications[n] === notification) {
+      notifications.splice(n, 1);
+    }
+  }
+}
+
+/**
+ * Append the element to notifications container
+ * @param {d3 selector} $container
+ * @param {string} type. danger, warning, success, info
+ * @param {string} message
+ */
+function addKaavioNotification($container, type, message, notifications) {
+  var notification = getNotification(type, message, notifications)
+
+  if (notification !== null) {
+    notification.counter += 1;
+
+    // Increment counter
+    notification.$element.find('.counter').show().text(notification.counter)
+  } else {
+    var $notification = $('&lt;div class="alert alert-' + type + '">')
+      .html(message)
+      .appendTo($container);
+
+    notification = {
+      type: type,
+      message: message,
+      counter: 1,
+      $element: $notification
+    }
+
+    // Add close button
+    $('&lt;button type="button" class="close" data-dismiss="alert">' +
+        '&lt;span aria-hidden="true">×&lt;/span>&lt;/button>')
+      .prependTo($notification)
+      .on('click', function() {
+        removeNotification(notification, notifications);
+        $(this).parent().remove();
+      });
+
+    // Add counter
+    $('&lt;span class="counter">1&lt;/span>')
+      .hide()
+      .prependTo($notification);
+
+    notifications.push(notification);
+  }
+}
+
+module.exports = KaavioNotifications;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+
+
+        
+        <!-- disqus code -->
+        <div id="disqus_thread"></div>
+        <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        <!-- // disqus code -->
+        
+
+        <footer>
+            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Thu May 14 2015 14:04:40 GMT-0700 (PDT)
+        </footer>
+    </div>
+</div>
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+<script src="scripts/main.js"></script>
+</body>
+</html>

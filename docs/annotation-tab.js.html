@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Source: editor/editor-tabs-component/tabs/annotation-tab/annotation-tab.js</title>
+    
+    
+    
+    
+    
+    <meta property="og:title" content=""/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:image" content=""/>
+    
+    <meta property="og:url" content=""/>
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/jaguar.css">
+    
+    
+    <script>
+    var config = {"monospaceLinks":true,"cleverLinks":true,"default":{"outputSourceFiles":true},"applicationName":"kaavio","disqus":"false","googleAnalytics":"","openGraph":{"title":"","type":"website","image":"","site_name":"","url":""},"meta":{"title":"","description":"","keyword":""},"linenums":false};
+    </script>
+    
+
+    
+</head>
+<body>
+<div id="wrap" class="clearfix">
+    
+<div class="navigation">
+    <h3 class="applicationName"><a href="index.html">kaavio</a></h3>
+
+    <div class="search">
+        <input id="search" type="text" class="form-control input-sm" placeholder="Search Documentations">
+    </div>
+    <ul class="list">
+    
+        <li class="item" data-name="module.exports~simpleModalComponent">
+            <span class="title">
+                <a href="module.exports-simpleModalComponent.html">module.exports~simpleModalComponent</a>
+                
+                <span class="static">static</span>
+                
+            </span>
+            <ul class="members itemMembers">
+            
+            </ul>
+            <ul class="typedefs itemMembers">
+            
+            </ul>
+            <ul class="methods itemMembers">
+            
+            <span class="subtitle">Methods</span>
+            
+                <li data-name="module.exports~simpleModalComponent.config"><a href="module.exports-simpleModalComponent.html#config">config</a></li>
+            
+            </ul>
+            <ul class="events itemMembers">
+            
+            </ul>
+        </li>
+    
+    </ul>
+</div>
+    <div class="main">
+        <h1 class="page-title" data-filename="annotation-tab.js.html">Source: editor/editor-tabs-component/tabs/annotation-tab/annotation-tab.js</h1>
+        
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source "><code>/***********************************
+ * annotationTab
+ **********************************/
+
+var _ = require('lodash');
+var datasetControl = require('./dataset-control');
+var displayNameControl = require('../../../sub-components/display-name-control');
+var editorUtils = require('../../../editor-utils');
+var fs = require('fs');
+var XrefSearch = require('./xref-search');
+var xrefTypeControl = require('./xref-type-control');
+var highland = require('highland');
+var identifierControl = require('./identifier-control');
+var m = require('mithril');
+var mithrilUtils = require('../../../../mithril-utils');
+
+var annotationTab = {};
+var xrefSearch;
+
+annotationTab.ItemList = Array;
+
+annotationTab.Item = function(item) {
+  this.id = m.prop(item.id);
+  this.name = m.prop(item.name);
+};
+
+annotationTab.vm = (function() {
+
+  var vm = {};
+
+  vm.init = function(kaavio) {
+    vm.selectedXref = m.prop();
+    vm.selectedPvjsElement = kaavio.diagramComponent.vm.selectedPvjsElement;
+    vm.activeSelection = kaavio.editor.vm.activeSelection;
+    vm.disabled = m.prop(!vm.selectedPvjsElement());
+    vm.onClickDiagramContainerHandler = function(event) {
+      if (!event.detail.selectedPvjsElement) {
+        //return vm.init(kaavio);
+        return vm.reset();
+      }
+      vm.onClickDiagramContainer(event.detail.selectedPvjsElement)
+    };
+    kaavio.containerElement.addEventListener(
+        'kaaviodiagramelementclick', vm.onClickDiagramContainerHandler, false);
+
+    xrefSearch = new XrefSearch(annotationTab);
+
+    vm.cancel = function() {
+      vm.reset();
+      kaavio.editor.cancel();
+    };
+
+    vm.onClickDiagramContainer = function(selectedPvjsElement) {
+      if (!selectedPvjsElement) {
+        return vm.reset();
+      }
+
+      var currentXref = _.find(kaavio.sourceData.pvjson.elements,
+          function(pvjsElement) {
+            return pvjsElement.id === selectedPvjsElement.entityReference;
+          });
+
+      if (!currentXref) {
+        return vm.reset();
+      }
+
+      vm.selectedXref(currentXref);
+
+      var iri = selectedPvjsElement.entityReference;
+      var iriComponents = iri.split('identifiers.org');
+      var iriPath = iriComponents[iriComponents.length - 1];
+      var iriPathComponents = iriPath.split('/');
+      var preferredPrefix = iriPathComponents[1];
+      var identifier = iriPathComponents[2];
+
+      var datasetId = 'http://identifiers.org/' + preferredPrefix;
+      currentXref.isDataItemIn = {id: datasetId};
+
+      currentXref.identifier = identifier;
+
+      // TODO we want to edit the actual instance, not the EntityReference,
+      // but right now, we're getting the displayName from the EntityReference,
+      // not the textContent from the instance.
+      // annotationEntity is a combination of an Xref plus the displayName of
+      // the selected element, which may differ from the displayName of the
+      // referenced Xref.
+      //var annotationEntity = editorUtils.createAnnotationEntity(currentXref, selectedPvjsElement);
+      //annotationTab.vm.updateControlValues(annotationEntity);
+      annotationTab.vm.updateControlValues(selectedPvjsElement, currentXref);
+
+      // Kludge to handle cases where we change the pvjson, but the change doesn't constitute
+      // a real change to the GPML, e.g., we explicitly define an implied value.
+      if (!kaavio.editor.editorTabsComponent.vm.dataChanged()) {
+        kaavio.editor.editorTabsComponent.vm.originalPvjsonAsString = JSON.stringify(
+            kaavio.sourceData.pvjson);
+      }
+    };
+
+    vm.reset = function() {
+      //annotationTab.vm.saveButtonClass = 'btn-default';
+      xrefTypeControl.vm.init();
+      datasetControl.vm.currentDataset.id = m.prop('');
+      identifierControl.vm.identifier = m.prop('');
+      displayNameControl.vm.displayName = m.prop('');
+      vm.disabled(true);
+
+      //kaavio.editor.clearSelection();
+    };
+
+    vm.save = function() {
+      //var selectedPvjsElement = kaavio.diagramComponent.vm.selectedPvjsElement();
+      var selectedPvjsElement = _.find(kaavio.sourceData.pvjson.elements, function(element) {
+        return kaavio.diagramComponent.vm.selectedPvjsElement().id === element.id;
+      });
+      if (!selectedPvjsElement) {
+        return console.warn('No selectedPvjsElement. Cannot save.');
+      }
+
+      //annotationTab.vm.saveButtonClass = 'btn-default';
+      var xrefType = xrefTypeControl.vm.currentXrefType.name().replace(' ', '');
+
+      var datasetName = datasetControl.vm.currentDataset.name();
+      var datasetId = datasetControl.vm.currentDataset.id();
+      var identifier = identifierControl.vm.identifier();
+      var entityReferenceId = datasetId + '/' + identifier;
+
+      var displayName = displayNameControl.vm.displayName();
+
+      if ('gpml:' + xrefType === selectedPvjsElement['gpml:Type'] &amp;&amp;
+        selectedPvjsElement.textContent === displayName &amp;&amp;
+        selectedPvjsElement.entityReference === entityReferenceId) {
+
+        // Kludge to handle cases where we change the pvjson, but the change doesn't constitute
+        // a real change to the GPML, e.g., we explicitly define an implied value.
+        if (!kaavio.editor.editorTabsComponent.vm.dataChanged()) {
+          kaavio.editor.editorTabsComponent.vm.originalPvjsonAsString = JSON.stringify(
+              kaavio.sourceData.pvjson);
+        }
+
+        // No changes.
+        return;
+      }
+
+      //kaavio.editor.editorTabsComponent.vm.dataChanged(true);
+
+      // TODO this isn't exactly matching the current pvjson model
+      if (!!xrefType) {
+        selectedPvjsElement['gpml:Type'] = 'gpml:' + xrefType;
+      }
+      if (!!displayName) {
+        selectedPvjsElement.textContent = displayName;
+      }
+      if (!!entityReferenceId) {
+        selectedPvjsElement.entityReference = entityReferenceId;
+      }
+
+      var currentXref = _.find(kaavio.sourceData.pvjson.elements,
+          function(pvjsElement) {
+            return pvjsElement.id === selectedPvjsElement.entityReference;
+          });
+
+      if (!currentXref &amp;&amp; !!entityReferenceId) {
+        currentXref = {};
+        currentXref.id = entityReferenceId;
+        kaavio.sourceData.pvjson.elements.push(currentXref);
+      }
+
+      if (!!datasetId &amp;&amp; !!datasetName &amp;&amp; !!identifier) {
+        currentXref.isDataItemIn = {id: datasetId};
+        currentXref.dbName = datasetName;
+        currentXref.dbId = identifier;
+        if (!!displayName) {
+          currentXref.displayName = currentXref.displayName || displayName;
+        }
+      }
+
+      updateDiagram(
+          kaavio, selectedPvjsElement.id, xrefType, datasetName, identifier, displayName);
+
+      //vm.reset();
+    };
+
+    //xrefSearch.vm.disabled = vm.disabled;
+    xrefSearch.vm.init(kaavio);
+
+    xrefTypeControl.vm.disabled = vm.disabled;
+    xrefTypeControl.vm.init();
+
+    datasetControl.vm.disabled = vm.disabled;
+    datasetControl.vm.init();
+
+    identifierControl.vm.disabled = vm.disabled;
+    identifierControl.vm.init();
+
+    displayNameControl.vm.disabled = vm.disabled;
+    displayNameControl.vm.init();
+
+    vm.onunload = function() {
+      kaavio.containerElement.removeEventListener(
+          'kaaviodiagramelementclick', vm.onClickDiagramContainerHandler, false);
+    };
+
+  };
+
+  /**
+   * update the dropdowns and input boxes that
+   * identify and/or describe an annotationEntity.
+   *
+   * @param {object} selectedPvjsElement
+   * @param {string} selectedPvjsElement.textContent Short name for display
+   * @param {object} currentXref
+   * @param {string} currentXref.type Type
+   * @param {string} currentXref.displayName Short name for display
+   * @param {string} currentXref.identifier Character string that differentiates this
+   *                                          annotationEntity from other annotation entities.
+   * @param {object} currentXref.isDataItemIn Dataset of which this annotationEntity
+   *                                              reference is a member
+   * @param {string} currentXref.isDataItemIn.id IRI
+   * @return
+   */
+  vm.updateControlValues = function(selectedPvjsElement, currentXref) {
+    xrefTypeControl.vm.changeXrefType(currentXref.type);
+    datasetControl.vm.changeDataset(currentXref.isDataItemIn.id);
+    identifierControl.vm.identifier = m.prop(currentXref.identifier);
+    displayNameControl.vm.displayName = m.prop(selectedPvjsElement.textContent ||
+        currentXref.displayName);
+    /*
+    xrefTypeControl.vm.changeXrefType(annotationEntity.type);
+    datasetControl.vm.changeDataset(annotationEntity.isDataItemIn.id);
+    identifierControl.vm.identifier = m.prop(annotationEntity.identifier);
+    displayNameControl.vm.displayName = m.prop(annotationEntity.displayName);
+    //*/
+    annotationTab.vm.save();
+  };
+
+  return vm;
+})();
+
+annotationTab.controller = function() {
+  annotationTab.vm.init();
+};
+
+annotationTab.view = function() {
+  annotationTab.vm.disabled(!annotationTab.vm.activeSelection().id);
+  return m('nav.kaavio-editor-annotation.navbar.navbar-default.navbar-form.well.well-sm', [
+    m('div.navbar-left', [
+      xrefSearch.view(),
+    ]),
+    m('div.form-group.navbar-left', [
+      m('div.form-control[style="height: 44px;"]', {
+        onchange: annotationTab.vm.save
+      }, [
+        xrefTypeControl.view(),
+        datasetControl.view(),
+        identifierControl.view(),
+        displayNameControl.view(),
+      ]),
+    ]),
+    /*
+    m('div.form-group.navbar-left', [
+      m('button[type="submit"][style="height: 44px;"].btn.form-control.' +
+          annotationTab.vm.saveButtonClass, {
+        onclick: annotationTab.vm.save
+      }, [
+        m('span.glyphicon.glyphicon-ok')
+      ]),
+    ]),
+    m('span.glyphicon.glyphicon-remove.btn.navbar-right' +
+        '[style="color: #aaa; transform: translateY(-10px);"]', {
+      onclick: annotationTab.vm.cancel
+    })
+    //*/
+  ]);
+};
+
+function updateDiagram(kaavio, selectedElementId, xrefType,
+    datasetName, identifier, displayName) {
+  if (!datasetName || !identifier) {
+    throw new Error('Missing datasetName and/or identifier for updateDiagram');
+  }
+
+  if (!!selectedElementId &amp;&amp; !!displayName) {
+    var textLabelElement = kaavio.$element.select('#text-for-' + selectedElementId)
+      .select('text').text(displayName);
+  }
+}
+
+module.exports = annotationTab;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+
+
+        
+        <!-- disqus code -->
+        <div id="disqus_thread"></div>
+        <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        <!-- // disqus code -->
+        
+
+        <footer>
+            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Thu May 14 2015 14:04:40 GMT-0700 (PDT)
+        </footer>
+    </div>
+</div>
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+<script src="scripts/main.js"></script>
+</body>
+</html>

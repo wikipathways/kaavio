@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Source: jquery-plugin.js</title>
+    
+    
+    
+    
+    
+    <meta property="og:title" content=""/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:image" content=""/>
+    
+    <meta property="og:url" content=""/>
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/jaguar.css">
+    
+    
+    <script>
+    var config = {"monospaceLinks":true,"cleverLinks":true,"default":{"outputSourceFiles":true},"applicationName":"kaavio","disqus":"false","googleAnalytics":"","openGraph":{"title":"","type":"website","image":"","site_name":"","url":""},"meta":{"title":"","description":"","keyword":""},"linenums":false};
+    </script>
+    
+
+    
+</head>
+<body>
+<div id="wrap" class="clearfix">
+    
+<div class="navigation">
+    <h3 class="applicationName"><a href="index.html">kaavio</a></h3>
+
+    <div class="search">
+        <input id="search" type="text" class="form-control input-sm" placeholder="Search Documentations">
+    </div>
+    <ul class="list">
+    
+        <li class="item" data-name="module.exports~simpleModalComponent">
+            <span class="title">
+                <a href="module.exports-simpleModalComponent.html">module.exports~simpleModalComponent</a>
+                
+                <span class="static">static</span>
+                
+            </span>
+            <ul class="members itemMembers">
+            
+            </ul>
+            <ul class="typedefs itemMembers">
+            
+            </ul>
+            <ul class="methods itemMembers">
+            
+            <span class="subtitle">Methods</span>
+            
+                <li data-name="module.exports~simpleModalComponent.config"><a href="module.exports-simpleModalComponent.html#config">config</a></li>
+            
+            </ul>
+            <ul class="events itemMembers">
+            
+            </ul>
+        </li>
+    
+    </ul>
+</div>
+    <div class="main">
+        <h1 class="page-title" data-filename="jquery-plugin.js.html">Source: jquery-plugin.js</h1>
+        
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source "><code>var Kaavio = require('./main.js');
+var Utils = require('./utils');
+
+/**
+ * Initialize the global constructor for JqueryKaavioPlugin
+ *
+ * @param {object} window
+ * @param {object} [$] optional jQuery or Zepto instance
+ * @return
+ */
+module.exports = function(window, $) {
+  'use strict';
+
+  /**
+   *
+   */
+  if (typeof $ !== undefined) {
+    /**
+     * jQuery plugin entry point. Only if jQuery is defined.
+     * If option is 'get' then returns an array of jqueryKaavioPlugin public instances.
+     * Otherwise returns an jQuery object to allow chaining.
+     *
+     * @param  {string} option
+     * @return {object} array || jQuery object
+     */
+    $.fn.kaavio = function(option) {
+      // Instantiate Kaavio for all elements
+      var $return = this.each(function() {
+        var $this = $(this);
+        var data = $this.data('kaavio');
+        var options = typeof option == 'object' &amp;&amp; option;
+
+        if (!data) {
+          $this.data('kaavio', (new Kaavio(this, options)));
+        }
+      });
+
+      if (option === 'get') {
+        // Return an array of Kaavio instances
+        return $.map(this, function(a) {
+          return $(a).data('kaavio').getPublicInstance();
+        });
+      } else {
+        // Return jQuery object
+        return $return;
+      }
+    };
+  }
+
+  /**
+   * Globally available method
+   * Returns an array of public instances
+   *
+   * @param  {string} selector
+   * @param  {object} option
+   * @return {array}
+   */
+  window.jqueryKaavioPlugin = function(selector, option) {
+    var $elements;
+
+    if (Utils.isElement(selector)) {
+      $elements = [[selector]];
+    } else {
+      $elements = d3.selectAll(selector);
+    }
+
+    return _.map($elements[0], function(element) {
+      if (element.data === undefined) {
+        element.data = {};
+      }
+
+      var data;
+      var options = typeof option == 'object' ? option : {};
+
+      if (element.data.kaavio === undefined) {
+        element.data.kaavio = (data = new Kaavio(element, options));
+      } else {
+        data = element.data.kaavio;
+      }
+
+      return data.getPublicInstance();
+    });
+  };
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+
+
+        
+        <!-- disqus code -->
+        <div id="disqus_thread"></div>
+        <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        <!-- // disqus code -->
+        
+
+        <footer>
+            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Thu May 14 2015 14:04:40 GMT-0700 (PDT)
+        </footer>
+    </div>
+</div>
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+<script src="scripts/main.js"></script>
+</body>
+</html>

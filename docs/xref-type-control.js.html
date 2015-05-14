@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Source: editor/editor-tabs-component/tabs/annotation-tab/xref-type-control.js</title>
+    
+    
+    
+    
+    
+    <meta property="og:title" content=""/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:image" content=""/>
+    
+    <meta property="og:url" content=""/>
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="scripts/jquery.min.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/bootstrap.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/jaguar.css">
+    
+    
+    <script>
+    var config = {"monospaceLinks":true,"cleverLinks":true,"default":{"outputSourceFiles":true},"applicationName":"kaavio","disqus":"false","googleAnalytics":"","openGraph":{"title":"","type":"website","image":"","site_name":"","url":""},"meta":{"title":"","description":"","keyword":""},"linenums":false};
+    </script>
+    
+
+    
+</head>
+<body>
+<div id="wrap" class="clearfix">
+    
+<div class="navigation">
+    <h3 class="applicationName"><a href="index.html">kaavio</a></h3>
+
+    <div class="search">
+        <input id="search" type="text" class="form-control input-sm" placeholder="Search Documentations">
+    </div>
+    <ul class="list">
+    
+        <li class="item" data-name="module.exports~simpleModalComponent">
+            <span class="title">
+                <a href="module.exports-simpleModalComponent.html">module.exports~simpleModalComponent</a>
+                
+                <span class="static">static</span>
+                
+            </span>
+            <ul class="members itemMembers">
+            
+            </ul>
+            <ul class="typedefs itemMembers">
+            
+            </ul>
+            <ul class="methods itemMembers">
+            
+            <span class="subtitle">Methods</span>
+            
+                <li data-name="module.exports~simpleModalComponent.config"><a href="module.exports-simpleModalComponent.html#config">config</a></li>
+            
+            </ul>
+            <ul class="events itemMembers">
+            
+            </ul>
+        </li>
+    
+    </ul>
+</div>
+    <div class="main">
+        <h1 class="page-title" data-filename="xref-type-control.js.html">Source: editor/editor-tabs-component/tabs/annotation-tab/xref-type-control.js</h1>
+        
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source "><code>/***********************************
+ * Entity Type Control
+ **********************************/
+
+/**
+ * Module dependencies.
+ */
+
+var _ = require('lodash');
+var datasetControl = require('./dataset-control');
+var editorUtils = require('../../../editor-utils');
+var highland = require('highland');
+var m = require('mithril');
+var mithrilUtils = require('../../../../mithril-utils');
+
+var xrefTypeControl = {};
+
+xrefTypeControl.XrefTypeList = Array;
+
+//a xrefType
+xrefTypeControl.XrefType = function(xrefType) {
+  this.id = m.prop(xrefType['@id']);
+  this.name = m.prop(xrefType.name);
+}
+
+xrefTypeControl.vm = (function() {
+  var vm = {};
+
+  vm.disabled = m.prop(false);
+
+  vm.init = function() {
+
+    var propify = function(highlandStream) {
+      return highlandStream.map(function(item) {
+        return new xrefTypeControl.XrefType(item);
+      });
+    }
+
+    var promisifiedGetXrefTypes = highland.compose(
+        mithrilUtils.promisify, propify, function(items) {
+          return highland(items);
+        });
+
+    //specify initial selection
+    var xrefTypePlaceholder = {
+      '@id': '',
+      'name': 'Select type'
+    };
+    vm.currentXrefType = new xrefTypeControl.XrefType(xrefTypePlaceholder);
+
+    var xrefTypes = [xrefTypePlaceholder].concat([{
+      '@id': 'gpml:GeneProduct',
+      name: 'Gene Product'
+    }, {
+      '@id': 'gpml:Metabolite',
+      name: 'Metabolite'
+    }, {
+      '@id': 'biopax:Pathway',
+      name: 'Pathway'
+    }, {
+      '@id': 'biopax:ProteinReference',
+      name: 'Protein'
+    }, {
+      '@id': 'gpml:Unknown',
+      name: 'Unknown'
+    }]);
+
+    vm.xrefTypeList = promisifiedGetXrefTypes(xrefTypes);
+
+    vm.changeXrefType = function(xrefTypeId) {
+      vm.currentXrefType = vm.xrefTypeList()
+        .filter(function(xrefType) {
+          var xrefTypeIdsArray = _.isArray(xrefTypeId) ? xrefTypeId :
+              [xrefTypeId];
+          return xrefTypeIdsArray.indexOf(xrefType.id()) > -1;
+        })[0];
+      datasetControl.vm.filterDatasetListByXrefType(xrefTypeId);
+    };
+
+  }
+  return vm;
+})();
+
+xrefTypeControl.controller = function() {
+  xrefTypeControl.vm.init();
+}
+
+xrefTypeControl.view = function() {
+  return m('select.form-control.input.input-sm',
+  {
+    onchange: m.withAttr('value', xrefTypeControl.vm.changeXrefType),
+    value: xrefTypeControl.vm.currentXrefType.id(),
+    disabled: xrefTypeControl.vm.disabled()
+  },
+  [
+    xrefTypeControl.vm.xrefTypeList().map(
+      function(xrefType, index) {
+        return m('option', {
+          value: xrefType.id(),
+          innerHTML: xrefType.name(),
+          selected: xrefType.id() === xrefTypeControl.vm.currentXrefType.id()
+        })
+      })
+  ]);
+}
+
+module.exports = xrefTypeControl;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+
+
+        
+        <!-- disqus code -->
+        <div id="disqus_thread"></div>
+        <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+        <!-- // disqus code -->
+        
+
+        <footer>
+            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Thu May 14 2015 14:04:40 GMT-0700 (PDT)
+        </footer>
+    </div>
+</div>
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+<script src="scripts/main.js"></script>
+</body>
+</html>
