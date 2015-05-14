@@ -7,7 +7,7 @@ evt.on('rs', function() {
   console.log('You want to reload BrowserSync!');
 });
 
-gulp.task('browserSync', ['build'], function() {
+gulp.task('browser-sync', ['build'], function() {
   //browserSync.init(['./lib/**/*.js'], {
   //browserSync.init(['./demo/lib/**/*.js'], {
   browserSync.init(['./index.js'], {
