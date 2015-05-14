@@ -9,56 +9,37 @@
 var brfs = require('gulp-brfs');
 var browserify = require('browserify');
 var buffer = require('vinyl-buffer');
-var bundleLogger = require('../util/bundleLogger');
+var bundleLogger = require('../util/bundle-logger.js');
 var fs = require('fs');
 var gulp = require('gulp');
-var handleErrors = require('../util/handleErrors');
+var handleErrors = require('../util/handle-errors.js');
 var highland = require('highland');
+var mkdirp = require('mkdirp');
+var rename = require('gulp-rename');
 var source = require('vinyl-source-stream');
 var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
 var watchify = require('watchify');
 
-gulp.task('browserify', ['browserifyPolyfills'], function() {
-
-  // TODO move this into its own file
-  var modernizr = require('modernizr');
-
-  modernizr.build({
-    'feature-detects': [
-      'inputtypes',
-      'svg',
-      'svg/asimg',
-      'svg/clippaths',
-      'svg/filters',
-      'svg/foreignobject',
-      'svg/inline',
-      'svg/smil'
-    ]
-  }, function(result) {
-    fs.writeFileSync('./tmp/modernizr-custom.js', result);
-  });
+gulp.task('browserify', ['browserify-polyfills'], function() {
 
   var bundleMethod = global.isWatching ? watchify : browserify;
 
+  var packageJson;
+
   var getBundleName = function() {
-    var package = JSON.parse(fs.readFileSync('package.json'));
-    var version = package.version;
-    var name = package.name;
-    if (global.isWatching) {
-      return name + '-dev.bundle';
-    } else {
-      return name + '-' + version + '.bundle.min';
-    }
+    packageJson = JSON.parse(fs.readFileSync('package.json'));
+    var version = packageJson.version;
+    var name = packageJson.name;
+    return name + '-dev.bundle';
   };
 
   var bundler = bundleMethod({
     // Specify the entry point of your app
-    entries: ['./tmp/modernizr-custom.js',
-      //'./index.js',
+    entries: [//'./index.js',
       './lib/wikipathways-kaavio-element.js',
-      './lib/jquery-plugin.js',
-      './lib/notifications/notifications.js']
+      './lib/jquery-plugin.js'
+    ]
   });
 
   var bundle = function() {
@@ -88,13 +69,19 @@ gulp.task('browserify', ['browserifyPolyfills'], function() {
         // They are too slow to enable
         // during development.
         .through(buffer())
+        .through(rename(function(path) {
+          path.basename = path.basename.replace(
+              '-dev.bundle', '-' + packageJson.version + '.bundle.min');
+        }))
         .through(sourcemaps.init({loadMaps: true}))
         // Add transformation tasks to the pipeline here.
         .through(uglify())
         .through(sourcemaps.write('./'))
+        .through(gulp.dest('./dist/'))
+        .through(gulp.dest('./demo/lib/' + packageJson.name + '/'));
     }))
     // Specify the output destination
-    .pipe(gulp.dest('./dist/'))
+    .pipe(gulp.dest('./test/lib/' + packageJson.name + '/'))
     // Log when bundling completes!
     .on('end', bundleLogger.end);
   };

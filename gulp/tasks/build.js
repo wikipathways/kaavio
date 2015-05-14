@@ -1,18 +1,22 @@
 var gulp = require('gulp');
 var gulpSequence = require('gulp-sequence');
 
-/* Before running this task, manually commit in master
- * Build (this task)
- *   Check git status for no changes
- *   Bump metadata files version
- *   Sync README, test and demo files with current version
- *   Build docs / Browserify
- *   Commit again with message "Built and bumped to version X.Y.Z."
- *   Create tag with new version
- * After this task, run gulp publish
+/* Task Steps
+ * Manually commit in master, then this task will:
+ * Build
+ *  - Check git status for no changes
+ *  - Bump metadata files version
+ *  - Sync README with current version
+ *  - Build docs & browserify
+ *  - Copy built files to demo directory
+ *  - Commit again with message "Bumped to version X.Y.Z. Built"
+ *  - Create tag with new version
+ * When this task finishes, you can run ``gulp publish``
  */
 
-gulp.task('build', gulpSequence(
-    'browserify',
-    'copy'
-));
+gulp.task('build', gulpSequence('verify-git-status',
+      'bump-version-number-in-files',
+      ['browserify', 'build-docs', 'browserify-polyfills'],
+      'create-demos-from-tests',
+      'commit-after-build',
+      'sync-tag-version'));

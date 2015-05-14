@@ -9,43 +9,41 @@
 var brfs = require('gulp-brfs');
 var browserify = require('browserify');
 var buffer = require('vinyl-buffer');
+var bundleLogger = require('../util/bundle-logger.js');
 var bundleLogger = require('../util/bundleLogger');
 var fs = require('fs');
 var gulp = require('gulp');
 var handleErrors = require('../util/handleErrors');
 var highland = require('highland');
+var mkdirp = require('mkdirp');
+var rename = require('gulp-rename');
 var source = require('vinyl-source-stream');
 var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
 //var watchify = require('watchify');
 
-gulp.task('browserifyPolyfills', function() {
+gulp.task('browserify-polyfills', function() {
 
-  // TODO move this into its own file
   var modernizr = require('modernizr');
 
   modernizr.build({
-    'feature-detects': [
-      'inputtypes',
-      'svg',
-      'svg/asimg',
-      'svg/clippaths',
-      'svg/filters',
-      'svg/foreignobject',
-      'svg/inline',
-      'svg/smil'
-    ]
+    'feature-detects': config.modernizrFeatureDetects,
   }, function(result) {
-    fs.writeFileSync('./tmp/modernizr-custom.js', result);
+    mkdirp('./tmp', function(err) {
+      fs.writeFileSync('./tmp/modernizr-custom.js', result);
+    });
   });
+
+
+  var packageJson;
 
   var bundleMethod = browserify;
 
   var getBundleName = function() {
-    var package = JSON.parse(fs.readFileSync('package.json'));
-    var version = package.version;
-    var name = package.name;
-    return name + '-dev-polyfills.bundle';
+    packageJson = JSON.parse(fs.readFileSync('package.json'));
+    var version = packageJson.version;
+    var name = packageJson.name;
+    return name + '-polyfills-dev.bundle';
   };
 
   var bundler = bundleMethod({
@@ -76,9 +74,32 @@ gulp.task('browserifyPolyfills', function() {
     // stream gulp compatible. Specify the
     // desired output filename here.
     .pipe(source(getBundleName() + '.js'))
+    .pipe(highland.pipeline(function(stream) {
+      if (global.isWatching) {
+        return stream;
+      }
+
+      return stream
+        // These steps are only enabled when
+        // a watch is not set.
+        // They are too slow to enable
+        // during development.
+        .through(buffer())
+        .through(rename(function(path) {
+          path.basename = path.basename.replace(
+              '-dev.bundle', '-' + packageJson.version + '.bundle.min');
+        }))
+        .through(sourcemaps.init({loadMaps: true}))
+        // Add transformation tasks to the pipeline here.
+        .through(uglify())
+        .through(sourcemaps.write('./'))
+        .through(gulp.dest('./dist/'))
+        // No need to copy to test dir,
+        // because we copy from dist to test.
+        .through(gulp.dest('./demo/lib/' + packageJson.name + '/'));
+    }))
     // Specify the output destination
-    .pipe(gulp.dest('./dist/'))
-    .pipe(gulp.dest('./demo/lib/kaavio/'))
+    .pipe(gulp.dest('./test/lib/' + packageJson.name + '/'))
     // Log when bundling completes!
     .on('end', bundleLogger.end);
   };
