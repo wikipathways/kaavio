@@ -2,7 +2,7 @@ var freeport = require('freeport');
 var gulp = require('gulp');
 var highland = require('highland');
 var http = require('http');
-var isPortInUse = require('../util/isPortInUse.js')
+var isPortInUse = require('../util/is-port-in-use.js')
 var ecstatic = require('ecstatic')({
   root: __dirname + '/../../',
   showDir: true,

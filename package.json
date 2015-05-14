@@ -107,6 +107,7 @@
     "jspm": "~0.14.0",
     "matchdep": "~0.1.2",
     "minimize": "~0.7.6",
+    "mkdirp": "^0.5.1",
     "mocha": "~1.18.2",
     "mockserver": "~1.1.0",
     "modernizr": "~3.0.0-alpha",
