@@ -21,7 +21,8 @@ var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
 var watchify = require('watchify');
 
-gulp.task('browserify', ['browserify-polyfills'], function() {
+//gulp.task('browserify', ['browserify-polyfills'], function() {
+gulp.task('browserify', function() {
 
   var bundleMethod = global.isWatching ? watchify : browserify;
 
