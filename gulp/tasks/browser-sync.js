@@ -1,23 +1,25 @@
 // see setup guide for using with gulp: http://www.browsersync.io/docs/gulp/
 var browserSync = require('browser-sync');
-var gulp        = require('gulp');
 var evt = browserSync.emitter;
+var gulp        = require('gulp');
+var packageJson = require('../../package.json');
+var reload      = browserSync.reload;
 
 evt.on('rs', function() {
   console.log('You want to reload BrowserSync!');
 });
 
-gulp.task('browser-sync', ['build'], function() {
-  //browserSync.init(['./lib/**/*.js'], {
-  //browserSync.init(['./demo/lib/**/*.js'], {
-  browserSync.init(['./index.js'], {
+gulp.task('browser-sync', ['browserify', 'browserify-polyfills'], function() {
+  browserSync(['./index.js', './lib/polyfills.js'], {
 		server: {
 			baseDir: './'
 		},
     port: 3000,
     // Don't show any notifications in the browser.
     notify: false,
-    //startPath: './test/'
-    startPath: './demo/editor-polyfilled.html'
+    startPath: './test/'
 	});
+
+  gulp.watch(['./test/lib/' + packageJson.name + '/' + packageJson.name + '-dev.bundle.js'])
+    .on('change', reload);
 });

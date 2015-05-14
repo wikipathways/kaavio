@@ -104,6 +104,7 @@
     "image-diff": "~1.0.1",
     "imagemagick-native": "^1.7.0",
     "inquirer": "~0.8.0",
+    "jaguarjs-jsdoc": "0.0.1",
     "jspm": "~0.14.0",
     "matchdep": "~0.1.2",
     "minimize": "~0.7.6",
