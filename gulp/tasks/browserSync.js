@@ -9,7 +9,8 @@ evt.on('rs', function() {
 
 gulp.task('browserSync', ['build'], function() {
   //browserSync.init(['./lib/**/*.js'], {
-  browserSync.init(['./demo/lib/**/*.js'], {
+  //browserSync.init(['./demo/lib/**/*.js'], {
+  browserSync.init(['./index.js'], {
 		server: {
 			baseDir: './'
 		},

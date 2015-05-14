@@ -58,8 +58,7 @@ gulp.task('browserify', ['browserifyPolyfills'], function() {
       //'./index.js',
       './lib/wikipathways-kaavio-element.js',
       './lib/jquery-plugin.js',
-      './lib/notifications/notifications.js',
-      './lib/diff-viewer/diff-viewer.js']
+      './lib/notifications/notifications.js']
   });
 
   var bundle = function() {
