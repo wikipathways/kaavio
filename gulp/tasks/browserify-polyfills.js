@@ -1,4 +1,4 @@
-/* browserify task
+/* browserify task for polyfills
    ---------------
    Bundle javascripty things with browserify!
 
@@ -10,17 +10,17 @@ var brfs = require('gulp-brfs');
 var browserify = require('browserify');
 var buffer = require('vinyl-buffer');
 var bundleLogger = require('../util/bundle-logger.js');
-var bundleLogger = require('../util/bundleLogger');
+var config = require('../config.json');
 var fs = require('fs');
 var gulp = require('gulp');
-var handleErrors = require('../util/handleErrors');
+var handleErrors = require('../util/handle-errors.js');
 var highland = require('highland');
 var mkdirp = require('mkdirp');
 var rename = require('gulp-rename');
 var source = require('vinyl-source-stream');
 var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
-//var watchify = require('watchify');
+var watchify = require('watchify');
 
 gulp.task('browserify-polyfills', function() {
 
@@ -34,10 +34,9 @@ gulp.task('browserify-polyfills', function() {
     });
   });
 
-
   var packageJson;
 
-  var bundleMethod = browserify;
+  var bundleMethod = global.isWatching ? watchify : browserify;
 
   var getBundleName = function() {
     packageJson = JSON.parse(fs.readFileSync('package.json'));
