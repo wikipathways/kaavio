@@ -135,7 +135,7 @@
   "dependencies": {
     "JSONStream": "~0.10.0",
     "bridgedb": "~4.1.0",
-    "cross-platform-shapes": "git://github.com/ariutta/cross-platform-shapes.git#1.0.6",
+    "cross-platform-shapes": "git://github.com/ariutta/cross-platform-shapes.git#1.1.0",
     "cross-platform-text": "git://github.com/ariutta/cross-platform-text.git#0.0.14",
     "csv-streamify": "~2.0.0",
     "custom-event-polyfill": "~0.1.2",
