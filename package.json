@@ -149,6 +149,7 @@
     "mithril": "~0.1.34",
     "promisescript": "~1.1.0",
     "resolve-url": "~0.2.1",
+    "rx": "^2.5.2",
     "select2": "~3.5.2-browserify",
     "simple-modal": "~0.1.4",
     "spectrum-colorpicker": "~1.6.1",
