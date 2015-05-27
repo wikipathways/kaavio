@@ -2,7 +2,7 @@
   "author": "WikiPathways team",
   "name": "kaavio",
   "description": "Diagram viewer and editor with Linked Open Data capabilities",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "homepage": "http://wikipathways.github.io/kaavio/",
   "dependencies": {
     "aight": "~1.2.2",
@@ -12,7 +12,7 @@
     "jquery": "1.x"
   },
   "main": [
-    "./dist/kaavio-2.3.3.bundle.min.js"
+    "./dist/kaavio-2.3.4.bundle.min.js"
   ],
   "defaultSave": true
 }
