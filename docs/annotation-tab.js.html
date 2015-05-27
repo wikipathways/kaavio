@@ -93,6 +93,7 @@ var highland = require('highland');
 var identifierControl = require('./identifier-control');
 var m = require('mithril');
 var mithrilUtils = require('../../../../mithril-utils');
+var Rx = require('rx');
 
 var annotationTab = {};
 
@@ -103,93 +104,112 @@ annotationTab.Item = function(item) {
   this.name = m.prop(item.name);
 };
 
+annotationTab.AnnotationElement = function(pvjsElement, xref) {
+  this.datasetId = xref.isDataItemIn.id;
+  this.type = xref.type;
+  this.identifier = xref.identifier;
+  this.textContent = pvjsElement.textContent || xref.displayName;
+};
+
 annotationTab.vm = (function() {
 
   var vm = {};
 
   vm.init = function(kaavio) {
-    vm.selectedXref = m.prop();
-    vm.selectedPvjsElement = kaavio.diagramComponent.vm.selectedPvjsElement;
-    vm.activeSelection = kaavio.editor.vm.activeSelection;
-    vm.disabled = m.prop(!vm.selectedPvjsElement());
+    kaavio.editor.editorTabsComponent.annotationTab = annotationTab;
+    vm.xref = m.prop();
+    vm.disabled = m.prop(true);
+    vm.selection = kaavio.editor.vm.selection;
 
-    annotationTab.xrefSearch = new XrefSearch(annotationTab);
+    var xrefSearch = annotationTab.xrefSearch = new XrefSearch(annotationTab);
 
     vm.cancel = function() {
       vm.reset();
       kaavio.editor.cancel();
     };
 
-    vm.onClickDiagramContainer = function(event) {
-      var eventDetail = event.detail;
-      if (!eventDetail || !eventDetail.selectedPvjsElement) {
-        return vm.reset();
-      }
+    var currentXrefAndResetSource = kaavio.editor.vm.selectionSource
+      .map(function(selection) {
+        var pvjsElement = selection().pvjsElement();
+        var currentXref = _.find(kaavio.sourceData.pvjson.elements,
+            function(element) {
+              return element.id === pvjsElement.entityReference;
+            });
+        return currentXref;
+      })
+      .partition(function(currentXref) {
+        return !_.isEmpty(currentXref);
+      });
 
-      var selectedPvjsElement = eventDetail.selectedPvjsElement;
+    var currentXrefSource = currentXrefAndResetSource[0];
+    vm.resetSource = kaavio.editor.vm.resetSource.merge(currentXrefAndResetSource[1]);
 
-      var currentXref = _.find(kaavio.sourceData.pvjson.elements,
-          function(pvjsElement) {
-            return pvjsElement.id === selectedPvjsElement.entityReference;
-          });
+    vm.annotationElementSource = currentXrefSource.map(function(currentXref) {
+        vm.disabled(false);
+        vm.xref(currentXref);
 
-      if (!currentXref) {
-        return vm.reset();
-      }
+        var pvjsElement = vm.selection().pvjsElement();
+        var iri = pvjsElement.entityReference;
+        var iriComponents = iri.split('identifiers.org');
+        var iriPath = iriComponents[iriComponents.length - 1];
+        var iriPathComponents = iriPath.split('/');
+        var preferredPrefix = iriPathComponents[1];
+        var identifier = iriPathComponents[2];
 
-      vm.selectedXref(currentXref);
+        var datasetId = 'http://identifiers.org/' + preferredPrefix;
+        currentXref.isDataItemIn = {id: datasetId};
 
-      var iri = selectedPvjsElement.entityReference;
-      var iriComponents = iri.split('identifiers.org');
-      var iriPath = iriComponents[iriComponents.length - 1];
-      var iriPathComponents = iriPath.split('/');
-      var preferredPrefix = iriPathComponents[1];
-      var identifier = iriPathComponents[2];
+        currentXref.identifier = identifier;
 
-      var datasetId = 'http://identifiers.org/' + preferredPrefix;
-      currentXref.isDataItemIn = {id: datasetId};
+        // Kludge to handle cases where we change the pvjson, but the change doesn't constitute
+        // a real change to the GPML, e.g., we explicitly define an implied value.
+        if (!kaavio.editor.editorTabsComponent.vm.dataChanged()) {
+          kaavio.editor.editorTabsComponent.vm.originalPvjsonAsString = JSON.stringify(
+              kaavio.sourceData.pvjson);
+        }
 
-      currentXref.identifier = identifier;
+        var annotationElement = new annotationTab.AnnotationElement(pvjsElement, currentXref);
 
+        return annotationElement;
+      });
+
+    vm.resetSource
+      .subscribe(function(value) {
+        vm.reset();
+      }, function(err) {
+        console.log(err);
+      }, function(value) {
+        console.log(value);
+      });
+
+    vm.annotationElementSource.subscribe(function(annotationElement) {
       // TODO we want to edit the actual instance, not the EntityReference,
       // but right now, we're getting the displayName from the EntityReference,
       // not the textContent from the instance.
       // annotationEntity is a combination of an Xref plus the displayName of
-      // the selected element, which may differ from the displayName of the
+      // the selection, which may differ from the displayName of the
       // referenced Xref.
-      //var annotationEntity = editorUtils.createAnnotationEntity(currentXref, selectedPvjsElement);
+      //var annotationEntity = editorUtils.createAnnotationEntity(
+      //    currentXref, pvjsElement);
       //annotationTab.vm.updateControlValues(annotationEntity);
-      annotationTab.vm.updateControlValues(selectedPvjsElement, currentXref);
-
-      // Kludge to handle cases where we change the pvjson, but the change doesn't constitute
-      // a real change to the GPML, e.g., we explicitly define an implied value.
-      if (!kaavio.editor.editorTabsComponent.vm.dataChanged()) {
-        kaavio.editor.editorTabsComponent.vm.originalPvjsonAsString = JSON.stringify(
-            kaavio.sourceData.pvjson);
-      }
-    };
-
-    kaavio.containerElement.addEventListener(
-        'kaaviodiagramelementclick', vm.onClickDiagramContainer, false);
+      vm.updateControlValues(annotationElement);
+    });
 
     vm.reset = function() {
       //annotationTab.vm.saveButtonClass = 'btn-default';
       xrefTypeControl.vm.init();
       datasetControl.vm.currentDataset.id = m.prop('');
       identifierControl.vm.identifier = m.prop('');
-      displayNameControl.vm.displayName = m.prop('');
+      displayNameControl.vm.reset();
       vm.disabled(true);
-
-      //kaavio.editor.clearSelection();
     };
 
     vm.save = function() {
-      //var selectedPvjsElement = kaavio.diagramComponent.vm.selectedPvjsElement();
-      var selectedPvjsElement = _.find(kaavio.sourceData.pvjson.elements, function(element) {
-        return kaavio.diagramComponent.vm.selectedPvjsElement().id === element.id;
+      var pvjsElement = _.find(kaavio.sourceData.pvjson.elements, function(element) {
+        return kaavio.diagramComponent.vm.selection().id() === element.id;
       });
-      if (!selectedPvjsElement) {
-        return console.warn('No selectedPvjsElement. Cannot save.');
+      if (!pvjsElement) {
+        return console.warn('No pvjsElement. Cannot save.');
       }
 
       //annotationTab.vm.saveButtonClass = 'btn-default';
@@ -202,9 +222,9 @@ annotationTab.vm = (function() {
 
       var displayName = displayNameControl.vm.displayName();
 
-      if ('gpml:' + xrefType === selectedPvjsElement['gpml:Type'] &amp;&amp;
-        selectedPvjsElement.textContent === displayName &amp;&amp;
-        selectedPvjsElement.entityReference === entityReferenceId) {
+      if ('gpml:' + xrefType === pvjsElement['gpml:Type'] &amp;&amp;
+        pvjsElement.textContent === displayName &amp;&amp;
+        pvjsElement.entityReference === entityReferenceId) {
 
         // Kludge to handle cases where we change the pvjson, but the change doesn't constitute
         // a real change to the GPML, e.g., we explicitly define an implied value.
@@ -221,18 +241,18 @@ annotationTab.vm = (function() {
 
       // TODO this isn't exactly matching the current pvjson model
       if (!!xrefType) {
-        selectedPvjsElement['gpml:Type'] = 'gpml:' + xrefType;
+        pvjsElement['gpml:Type'] = 'gpml:' + xrefType;
       }
       if (!!displayName) {
-        selectedPvjsElement.textContent = displayName;
+        pvjsElement.textContent = displayName;
       }
       if (!!entityReferenceId) {
-        selectedPvjsElement.entityReference = entityReferenceId;
+        pvjsElement.entityReference = entityReferenceId;
       }
 
       var currentXref = _.find(kaavio.sourceData.pvjson.elements,
-          function(pvjsElement) {
-            return pvjsElement.id === selectedPvjsElement.entityReference;
+          function(element) {
+            return element.id === pvjsElement.entityReference;
           });
 
       if (!currentXref &amp;&amp; !!entityReferenceId) {
@@ -251,29 +271,20 @@ annotationTab.vm = (function() {
       }
 
       updateDiagram(
-          kaavio, selectedPvjsElement.id, xrefType, datasetName, identifier, displayName);
+          kaavio, pvjsElement.id, xrefType, datasetName, identifier, displayName);
 
       //vm.reset();
     };
 
-    //xrefSearch.vm.disabled = vm.disabled;
     annotationTab.xrefSearch.vm.init(kaavio);
+    xrefTypeControl.vm.init(kaavio);
+    datasetControl.vm.init(kaavio);
+    identifierControl.vm.init(kaavio);
+    displayNameControl.vm.init(kaavio);
 
-    xrefTypeControl.vm.disabled = vm.disabled;
-    xrefTypeControl.vm.init();
-
-    datasetControl.vm.disabled = vm.disabled;
-    datasetControl.vm.init();
-
-    identifierControl.vm.disabled = vm.disabled;
-    identifierControl.vm.init();
-
-    displayNameControl.vm.disabled = vm.disabled;
-    displayNameControl.vm.init();
+    vm.syncControls();
 
     vm.onunload = function() {
-      kaavio.containerElement.removeEventListener(
-          'kaaviodiagramelementclick', vm.onClickDiagramContainerHandler, false);
     };
 
   };
@@ -282,8 +293,8 @@ annotationTab.vm = (function() {
    * update the dropdowns and input boxes that
    * identify and/or describe an annotationEntity.
    *
-   * @param {object} selectedPvjsElement
-   * @param {string} selectedPvjsElement.textContent Short name for display
+   * @param {object} pvjsElement
+   * @param {string} pvjsElement.textContent Short name for display
    * @param {object} currentXref
    * @param {string} currentXref.type Type
    * @param {string} currentXref.displayName Short name for display
@@ -294,20 +305,22 @@ annotationTab.vm = (function() {
    * @param {string} currentXref.isDataItemIn.id IRI
    * @return
    */
-  vm.updateControlValues = function(selectedPvjsElement, currentXref) {
-    xrefTypeControl.vm.changeXrefType(currentXref.type);
-    datasetControl.vm.changeDataset(currentXref.isDataItemIn.id);
-    identifierControl.vm.identifier = m.prop(currentXref.identifier);
-    displayNameControl.vm.displayName = m.prop(selectedPvjsElement.textContent ||
-        currentXref.displayName);
-    /*
-    xrefTypeControl.vm.changeXrefType(annotationEntity.type);
-    datasetControl.vm.changeDataset(annotationEntity.isDataItemIn.id);
-    identifierControl.vm.identifier = m.prop(annotationEntity.identifier);
-    displayNameControl.vm.displayName = m.prop(annotationEntity.displayName);
-    //*/
+  vm.updateControlValues = function(annotationElement) {
+    xrefTypeControl.vm.changeXrefType(annotationElement.type);
+    datasetControl.vm.changeDataset(annotationElement.datasetId);
+    identifierControl.vm.identifier = m.prop(annotationElement.identifier);
+    displayNameControl.vm.displayName = m.prop(annotationElement.textContent);
     annotationTab.vm.save();
   };
+  //*
+  vm.syncControls = function() {
+    annotationTab.xrefSearch.vm.disabled = vm.disabled;
+    xrefTypeControl.vm.disabled = vm.disabled;
+    datasetControl.vm.disabled = vm.disabled;
+    identifierControl.vm.disabled = vm.disabled;
+    displayNameControl.vm.disabled = vm.disabled;
+  };
+  //*/
 
   return vm;
 })();
@@ -317,7 +330,6 @@ annotationTab.controller = function() {
 };
 
 annotationTab.view = function() {
-  annotationTab.vm.disabled(!annotationTab.vm.activeSelection().id);
   return m('nav.kaavio-editor-annotation.navbar.navbar-default.navbar-form.well.well-sm', [
     m('div.navbar-left', [
       annotationTab.xrefSearch.view(),
@@ -332,31 +344,17 @@ annotationTab.view = function() {
         displayNameControl.view(),
       ]),
     ]),
-    /*
-    m('div.form-group.navbar-left', [
-      m('button[type="submit"][style="height: 44px;"].btn.form-control.' +
-          annotationTab.vm.saveButtonClass, {
-        onclick: annotationTab.vm.save
-      }, [
-        m('span.glyphicon.glyphicon-ok')
-      ]),
-    ]),
-    m('span.glyphicon.glyphicon-remove.btn.navbar-right' +
-        '[style="color: #aaa; transform: translateY(-10px);"]', {
-      onclick: annotationTab.vm.cancel
-    })
-    //*/
   ]);
 };
 
-function updateDiagram(kaavio, selectedElementId, xrefType,
+function updateDiagram(kaavio, selectionId, xrefType,
     datasetName, identifier, displayName) {
   if (!datasetName || !identifier) {
     throw new Error('Missing datasetName and/or identifier for updateDiagram');
   }
 
-  if (!!selectedElementId &amp;&amp; !!displayName) {
-    var textLabelElement = kaavio.$element.select('#text-for-' + selectedElementId)
+  if (!!selectionId &amp;&amp; !!displayName) {
+    var textLabelElement = kaavio.$element.select('#text-for-' + selectionId)
       .select('text').text(displayName);
   }
 }
@@ -380,7 +378,7 @@ module.exports = annotationTab;
         
 
         <footer>
-            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Mon May 18 2015 21:46:50 GMT-0700 (PDT)
+            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Tue May 26 2015 22:21:48 GMT-0700 (PDT)
         </footer>
     </div>
 </div>

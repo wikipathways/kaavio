@@ -86,16 +86,6 @@ var m = require('mithril');
 var mithrilUtils = require('../../../../mithril-utils');
 var simpleModal = require('simple-modal');
 var Spinner = require('spin.js');
-/*
-System.import('../../../../../jspm_packages/npm/simple-modal@0.1.4/lib/index.coffee!')
-  .then(function (simpleModal) {
-    var t = new simpleModal('Test');
-    console.log(t);
-  })
-//*/
-//var simpleModal = require('simple-modal/index');
-//var simpleModal = require('simple-modal/lib/index.coffee!');
-//var simpleModal = {};
 
 module.exports = function(annotationTab) {
 
@@ -127,7 +117,8 @@ module.exports = function(annotationTab) {
           deferred.resolve();
           //the service is done, tell Mithril that it may redraw
           m.endComputation();
-        }, 1500);
+        }, xrefSearch.modalOpenDelay);
+
         //m.module(document.querySelector('.simple-modal-content'), xrefSearchResults);
         /*
         //set up simpleModalComponent (only if not initialized already)
@@ -166,7 +157,7 @@ module.exports = function(annotationTab) {
         buttons: [{
           text:'Cancel',
           closeOnClick: true,
-          callback: xrefSearch.vm.onClose
+          callback: xrefSearch.vm.reset
         }]
       });
     }
@@ -212,12 +203,20 @@ module.exports = function(annotationTab) {
 
   xrefSearch.ModalList = Array;
 
+  // how long to wait (ms) before opening modal
+  xrefSearch.modalOpenDelay = 1500;
+
   //the view-model tracks a running list of xrefs,
   //stores a query for new xrefs before they are created
   //and takes care of the logic surrounding when searching is permitted
   //and clearing the input after searching a xref to the list
   xrefSearch.vm = (function() {
     var vm = {}
+
+    vm.changeStateToGlyphiconMappings = {
+      'true': 'btn-success',
+      'false': 'btn-default'
+    };
 
     vm.init = function(kaavio) {
       vm.spinner = kaavio.spinner;
@@ -249,14 +248,6 @@ module.exports = function(annotationTab) {
       //a slot to store the name of a new xref before it is created
       vm.query = m.prop('');
 
-      //react to the user closing the modal
-      vm.onClose = function() {
-        vm.xrefList = m.prop([]);
-        vm.modalList = new xrefSearch.ModalList();
-        // clears the query field for user convenience
-        vm.query('');
-      };
-
       //react to the user selecting an xref in the modal
       vm.selectXref = function(xref) {
         xref.id = xref['@id'];
@@ -272,27 +263,36 @@ module.exports = function(annotationTab) {
           kaavio.sourceData.pvjson.elements.push(xref);
         }
 
-        var selectedPvjsElement = kaavio.diagramComponent.vm.selectedPvjsElement();
-        selectedPvjsElement.textContent = xref.displayName;
-        kaavio.diagramComponent.vm.selectedPvjsElement(selectedPvjsElement);
-        /*
-        var entity = editorUtils.createAnnotationEntity(
-            xref, kaavio.diagramComponent.vm.selectedPvjsElement());
-        annotationTab.vm.updateControlValues(entity);
-        //*/
-        annotationTab.vm.updateControlValues(selectedPvjsElement, xref);
+        var pvjsElement = kaavio.diagramComponent.vm.selection().pvjsElement();
+        pvjsElement.textContent = xref.displayName;
+        kaavio.diagramComponent.vm.selection().pvjsElement(pvjsElement);
 
-        vm.onClose();
+        var annotationTab = kaavio.editor.editorTabsComponent.annotationTab;
+        var annotationElement = new annotationTab.AnnotationElement(pvjsElement, xref);
+        annotationTab.vm.updateControlValues(annotationElement);
+
+        vm.reset();
       };
 
       // searches for xrefs, which are added to the list
       vm.search = function() {
-        if (vm.query()) {
+        if (!_.isEmpty(vm.query())) {
           vm.modalList.push(new xrefSearch.XrefList(vm.query()));
           vm.spinner.spinDefault();
         }
       };
+
+      vm.reset = function() {
+        xrefSearch.vm.spinner.stop();
+        // clears the query field for user convenience
+        vm.query('');
+        // TODO refactor the below line - shouldn't need to do this.
+        document.querySelector('#xref-search-input').value = '';
+        vm.xrefList = m.prop([]);
+        vm.modalList = new xrefSearch.ModalList();
+      };
     }
+
     return vm
   }());
 
@@ -306,8 +306,10 @@ module.exports = function(annotationTab) {
   xrefSearch.view = function() {
     return m('div.form-search.form-group', [
       m('div.input-group.input-group-sm.form-control', [
-        m('input[placeholder="Search by name"][type="text"].form-control', {
-          onblur: m.withAttr('value', xrefSearch.vm.query),
+        m('input[placeholder="Search by name"][type="text"]', {
+          'id': 'xref-search-input',
+          'class': 'form-control',
+          onchange: m.withAttr('value', xrefSearch.vm.query),
           value: xrefSearch.vm.query(),
           disabled: xrefSearch.vm.disabled()
         }),
@@ -315,19 +317,29 @@ module.exports = function(annotationTab) {
           onclick: xrefSearch.vm.search,
           style: xrefSearch.vm.disabled() ? 'pointer-events: none; ' : null
         },
-          m('button[type="submit"].btn.btn-success', [
+          m('button[type="submit"]', {
+            'class': 'btn ' +
+                xrefSearch.vm.changeStateToGlyphiconMappings[!xrefSearch.vm.disabled()]
+          }, [
             m('span[aria-hidden="true"].glyphicon.glyphicon-search')
           ])),
         xrefSearch.vm.modalList.map(function(xrefList, index) {
-          // TODO shouldn't these not be in the view?
-          xrefSearch.vm.spinner.stop();
           var xrefs = xrefList.xrefs();
           if (!!xrefs &amp;&amp; !!xrefs.length &amp;&amp; xrefs.length > 0) {
+            xrefSearch.vm.spinner.stop();
             return simpleModalComponent.view(xrefList);
           } else {
-            xrefSearch.trigger('warning.xrefSearch',
-                {message: 'Your search "' + xrefSearch.vm.query() + '" did not match any xrefs.'});
-            return;
+            window.setTimeout(function() {
+              xrefs = xrefList.xrefs();
+              if (!_.isEmpty(xrefSearch.vm.query()) &amp;&amp; (!xrefs || !xrefs.length)) {
+                xrefSearch.trigger('warning.xrefSearch',
+                    {message: 'Your search "' + xrefSearch.vm.query() +
+                        '" did not match any identifiers.'});
+              }
+              // TODO the handling of no results returned is ugly.
+              xrefSearch.vm.reset();
+              return;
+            }, xrefSearch.modalOpenDelay + 1500);
           }
         })
       ])
@@ -354,7 +366,7 @@ module.exports = function(annotationTab) {
         
 
         <footer>
-            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Mon May 18 2015 21:46:50 GMT-0700 (PDT)
+            Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha9</a> on Tue May 26 2015 22:21:48 GMT-0700 (PDT)
         </footer>
     </div>
 </div>
