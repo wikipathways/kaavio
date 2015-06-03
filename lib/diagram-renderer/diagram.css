@@ -1,6 +1,6 @@
   .diagram-container {
     width: inherit;
-    height: calc(100% - 4px);
+    height: calc(100% - 0px);
     text-align: center;
     /* To avoid covering up the resize handle (grab area) */
     border-bottom-right-radius: 1em 1em;
@@ -8,7 +8,7 @@
   }
 
   .diagram-container.footer-open {
-    height: calc(100% - 134px);
+    height: calc(100% - 124px);
   }
 
 	svg {
