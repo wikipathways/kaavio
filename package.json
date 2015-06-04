@@ -47,9 +47,11 @@
   ],
   "devDependencies": {
     "bdd-with-opts": "0.0.4",
+    "brfs": "^1.4.0",
     "chai": "~2.1.2",
     "chai-as-promised": "latest",
     "connect": "~2.14.3",
+    "deglobalify": "^0.2.0",
     "ecstatic": "~0.5.8",
     "event-stream": "~3.1.7",
     "express": "~3.4.7",
@@ -74,8 +76,8 @@
     "selenium-launcher": "git://github.com/ariutta/nodejs-selenium-launcher",
     "selenium-standalone": "~2.44.0-7",
     "spawn-mocha-parallel": "~1.0.0",
-    "workflow-bob": "git://github.com/ariutta/workflow-bob.git",
     "wd": "~0.3.11",
+    "workflow-bob": "git://github.com/ariutta/workflow-bob.git",
     "yargs": "~1.2.6"
   },
   "dependencies": {
