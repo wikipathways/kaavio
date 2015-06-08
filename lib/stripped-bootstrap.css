@@ -369,7 +369,7 @@ select.input-sm {
 
 .navbar-right {
   float: right!important;
-  margin-right: -15px;
+  margin-right: 5px;
 }
 
 @media (min-width: 768px)
