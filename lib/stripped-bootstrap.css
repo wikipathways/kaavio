@@ -93,6 +93,10 @@ th {
   content: "\e113";
 }
 
+.glyphicon-chevron-down:before {
+  content: "\e114";
+}
+
 .nav-tabs {
   border-bottom: 1px solid #ddd;
 }
