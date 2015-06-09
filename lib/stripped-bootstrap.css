@@ -407,6 +407,10 @@ select.input-sm {
   background-color: #777;
 }
 
+.label-default>a:hover {
+  text-decoration: none;
+}
+
 .label {
   display: inline;
   padding: .4em .6em .3em;
