@@ -336,6 +336,12 @@ button {
   border-color: #4cae4c;
 }
 
+.btn-close {
+  color: #777;
+  background-color: fff;
+  border-color: #ccc;
+}
+
 .btn-default {
   color: #333;
   background-color: #fff;
