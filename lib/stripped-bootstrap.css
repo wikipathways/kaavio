@@ -11,10 +11,6 @@ table {
   background-color: transparent;
 }
 
-th {
-  text-align: left;
-}
-
 .simple-modal-title {
   margin: 0px 0px 0px 0px;
   padding-bottom: 5px;
@@ -382,7 +378,7 @@ select.input-sm {
 
 .navbar-right {
   float: right!important;
-  margin-right: -9px;
+  margin-right: -10px;
 }
 
 @media (min-width: 768px)
