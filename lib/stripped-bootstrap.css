@@ -11,12 +11,6 @@ table {
   background-color: transparent;
 }
 
-.simple-modal-title {
-  margin: 0px 0px 0px 0px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #eee;
-}
-
 .simple-modal-overlay {
   opacity: 0.4;
   background-color: #fff;
