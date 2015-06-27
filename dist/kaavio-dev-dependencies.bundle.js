@@ -1753,14 +1753,14 @@ var css = '\
 \
 \
 .simple-modal-overlay {\
-  opacity: 0.8;\
+  opacity: 0.4;\
   position: fixed;\
   top: 0;\
   right: 0;\
   bottom: 0;\
   left: 0;\
   z-index: 1050;\
-  background-color: #000000;\
+  background-color: #fff;\
 }\
 '; (require("/Users/andersriutta/Sites/kaavio/node_modules/simple-modal/node_modules/cssify"))(css); module.exports = css;
 }).call(this,require("FWaASH"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/simple-modal/lib/style.css","/node_modules/simple-modal/lib")
