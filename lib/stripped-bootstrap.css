@@ -240,7 +240,6 @@ box-shadow: none;
 .input-group .form-control {
   position: relative;
   z-index: 2;
-  float: left;
   width: 100%;
   margin-bottom: 0;
 }
@@ -258,7 +257,6 @@ box-shadow: none;
 }
 
 .input-group .form-control, .input-group-addon, .input-group-btn {
-  display: table-cell;
 }
 
 .input-group-btn:last-child>.btn, .input-group-btn:last-child>.btn-group {
