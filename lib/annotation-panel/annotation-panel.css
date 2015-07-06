@@ -130,9 +130,12 @@ header.annotation-header {
   padding: 0px;
   display: inline;
   margin: 0 5px 0 auto;
-  color: blue;
   font-size: 9pt;
   text-decoration: none;
+}
+
+a.annotation-item-text {
+  color: blue;
 }
 
 .annotation-item-text:hover {
@@ -142,10 +145,4 @@ header.annotation-header {
 
 .tooltip {
   font-size: 8pt;
-}
-
-.icon-search {
-  color:blue;
-  font-size:50%;
-  text-decoration:none;
 }
