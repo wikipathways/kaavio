@@ -9,6 +9,7 @@
   background-color: white;
   font-family: Helvetica, sans-serif, Arial;
   resize: both;
+  overflow: hidden;
   display: block;
 }
 
