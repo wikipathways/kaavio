@@ -169,7 +169,7 @@ box-shadow: none;
 }
 
 .navbar-form {
-  padding: 8px 20px;
+  padding: 12px 20px;
   margin-right: -15px;
   margin-left: -15px;
   border-top: 1px solid transparent;
@@ -370,7 +370,7 @@ select.input-sm {
 
 .navbar-right {
   float: right!important;
-  margin-right: -12px;
+  margin-right: -8px;
 }
 
 @media (min-width: 768px)
