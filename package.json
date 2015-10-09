@@ -103,7 +103,7 @@
     "simple-modal": "~0.1.4",
     "spectrum-colorpicker": "~1.6.1",
     "spin.js": "~2.0.2",
-    "svg-pan-zoom": "git://github.com/ariutta/svg-pan-zoom.git",
+    "svg-pan-zoom": "^3.2.3",
     "tower-strcase": "~0.5.0",
     "typeahead.js": "~0.10.5"
   }
