@@ -4,16 +4,16 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
 
-    <title>Pathvisiojs Simple Built Production Example</title>
+    <title>Pathvisi.min.js Simple Built Production Example</title>
 
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" media="screen">
 
     <!--[if lt IE 9]>
     <script>
 
-      // pvjs won't run on IE8 and earlier
-      var pathvisiojs = {};
-      pathvisiojs.init = {};
+      // p.min.js won't run on IE8 and earlier
+      var pathvisi.min.js = {};
+      pathvisi.min.js.init = {};
 
       // IE8 only allows console.log when Developer Tools is open. This will prevent errors
       // from showing up if I use console.log without DevTools being open.
@@ -46,16 +46,16 @@
   <body style="margin: 0; width: 100%; height: 100%; ">
     <div id="production-container" style="width:inherit; height:inherit; margin:0; overflow:hidden;">
     </div>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.10.2/typeahead.bundle.min.js"></script>
+    <script src="//cd.min.js.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js"></script>
+    <script src="//cd.min.js.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="//cd.min.js.cloudflare.com/ajax/libs/typeahead.min.js/0.10.2/typeahead.bundle.min.js"></script>
 
-    <script src="../../lib/kaavio/kaavio-polyfills-2.3.10.bundle.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script src="../../lib/kaavio/kaavio-2.3.10.bundle.min.js"></script>
+    <script src="../../lib/kaavio/kaavio-polyfills-dev.bundle.min.js"></script>
+    <script src="//cd.min.js.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="//cd.min.js.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="../../lib/kaavio/kaavio-dev.bundle.min.js"></script>
 
-    <script src="./js/load.js"></script>
+    <script src="..min.js/load.min.js"></script>
 
     <script>
     window.addEventListener('load',
@@ -64,10 +64,10 @@
         developmentLoader.parseUriParams(function(parsedInputData) {
 
           /* *******************
-          /* Load pvjs
+          /* Load p.min.js
           /* *******************/
           $(function(){
-            $('#production-container').pvjs({
+            $('#production-container').p.min.js({
               fitToContainer: true
               , manualRender: true
               , sourceData: parsedInputData.sourceData
@@ -89,15 +89,15 @@
             })
 
             // Get first element from array of instances
-            var pathInstance = $('#production-container').pvjs('get').pop()
+            var pathInstance = $('#production-container').p.min.js('get').pop()
 
             // Load plugins
-            pathvisiojsNotifications(pathInstance, {displayErrors: true, displayWarnings: true})
+            pathvisi.min.jsNotifications(pathInstance, {displayErrors: true, displayWarnings: true})
 
             // Call after render
             pathInstance.on('rendered', function(){
               // Initialize Highlighter plugin
-              var hi = pathvisiojsHighlighter(pathInstance)
+              var hi = pathvisi.min.jsHighlighter(pathInstance)
 
               /*
               // Highlight by Label
