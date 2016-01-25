@@ -2,7 +2,7 @@
   "author": "WikiPathways team",
   "name": "kaavio",
   "description": "Diagram viewer and editor with Linked Open Data capabilities",
-  "version": "2.3.11",
+  "version": "2.3.13",
   "homepage": "http://wikipathways.github.io/kaavio/",
   "dependencies": {
     "aight": "~1.2.2",
