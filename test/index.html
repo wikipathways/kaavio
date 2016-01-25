@@ -93,9 +93,9 @@ http://google-styleguide.googlecode.com/svn/trunk/jsoncstyleguide.xml#General_Gu
 
     testPathways.forEach(function(testPathway) {
         if (!!testPathway && !!testPathway.gpml && testPathway.gpml.indexOf('.gpml') > -1) {
-          $('#test-pathway-list').append('<li>' + testPathway.title + ': <a href="./one-diagram.html?gpml=' + testPathway.gpml + '">Development</a></li>');
+          $('#test-pathway-list').append('<li>' + testPathway.title + ': <a href="./browser-tests/one-diagram.html?gpml=' + testPathway.gpml + '">Development</a></li>');
         } else {
-          $('#test-pathway-list').append('<li>' + testPathway.title + ': <a href="./prod-vs-dev.html?gpml=' + testPathway.gpml + '">Production-vs-Development</a> || <a href="./one-diagram.html?gpml=' + testPathway.gpml + '">Development Only</a></li>');
+          $('#test-pathway-list').append('<li>' + testPathway.title + ': <a href="./browser-tests/prod-vs-dev.html?gpml=' + testPathway.gpml + '">Production-vs-Development</a> || <a href="./browser-tests/one-diagram.html?gpml=' + testPathway.gpml + '">Development Only</a></li>');
         }
     });
   </script>

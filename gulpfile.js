@@ -10,3 +10,4 @@
 */
 
 require('./gulp');
+require('./node_modules/workflow-bob/index.js');
