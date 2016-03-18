@@ -127,6 +127,11 @@ header.annotation-header {
   font-weight: bold;
 }
 
+.annotation-item-title:hover {
+text-decoration: none;
+cursor: none;
+}
+
 .annotation-item-text {
   padding: 0px;
   display: inline;
