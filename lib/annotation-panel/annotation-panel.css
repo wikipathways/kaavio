@@ -127,11 +127,6 @@ header.annotation-header {
   font-weight: bold;
 }
 
-.annotation-item-title:hover {
-text-decoration: none;
-cursor: none;
-}
-
 .annotation-item-text {
   padding: 0px;
   display: inline;
@@ -144,7 +139,7 @@ a.annotation-item-text {
   color: blue;
 }
 
-.annotation-item-text:hover {
+a.annotation-item-text:hover {
   text-decoration: underline;
   cursor: pointer;
 }
