@@ -66,6 +66,8 @@ header.annotation-header {
   margin: 0 0 0 auto;
   font-size: 14px;
   font-style:italic;
+  padding-left: 23.093px; /*hack to fix center alignment, adjusting for the width of the close icon*/
+
 }
 
 .annotation-items-container {
@@ -139,7 +141,7 @@ a.annotation-item-text {
   color: blue;
 }
 
-.annotation-item-text:hover {
+a.annotation-item-text:hover {
   text-decoration: underline;
   cursor: pointer;
 }
