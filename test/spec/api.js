@@ -29,11 +29,23 @@ describe('Public API', function() {
 
   it('init', function() {
     var containerElement = document.createElement('div');
+    document.body.appendChild(containerElement);
     var kaavioInstance = new Kaavio(containerElement, {
       pvjson: {}
     });
     expect(kaavioInstance).to.be.instanceof(Kaavio);
     expect(kaavioInstance).to.respondTo('init');
-    expect(kaavioInstance).to.respondTo('init');
   });
+
+  it('mount', function() {
+    var containerElement = document.createElement('div');
+    document.body.appendChild(containerElement);
+    var kaavioInstance = new Kaavio(containerElement, {
+      pvjson: {}
+    });
+    m.mount(containerElement, kaavioInstance);
+    var kaavioElement = document.querySelector('.kaavio-container');
+    expect(kaavioElement.tagName).to.equal('DIV');
+  });
+
 });

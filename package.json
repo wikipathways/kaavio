@@ -51,7 +51,7 @@
     "JSONStream": "~0.10.0",
     "ariutta-loading": "^1.0.0",
     "brfs": "^1.4.3",
-    "bridgedb": "git://github.com/bridgedb/bridgedbjs.git#3f53a3853b01c9ab0ffc4f367cb4dcfc4f266074",
+    "bridgedb": "git://github.com/bridgedb/bridgedbjs.git#04faa7d2b15f15b54ec312b43d7b830af4d4dd0d",
     "cross-platform-shapes": "git://github.com/ariutta/cross-platform-shapes.git#1.1.0",
     "cross-platform-text": "git://github.com/ariutta/cross-platform-text.git#0.0.14",
     "csv-streamify": "~2.0.0",
