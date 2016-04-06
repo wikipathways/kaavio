@@ -69,7 +69,7 @@
     "mithril": "^0.2.0",
     "promisescript": "~1.1.0",
     "resolve-url": "~0.2.1",
-    "rx": "^2.5.2",
+    "rx-extra": "git://github.com/ariutta/rx-extra.git#14e71f122845b0195dec674c1452c661a6e6a34f",
     "rx-node": "^1.0.1",
     "select2": "~3.5.2-browserify",
     "spectrum-colorpicker": "~1.6.1",
