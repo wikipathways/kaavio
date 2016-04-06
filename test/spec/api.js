@@ -15,11 +15,13 @@ require('./setup')
 
 // Run tests
 describe('Public API', function() {
+  var $;
   var d3;
   var Kaavio;
   var m;
 
   before(function() {
+    //$ = window.$ = require('jquery');
     d3 = window.d3 = require('d3');
     m = window.m = require('mithril');
     //require('../../dist/kaavio-dev-polyfills.bundle.js');
@@ -41,7 +43,7 @@ describe('Public API', function() {
     var containerElement = document.createElement('div');
     document.body.appendChild(containerElement);
     var kaavioInstance = new Kaavio(containerElement, {
-      pvjson: {}
+      pvjson: require('../inputs/WP1_73346.json')
     });
     m.mount(containerElement, kaavioInstance);
     var kaavioElement = document.querySelector('.kaavio-container');
