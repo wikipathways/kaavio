@@ -10,12 +10,16 @@
     "transform": [
       "brfs",
       "deglobalify"
+    ],
+    "ignore": [
+      "jquery"
     ]
   },
   "browser": {
     "cheerio": false,
     "commander": false,
-    "d3": false
+    "d3": false,
+    "jquery": false
   },
   "directories": {
     "test": "test",
@@ -51,7 +55,7 @@
     "JSONStream": "~0.10.0",
     "ariutta-loading": "^1.0.0",
     "brfs": "^1.4.3",
-    "bridgedb": "git://github.com/bridgedb/bridgedbjs.git#ac7874a1f1248d89feadc8ed491c7e14585bbd3e",
+    "bridgedb": "git://github.com/bridgedb/bridgedbjs.git#4065cc8e575d3c6650b179017d9d8e505779ce5a",
     "cross-platform-shapes": "git://github.com/ariutta/cross-platform-shapes.git#1.1.0",
     "cross-platform-text": "git://github.com/ariutta/cross-platform-text.git#0.0.14",
     "csv-streamify": "~2.0.0",
@@ -63,12 +67,13 @@
     "hyperquest": "^1.2.0",
     "iconv-lite": "~0.4.7",
     "insert-css": "~0.2.0",
-    "jsonld-rx-extra": "git://github.com/ariutta/jsonld-rx-extra.git#15025526dc8f04ad9b83046ded747cdb54852de3",
+    "jquery": "^1.12.3",
+    "jsonld-rx-extra": "git://github.com/ariutta/jsonld-rx-extra.git#c4f1da867abfb03b103c7afce1b619003d334597",
     "lodash": "^3.5.0",
     "mithril": "^0.2.0",
     "promisescript": "~1.1.0",
     "resolve-url": "~0.2.1",
-    "rx-extra": "git://github.com/ariutta/rx-extra.git#9a562eed117c96ff62f75981bd334f075af51dfc",
+    "rx-extra": "git://github.com/ariutta/rx-extra.git#ac954882fddcf03f9bf29919b597c63e93ab3a53",
     "rx-node": "^1.0.1",
     "select2": "~3.5.2-browserify",
     "spectrum-colorpicker": "~1.6.1",
