@@ -52,7 +52,6 @@
     "./src/components/**/*.css"
   ],
   "dependencies": {
-    "JSONStream": "~0.10.0",
     "ariutta-loading": "^1.0.0",
     "brfs": "^1.4.3",
     "cross-platform-shapes": "git://github.com/ariutta/cross-platform-shapes.git#1.1.0",
@@ -67,6 +66,8 @@
     "iconv-lite": "~0.4.7",
     "insert-css": "~0.2.0",
     "jquery": "^1.12.3",
+    "jsonld-rx-extra": "git://github.com/ariutta/jsonld-rx-extra#eff25cedd4c007fb3f59e2d2d1ff07c53a3bd0ec",
+    "JSONStream": "~0.10.0",
     "lodash": "^3.5.0",
     "mithril": "^0.2.0",
     "promisescript": "~1.1.0",
