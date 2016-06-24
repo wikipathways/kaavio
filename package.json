@@ -67,7 +67,7 @@
     "insert-css": "~0.2.0",
     "jquery": "^1.12.3",
     "jsonld-rx-extra": "git://github.com/ariutta/jsonld-rx-extra#961f6543aa160e0595b6e91d6261a90b27dfa67b",
-    "JSONStream": "~0.10.0",
+    "JSONStream": "^1.0.4",
     "lodash": "^3.5.0",
     "mithril": "^0.2.0",
     "promisescript": "~1.1.0",
