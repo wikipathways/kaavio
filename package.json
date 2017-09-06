@@ -1,42 +1,39 @@
 {
-  "name": "kaavio",
-  "version": "2.3.13",
-  "description": "Diagram viewer and editor.",
-  "main": "./lib/index.js",
-  "engines": {
-    "node": ">= 0.10.0"
-  },
-  "browserify": {
-    "transform": [
-      "brfs",
-      "deglobalify"
-    ],
-    "ignore": [
-      "jquery"
-    ]
+  "name": "@wikipathways/kaavio",
+  "version": "3.7.5-beta",
+  "description": "Diagram viewer and editor for biological pathways.",
+  "main": "dist/index.js",
+  "module": "lib/index.js",
+  "jsnext:main": "lib/index.",
+  "typings": "lib/index",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "npm-run-all build:lib build:dist",
+    "build:dist": "rimraf ./dist && webpack --config webpack.prod.config.js",
+    "compile": "rimraf ./lib && tsc --project tsconfig.json && npm run assets",
+    "assets": "npm run gulp copy:assets",
+    "test:e2e": "npm run serve && npm run serve:bundle",
+    "serve": "webpack-dev-server --config webpack.dev.config.js --open --progress --inline",
+    "start": "npm run serve",
+    "test": "echo 'get some tests working'",
+    "gulp": "gulp",
+    "watch": "rimraf ./lib && npm run assets && npm-run-all watch:*",
+    "watch:compile": "tsc --project tsconfig.json --watch"
   },
   "browser": {
-    "cheerio": false,
-    "commander": false,
-    "d3": false,
-    "jquery": false
-  },
-  "directories": {
-    "test": "test",
-    "lib": "lib",
-    "packages": "jspm_packages"
-  },
-  "scripts": {
-    "test": "mocha test/spec/api.js"
+    "commander": false
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/wikipathways/kaavio.git"
   },
   "keywords": [
+    "kaavio",
     "network",
-    "node",
-    "edge",
     "diagram"
   ],
   "author": "WikiPathways team",
@@ -44,107 +41,76 @@
   "bugs": {
     "url": "https://github.com/wikipathways/kaavio/issues"
   },
-  "homepage": "http://wikipathways.github.io/kaavio",
-  "gitHead": "044be6618ee72b932fcb90f4369eb61706f3cfb9",
-  "readmeFilename": "README.md",
-  "style": [
-    "./src/css/*.css",
-    "./src/components/**/*.css"
-  ],
+  "homepage": "https://wikipathways.github.io/kaavio/docs/",
   "dependencies": {
-    "ariutta-loading": "^1.0.0",
-    "cross-platform-shapes": "git://github.com/ariutta/cross-platform-shapes.git#1.1.0",
-    "cross-platform-text": "git://github.com/ariutta/cross-platform-text.git#0.0.14",
-    "csv-streamify": "~2.0.0",
-    "custom-event-polyfill": "~0.1.2",
-    "d3": "^3.5.16",
-    "element-resize-detector": "~0.1.4",
-    "highland": "~2.3.0",
-    "hyperquest": "^1.2.0",
-    "iconv-lite": "~0.4.7",
-    "insert-css": "~0.2.0",
-    "jquery": "^1.12.3",
-    "jsonld-rx-extra": "git://github.com/ariutta/jsonld-rx-extra#961f6543aa160e0595b6e91d6261a90b27dfa67b",
-    "JSONStream": "^1.0.4",
-    "lodash": "^3.5.0",
-    "mithril": "^0.2.0",
-    "promisescript": "~1.1.0",
-    "resolve-url": "~0.2.1",
-    "rx-extra": "git://github.com/ariutta/rx-extra.git#117359e7101c328187c648637c38c69aa60751d2",
-    "spin.js": "~2.0.2",
-    "svg-pan-zoom": "git://github.com/ariutta/svg-pan-zoom.git",
-    "tower-strcase": "~0.5.0",
-    "typeahead.js": "~0.10.5"
+    "commander": "^2.11.0",
+    "csstips": "^0.2.0",
+    "csx": "^8.2.1",
+    "highland": "^2.11.1",
+    "js-base64": "^2.1.9",
+    "json-stringify-safe": "^5.0.1",
+    "lodash": "^4.14.36",
+    "ndjson": "^1.5.0",
+    "react": "^15.6.0",
+    "react-addons-css-transition-group": "^15.6.0",
+    "react-addons-shallow-compare": "^15.4.1",
+    "react-dom": "^15.5.4",
+    "react-selectize": "^2.1.0",
+    "react-spinkit": "^3.0.0",
+    "roboto-fontface": "^0.7.0",
+    "rx-extra": "^2.0.3",
+    "rxjs": "^5.2.0",
+    "source-map-support": "^0.4.17",
+    "svg-pan-zoom": "^3.5.2",
+    "typestyle": "^0.22.3",
+    "url-loader": "^0.5.8",
+    "valid-data-url": "^0.1.4",
+    "verror": "^1.10.0",
+    "web-animations-js": "^2.2.2"
   },
   "devDependencies": {
-    "bdd-with-opts": "0.0.4",
-    "chai": "~2.1.2",
-    "chai-as-promised": "latest",
-    "connect": "~2.14.3",
-    "ecstatic": "~0.5.8",
-    "event-stream": "~3.1.7",
-    "express": "~3.4.7",
-    "freeport": "~1.0.4",
-    "gulp": "~3.8.11",
-    "gulp-changed": "~0.3.0",
-    "gulp-mocha": "~0.5.1",
-    "gulp-sequence": "~0.3.1",
-    "highland": "~2.3.0",
-    "inquirer": "~0.8.0",
-    "jquery": "^1.12.3",
-    "jsdom": "^8.3.0",
-    "loggin": "^3.0.1",
-    "matchdep": "~0.1.2",
-    "minimize": "~0.7.6",
-    "mkdirp": "^0.5.1",
-    "mocha": "~1.18.2",
-    "mocha-jsdom": "^1.1.0",
-    "mockserver": "~1.1.0",
-    "node-notifier": "~4.0.3",
-    "pretty-data": "~0.40.0",
-    "pretty-hrtime": "~0.2.1",
-    "prompt": "~0.2.13",
-    "q": "~1.0.1",
-    "reload": "~0.1.0",
-    "selenium-launcher": "git://github.com/ariutta/nodejs-selenium-launcher",
-    "selenium-standalone": "~2.44.0-7",
-    "sinon": "^1.17.3",
-    "spawn-mocha-parallel": "~1.0.0",
-    "wd": "~0.3.11",
-    "workflow-bob": "git://github.com/ariutta/workflow-bob.git",
-    "yargs": "~1.2.6"
+    "@types/js-base64": "^2.1.5",
+    "@types/node": "^6.0.73",
+    "@types/react": "^15.0.28",
+    "@types/react-dom": "^0.14.23",
+    "copyfiles": "^1.2.0",
+    "extract-text-webpack-plugin": "^2.1.0",
+    "gulp": "^3.9.1",
+    "gulp-clean-css": "^3.4.0",
+    "gulp-concat-css": "^2.3.0",
+    "gulp-copy": "^1.0.0",
+    "npm-run-all": "^2.1.1",
+    "rimraf": "^2.6.1",
+    "style-loader": "^0.16.1",
+    "svg-url-loader": "^2.0.2",
+    "ts-loader": "^2.1.0",
+    "typescript": "2.2.0",
+    "webpack": "^2.6.1",
+    "webpack-dev-server": "^1.16.5",
+    "webpack-hot-middleware": "^2.18.0"
   },
   "semverBumper": {
     "jsonFiles": [
       {
         "filepath": "package.json",
         "key": "version"
-      },
-      {
-        "filepath": "bower.json",
-        "key": "version"
       }
     ],
     "grepOptions": {
       "include": [],
       "exclude": [
-        "config.js",
-        "old-gulpfile.js",
-        "phantomjsdriver.log"
+        ".git",
+        "jsdoc-conf.json",
+        "npm-debug.log"
       ],
       "excludeDir": [
         "./docs",
         "./test",
         "./bower_components",
         "./lib",
-        "./old-gulp",
         "./demo",
-        "./old-demo",
-        "./tmp",
-        "./jspm_packages",
-        "./external-data",
-        "./dist",
-        "./.git"
+        "./gulp",
+        "./dist"
       ]
     }
   }

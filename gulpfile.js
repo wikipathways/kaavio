@@ -1,13 +1,15 @@
-/*
-	gulpfile.js
-	===========
-	Rather than manage one giant configuration file responsible
-	for creating multiple tasks, each task has been broken out into
-	its own file in gulp/tasks. Any file in that folder gets automatically
-	required by the loop in ./gulp/index.js (required below).
+var gulp = require('gulp');
+var copy = require('gulp-copy');
+var concatCss = require('gulp-concat-css');
+var cleanCSS = require('gulp-clean-css');
 
-	To add a new task, simply add a new task file to gulp/tasks.
-*/
+// Copy all assets that aren't js or ts
+gulp.task('copy:assets', function() {
+    return gulp.src('./src/**/!(*.ts|*.tsx|*.js|*.jsx|*.map|*.log)')
+        .pipe(copy('./lib', {
+            prefix: 1 // Remove the src part of the path
+        }))
+});
 
-require('./gulp');
-require('./node_modules/workflow-bob/index.js');
+// The default task (called when you run `gulp` from cli)
+gulp.task('default', ['copy:assets']);

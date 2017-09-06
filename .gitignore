@@ -17,3 +17,4 @@ dist/
 jspm_packages/
 logs/
 typings
+lib/
