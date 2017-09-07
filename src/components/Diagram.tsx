@@ -1,9 +1,27 @@
 import "source-map-support/register";
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import * as _ from "lodash";
+import { Base64 } from "js-base64";
+import {
+  defaults,
+  find,
+  intersection,
+  keys,
+  forOwn,
+  omitBy,
+  toPairs,
+  uniq,
+  values
+} from "lodash";
 import { Entity } from "./Entity";
-import { Observable } from "rxjs";
+import { Observable } from "rxjs/Observable";
+import { AjaxRequest } from "rxjs/observable/dom/AjaxObservable";
+import "rxjs/add/observable/dom/ajax";
+import "rxjs/add/observable/from";
+import "rxjs/add/observable/of";
+import "rxjs/add/operator/do";
+import "rxjs/add/operator/map";
+import "rxjs/add/operator/mergeMap";
 import * as validDataUrl from "valid-data-url";
 import {
   MARKER_PROPERTY_NAMES,
@@ -12,10 +30,13 @@ import {
 import { getHighlighted } from "../utils/getHighlighted";
 import { getMarkerId, Marker } from "./Marker";
 import { getHidden } from "../utils/getHidden";
+import { IconDefs } from "../IconDefs";
 
 export class Diagram extends React.Component<any, any> {
   constructor(props) {
     super(props);
+    this.state = { ...props };
+    this.state.iconSuffix = new Date().toISOString().replace(/\W/g, "");
   }
 
   handleClick(e) {
@@ -23,10 +44,7 @@ export class Diagram extends React.Component<any, any> {
     const id = e.target.parentNode.parentNode.getAttribute("id");
     const entity = entityMap[id];
     handleClick(
-      _.omitBy(
-        _.defaults({ entity: entity }, e),
-        (v, k) => k.indexOf("_") === 0
-      )
+      omitBy(defaults({ entity: entity }, e), (v, k) => k.indexOf("_") === 0)
     );
   }
 
@@ -78,6 +96,25 @@ export class Diagram extends React.Component<any, any> {
       }, []);
   }
 
+  componentWillReceiveProps(nextProps) {
+    let that = this;
+    const prevProps = that.props;
+    forOwn(nextProps, function(prop, key) {
+      if (key === "filters") {
+        that.setState({
+          [key]: prop
+        });
+      } else if (
+        prop &&
+        JSON.stringify(prevProps[key]) !== JSON.stringify(prop)
+      ) {
+        that.setState({
+          [key]: prop
+        });
+      }
+    });
+  }
+
   getMarkerInputs(zIndexedEntities) {
     const backgroundColor = this.props.backgroundColor;
     const edges = zIndexedEntities.filter(
@@ -102,7 +139,7 @@ export class Diagram extends React.Component<any, any> {
 
     const markerNames = Array.from(
       edges.reduce(function(acc, edge: any) {
-        _.intersection(MARKER_PROPERTY_NAMES, _.keys(edge)).forEach(function(
+        intersection(MARKER_PROPERTY_NAMES, keys(edge)).forEach(function(
           markerLocationType
         ) {
           const markerName: string & NonFuncIriMarkerPropertyValue =
@@ -119,7 +156,7 @@ export class Diagram extends React.Component<any, any> {
     return markerColors
       .map(color => ({ color: color }))
       .reduce(function(acc: any[], partialInput) {
-        const pairs = _.toPairs(partialInput);
+        const pairs = toPairs(partialInput);
         return acc.concat(
           markerBackgroundColors.map(function(markerBackgroundColor) {
             return pairs.reduce(function(subAcc: any, pair) {
@@ -132,7 +169,7 @@ export class Diagram extends React.Component<any, any> {
         );
       }, [])
       .reduce(function(acc: any[], partialInput) {
-        const pairs = _.toPairs(partialInput);
+        const pairs = toPairs(partialInput);
         return acc.concat(
           MARKER_PROPERTY_NAMES.map(function(markerLocationType) {
             return pairs.reduce(function(subAcc: any, pair) {
@@ -145,7 +182,7 @@ export class Diagram extends React.Component<any, any> {
         );
       }, [])
       .reduce(function(acc: any[], partialInput) {
-        const pairs = _.toPairs(partialInput);
+        const pairs = toPairs(partialInput);
         return acc.concat(
           markerNames.map(function(markerName) {
             return pairs.reduce(function(subAcc: any, pair) {
@@ -161,7 +198,7 @@ export class Diagram extends React.Component<any, any> {
 
   render() {
     const {
-      about,
+      id,
       backgroundColor,
       customStyle,
       edgeDrawers,
@@ -174,7 +211,6 @@ export class Diagram extends React.Component<any, any> {
       width,
       zIndices,
       highlightedNodes,
-      icons,
       hiddenEntities
     } = this.props;
 
@@ -189,7 +225,7 @@ export class Diagram extends React.Component<any, any> {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        id={about}
+        id={id}
         version="1.1"
         baseProfile="full"
         preserveAspectRatio="xMidYMid"
@@ -223,6 +259,8 @@ export class Diagram extends React.Component<any, any> {
               </clipPath>
             }
             {filters}
+            <IconDefs />
+
             {markerInputs.map(input => {
               const {
                 markerLocationType,
@@ -266,7 +304,9 @@ export class Diagram extends React.Component<any, any> {
               .map(function(entity) {
                 const highlighted = getHighlighted(entity, highlightedNodes);
                 const hidden = getHidden(entity, hiddenEntities);
-                const icon = icons[entity.drawAs];
+                const icon = entity.drawAs
+                  .replace(/[^\w]/, "")
+                  .match(/[a-zA-Z]\w*/);
                 return (
                   <Entity
                     key={entity.id}
@@ -277,7 +317,6 @@ export class Diagram extends React.Component<any, any> {
                     isHighlighted={highlighted.highlighted}
                     highlightedColor={highlighted.color}
                     highlightedNodes={highlightedNodes}
-                    icons={icons}
                     entityMap={entityMap}
                     hidden={hidden}
                     hiddenEntities={hiddenEntities}

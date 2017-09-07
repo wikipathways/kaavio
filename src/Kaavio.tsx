@@ -53,7 +53,7 @@ export class Kaavio extends React.Component<any, any> {
     } = this.props;
 
     const backgroundColor = customStyle.backgroundColor || "white";
-    const about = "kaavio-container";
+    const id = "kaavio-container";
 
     // This is a port to the legacy use of node_id
     // TODO: Change all references of highlightedNodes to the new highlightedEntities
@@ -87,14 +87,11 @@ export class Kaavio extends React.Component<any, any> {
     // Accessing the diagram ref from the state is a little bit of a hack to get panZoom working.
     // Consider refactoring the panZoom to be truly Reactive and not use refs
     return (
-      <div
-        id={about}
-        className={`kaavio-container ${customStyle.containerClass}`}
-      >
+      <div id={id} className={`kaavio-container ${customStyle.containerClass}`}>
         <Diagram
           ref={diagram =>
             !this.state.diagramRef && this.setState({ diagramRef: diagram })}
-          about={`kaavio-diagram-for-${about}`}
+          id={`kaavio-diagram-for-${id}`}
           name={name}
           width={width}
           height={height}
