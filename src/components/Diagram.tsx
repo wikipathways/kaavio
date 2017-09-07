@@ -30,10 +30,9 @@ import {
 import { getHighlighted } from "../utils/getHighlighted";
 import { getMarkerId, Marker } from "./Marker";
 import { getHidden } from "../utils/getHidden";
-import {
-  formatAsElementId,
-  Icons
-} from "../drawers/icons/__bundled_dont_edit__";
+import * as kaavioStyle from "../kaavio.style";
+import { normalizeElementId } from "../utils/normalizeElementId";
+import { Icons } from "../drawers/icons/__bundled_dont_edit__";
 import * as markerDrawers from "../drawers/markers/__bundled_dont_edit__";
 import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 
@@ -271,9 +270,7 @@ export class Diagram extends React.Component<any, any> {
                 color,
                 markerBackgroundColor
               } = input;
-              const normalizedName = markerDrawers.formatAsElementId(
-                markerName
-              );
+              const normalizedName = normalizeElementId(markerName);
               return (
                 <Marker
                   key={getMarkerId(
@@ -310,20 +307,17 @@ export class Diagram extends React.Component<any, any> {
               .map(function(entity) {
                 const highlighted = getHighlighted(entity, highlightedNodes);
                 const hidden = getHidden(entity, hiddenEntities);
-                const icon = formatAsElementId(entity.drawAs);
                 return (
                   <Entity
                     key={entity.id}
-                    {...entity}
-                    icon={icon ? icon : null}
-                    edgeDrawers={edgeDrawers}
-                    customStyle={customStyle}
                     isHighlighted={highlighted.highlighted}
                     highlightedColor={highlighted.color}
                     highlightedNodes={highlightedNodes}
                     entityMap={entityMap}
                     hidden={hidden}
                     hiddenEntities={hiddenEntities}
+                    edgeDrawers={edgeDrawers}
+                    {...entity}
                   />
                 );
               })}

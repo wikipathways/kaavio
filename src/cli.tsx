@@ -37,11 +37,13 @@ import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 import * as validDataUrl from "valid-data-url";
+import { normalizeElementId } from "./utils/normalizeElementId";
 import { Diagram } from "./components/Diagram";
-import edgeDrawers from "./components/EdgeDrawers";
+import * as edgeDrawers from "./drawers/edges/index";
 // Are the icons and markers are specific to Pvjs (less likely to useful to other applications)?
 // Should they be part of Kaavio?
 import * as markerDrawers from "./drawers/markers";
+import * as customStyle from "./drawers/style/custom.style";
 var npmPackage = require("../package.json");
 
 const exec = hl.wrapCallback(require("child_process").exec);
@@ -85,16 +87,11 @@ function build() {
   }).doto(x => console.log("Build complete."));
 }
 
-function formatAsElementId(str) {
-  return str.toLowerCase().replace(/[^\w]/, "").match(/[a-zA-Z]\w*/);
-}
-
 function setEdges(input) {
   console.log("Setting edges...");
   const normalizedInput = input.toLowerCase();
   const edgeDrawerCode =
     ` import "source-map-support/register";
-			export ${formatAsElementId.toString()};
 			export {${normalizedInput}} from "./index";
 		` + "\n";
 
@@ -113,7 +110,6 @@ function setMarkers(input) {
   const normalizedInput = input.toLowerCase();
   const markerDrawerCode =
     ` import "source-map-support/register";
-			export ${formatAsElementId.toString()};
 			export {${normalizedInput}} from "./index";
 		` + "\n";
 
@@ -130,7 +126,7 @@ function setMarkers(input) {
 
   hl([markerDrawerCode]).pipe(
     fs.createWriteStream(
-      path.join(__dirname, "../src/drawers/markers/__bundled_dont_edit__.ts")
+      path.join(__dirname, "../src/drawers/markers/__bundled_dont_edit__.tsx")
     )
   );
 }
@@ -146,7 +142,7 @@ function setIcons(inputPath) {
           const iconPathComponents = iconPath.split("#");
           const url = iconPathComponents[0];
           const id = iconPathComponents[1];
-          const elementId = formatAsElementId(name);
+          const elementId = normalizeElementId(name);
           // NOTE: data URI parsing is a variation of code from
           // https://github.com/killmenot/parse-data-url/blob/master/index.js
           let svgStringStream;
@@ -201,7 +197,6 @@ function setIcons(inputPath) {
             `import "source-map-support/register";
 							import * as React from "react";
 							import * as ReactDom from "react-dom";
-							export ${formatAsElementId.toString()};
 							export class Icons extends React.Component<any, any> {
 								constructor(props) {
 									super(props);
@@ -300,7 +295,7 @@ program
                 zIndices: input.pathway.contains,
                 //highlightedNodes,
                 //hiddenEntities
-                customStyle: {},
+                customStyle: customStyle,
                 edgeDrawers: edgeDrawers
               },
               null
@@ -341,4 +336,7 @@ if (!process.argv.slice(2).length) {
 
 /*
 ./bin/kaavio set markers 'arrow, tbar'
+./bin/kaavio set icons ./src/drawers/icons/defaultIconMap.json 
+./bin/kaavio set edges 'straightline,curvedline,elbowline,segmentedline'
+./bin/kaavio json2svg ./WP4.json 
 //*/

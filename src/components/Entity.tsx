@@ -8,6 +8,7 @@ import { Group } from "./Group";
 import { Edge } from "./Edge";
 import { getHighlighted } from "../utils/getHighlighted";
 import { getHidden } from "../utils/getHidden";
+import { normalizeElementId } from "../utils/normalizeElementId";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
 
 /**
@@ -68,6 +69,7 @@ export class Entity extends React.Component<any, any> {
       highlightedNodes,
       hiddenEntities
     } = this.props;
+    const normalizedDrawAs = normalizeElementId(drawAs);
     if (!burrs || burrs.length < 1) return;
 
     return burrs
@@ -89,7 +91,7 @@ export class Entity extends React.Component<any, any> {
         } else if (kaavioType === "Edge") {
           // TODO get edge logic working so we can position this better
           // TODO look at current production pvjs to see how this is done
-          const positionXY = edgeDrawers[drawAs].getPointAtPosition(
+          const positionXY = edgeDrawers[normalizedDrawAs].getPointAtPosition(
             points,
             position[0]
           );
@@ -109,7 +111,7 @@ export class Entity extends React.Component<any, any> {
         burr.kaavioType = "Node";
         const highlighted = getHighlighted(burr, highlightedNodes);
         const hidden = getHidden(burr, hiddenEntities);
-        const icon = icons[burr.drawAs];
+        const icon = icons[normalizeElementId(burr.drawAs)];
         return (
           <Entity
             key={burr.id}
@@ -140,12 +142,14 @@ export class Entity extends React.Component<any, any> {
       x,
       y,
       color,
+      drawAs,
       kaavioType,
       customClass,
       isHighlighted,
       highlightedColor,
       hidden
     } = this.props;
+    const normalizedDrawAs = normalizeElementId(drawAs);
     let entityTransform;
     if (x || y || rotation) {
       entityTransform = `translate(${x},${y})`;
@@ -160,13 +164,13 @@ export class Entity extends React.Component<any, any> {
     let child;
     switch (kaavioType) {
       case "Node":
-        child = <Node {...this.props} />;
+        child = <Node icon={normalizedDrawAs} {...this.props} />;
         break;
       case "Edge":
         child = <Edge {...this.props} />;
         break;
       case "Group":
-        child = <Group {...this.props} />;
+        child = <Group icon={normalizedDrawAs} {...this.props} />;
         break;
       default:
         throw new Error(

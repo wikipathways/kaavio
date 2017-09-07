@@ -2,6 +2,7 @@ import { intersection, keys, forOwn } from "lodash";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { getMarkerPropertyValue, MARKER_PROPERTY_NAMES } from "./Marker";
+import { normalizeElementId } from "../utils/normalizeElementId";
 
 export class Edge extends React.Component<any, any> {
   constructor(props) {
@@ -20,7 +21,10 @@ export class Edge extends React.Component<any, any> {
       type
     } = this.props;
 
-    const { getPathSegments, getPointAtPosition } = edgeDrawers[drawAs];
+    const normalizedDrawAs = normalizeElementId(drawAs);
+    const { getPathSegments, getPointAtPosition } = edgeDrawers[
+      normalizedDrawAs
+    ];
     const pathSegments = getPathSegments(points, id);
     const d = pathSegments
       .map(function(pathSegment) {

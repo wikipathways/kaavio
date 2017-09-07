@@ -1,6 +1,7 @@
 /// <reference path="../typings/index.d.ts" />
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { normalizeElementId } from "../utils/normalizeElementId";
 
 export const MARKER_PROPERTY_NAMES: ReadonlyArray<MarkerPropertyName> = [
   "markerStart",
@@ -18,11 +19,8 @@ export function getMarkerId(
   color: string,
   backgroundColor: string
 ): string {
-  return (
-    [markerLocationType, normalizedName, color, backgroundColor]
-      .join("-")
-      // we only want alphanumeric values and dashes in the id
-      .replace(/[^A-Za-z0-9-]/g, "")
+  return normalizeElementId(
+    [markerLocationType, normalizedName, color, backgroundColor].join("")
   );
 }
 

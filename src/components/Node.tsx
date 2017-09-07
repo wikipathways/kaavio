@@ -5,6 +5,7 @@ import * as _ from "lodash";
 import * as validDataUrl from "valid-data-url";
 import { Base64 } from "js-base64";
 import { NodeProps } from "../typings";
+import { normalizeElementId } from "../utils/normalizeElementId";
 
 /**
  * Node is a rectangle within a Kaavio diagram.

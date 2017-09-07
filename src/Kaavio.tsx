@@ -38,9 +38,6 @@ export class Kaavio extends React.Component<any, any> {
       name,
       width,
       height,
-      edgeDrawers,
-      icons,
-      markerDrawers,
       highlightedEntities,
       hiddenEntities,
       zoomedEntities,
@@ -96,12 +93,9 @@ export class Kaavio extends React.Component<any, any> {
           width={width}
           height={height}
           backgroundColor={backgroundColor}
-          edgeDrawers={edgeDrawers}
           entityMap={entityMap}
           filters={filters}
           handleClick={this.handleClick}
-          icons={icons}
-          markerDrawers={markerDrawers}
           zIndices={zIndices}
           customStyle={customStyle}
           highlightedNodes={highlightedEntitiesLegacy}
