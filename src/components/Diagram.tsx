@@ -30,7 +30,12 @@ import {
 import { getHighlighted } from "../utils/getHighlighted";
 import { getMarkerId, Marker } from "./Marker";
 import { getHidden } from "../utils/getHidden";
-import { IconDefs } from "../IconDefs";
+import {
+  formatAsElementId,
+  Icons
+} from "../drawers/icons/__bundled_dont_edit__";
+import * as markerDrawers from "../drawers/markers/__bundled_dont_edit__";
+import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 
 export class Diagram extends React.Component<any, any> {
   constructor(props) {
@@ -201,13 +206,11 @@ export class Diagram extends React.Component<any, any> {
       id,
       backgroundColor,
       customStyle,
-      edgeDrawers,
       entityMap,
       filters,
       height,
       name,
       organism,
-      markerDrawers,
       width,
       zIndices,
       highlightedNodes,
@@ -259,7 +262,7 @@ export class Diagram extends React.Component<any, any> {
               </clipPath>
             }
             {filters}
-            <IconDefs />
+            <Icons />
 
             {markerInputs.map(input => {
               const {
@@ -268,6 +271,9 @@ export class Diagram extends React.Component<any, any> {
                 color,
                 markerBackgroundColor
               } = input;
+              const normalizedName = markerDrawers.formatAsElementId(
+                markerName
+              );
               return (
                 <Marker
                   key={getMarkerId(
@@ -278,9 +284,9 @@ export class Diagram extends React.Component<any, any> {
                   )}
                   color={color}
                   backgroundColor={markerBackgroundColor}
+                  normalizedName={normalizedName}
                   markerLocationType={markerLocationType}
-                  markerName={markerName}
-                  markerDrawers={markerDrawers}
+                  markerDrawer={markerDrawers[normalizedName]}
                 />
               );
             })}
@@ -304,9 +310,7 @@ export class Diagram extends React.Component<any, any> {
               .map(function(entity) {
                 const highlighted = getHighlighted(entity, highlightedNodes);
                 const hidden = getHidden(entity, hiddenEntities);
-                const icon = entity.drawAs
-                  .replace(/[^\w]/, "")
-                  .match(/[a-zA-Z]\w*/);
+                const icon = formatAsElementId(entity.drawAs);
                 return (
                   <Entity
                     key={entity.id}

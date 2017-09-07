@@ -14,12 +14,12 @@ export const NON_FUNC_IRI_MARKER_PROPERTY_VALUES: ReadonlyArray<
 
 export function getMarkerId(
   markerLocationType: MarkerPropertyName,
-  markerName: string,
+  normalizedName: string,
   color: string,
   backgroundColor: string
 ): string {
   return (
-    [markerLocationType, markerName, color, backgroundColor]
+    [markerLocationType, normalizedName, color, backgroundColor]
       .join("-")
       // we only want alphanumeric values and dashes in the id
       .replace(/[^A-Za-z0-9-]/g, "")
@@ -28,17 +28,17 @@ export function getMarkerId(
 
 export function getMarkerPropertyValue(
   markerLocationType: MarkerPropertyName,
-  markerName: NonFuncIriMarkerPropertyValue & string,
+  normalizedName: NonFuncIriMarkerPropertyValue & string,
   color: string,
   backgroundColor: string
 ): NonFuncIriMarkerPropertyValue | string {
   // Don't make a funciri out of any of the names in NON_FUNC_IRI_MARKER_PROPERTY_VALUES
-  if (NON_FUNC_IRI_MARKER_PROPERTY_VALUES.indexOf(markerName) > -1) {
-    return markerName;
+  if (NON_FUNC_IRI_MARKER_PROPERTY_VALUES.indexOf(normalizedName) > -1) {
+    return normalizedName;
   }
   return `url(#${getMarkerId(
     markerLocationType,
-    markerName,
+    normalizedName,
     color,
     backgroundColor
   )})`;
@@ -55,17 +55,19 @@ export class Marker extends React.Component<any, any> {
       backgroundColor,
       color,
       markerLocationType,
-      markerDrawers,
-      markerName
+      markerDrawer,
+      normalizedName
     } = this.props;
 
-    const markerDrawer = markerDrawers[markerName](backgroundColor, color);
-    const { markerAttributes, groupChildren } = markerDrawer;
+    const { markerAttributes, groupChildren } = markerDrawer(
+      backgroundColor,
+      color
+    );
     const { markerWidth, markerHeight } = markerAttributes;
 
     const markerId = getMarkerId(
       markerLocationType,
-      markerName,
+      normalizedName,
       color,
       backgroundColor
     );

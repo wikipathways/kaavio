@@ -1,39 +1,11 @@
-var fs = require("fs");
-var Diagram = require("./components/Diagram").Diagram;
-var hl = require("highland");
-var path = require("path");
-var npmPackage = require("../package.json");
-var ndjson = require("ndjson");
-var program = require("commander");
-import { renderToString } from "react-dom/server";
-import edgeDrawers from "./components/EdgeDrawers";
-// Are the icons and markers are specific to Pvjs (less likely to useful to other applications)?
-// Should they be part of Kaavio?
-import markerDrawers from "./MarkerDrawers";
-//import icons from "./icons/main";
-//import icons from "../dist/icons";
-var iconMap = require("../dist/icons").default;
-
-// needed to load icons
-declare global {
-  // Augment Node.js `global`
-  namespace NodeJS {
-    interface Global {
-      XMLHttpRequest: XMLHttpRequest;
-    }
-  }
-  // Augment Browser `window`
-  //interface Window extends NodeJS.Global { }
-  // Augment Web Worker `self`
-  //interface WorkerGlobalScope extends NodeJS.Global { }
-}
-
-if (!global.hasOwnProperty("XMLHttpRequest")) {
-  global.XMLHttpRequest = require("xhr2");
-}
-
-var xpath = require("xpath");
-var dom = require("xmldom").DOMParser;
+import * as fs from "fs";
+import * as hl from "highland";
+import * as path from "path";
+import * as ndjson from "ndjson";
+import * as program from "commander";
+import { renderToStaticMarkup, renderToString } from "react-dom/server";
+import * as xpath from "xpath";
+import { DOMParser } from "xmldom";
 import * as urlRegex from "url-regex";
 import * as getit from "getit";
 import * as JSONStream from "JSONStream";
@@ -65,19 +37,26 @@ import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 import * as validDataUrl from "valid-data-url";
+import { Diagram } from "./components/Diagram";
+import edgeDrawers from "./components/EdgeDrawers";
+// Are the icons and markers are specific to Pvjs (less likely to useful to other applications)?
+// Should they be part of Kaavio?
+import * as markerDrawers from "./drawers/markers";
+var npmPackage = require("../package.json");
+
+const exec = hl.wrapCallback(require("child_process").exec);
 
 program
   .version(npmPackage.version)
-  .description("Converts Kaavio-formatted JSON to SVG");
-/*
-  .option(
-    "--mysampleoption [string]",
-    'Instructions for my sampleoption'
-  );
-  //*/
+  .description("Control and customize Kaavio from the command line.");
 
+// NOTE: this is in addition to the automatically generated help text
 program.on("--help", function() {
+  console.log();
   console.log("  Examples:");
+  console.log();
+  console.log("    Set icons:");
+  console.log("    $ kaavio set icons ./src/drawers/icons/defaultIconMap.json");
   console.log();
   console.log("    Convert Kaavio-formatted JSON into SVG:");
   console.log("    $ kaavio json2svg WP100.json WP100.svg");
@@ -96,77 +75,134 @@ function get(inputPath, opts = {}) {
   return hl.wrapCallback(getit)(strippedPath, opts);
 }
 
-program
-  .command("compile-icons <inputPath> [outputPath]")
-  .action(function(inputPath, outputPath) {
-    const outputStream = !!outputPath
-      ? fs.createWriteStream(outputPath)
-      : process.stdout;
-    get(inputPath)
-      .through(JSONStream.parse())
-      .flatMap(function(iconMap) {
-        return hl
-          .pairs(iconMap)
-          .flatMap(function([name, iconPath]) {
-            const iconPathComponents = iconPath.split("#");
-            const url = iconPathComponents[0];
-            const id = iconPathComponents[1];
-            const idSafeName = name.replace(/[^\w]/, "").match(/[a-zA-Z]\w*/);
-            // NOTE: data URI parsing is a variation of code from
-            // https://github.com/killmenot/parse-data-url/blob/master/index.js
-            let svgStringStream;
-            if (validDataUrl(url)) {
-              const parts = url.match(validDataUrl.regex);
-              let mediaType;
-              if (parts[1]) {
-                mediaType = parts[1].toLowerCase();
-              }
+function build() {
+  console.log("Rebuilding project (may take some time)...");
+  return exec("npm run build", {
+    // NOTE: we want to build from the top level of the package
+    // __dirname is kaavio/src/, even after compilation
+    // we want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
+    cwd: path.join(__dirname, "..")
+  }).doto(x => console.log("Build complete."));
+}
 
-              let charset;
-              if (parts[2]) {
-                charset = parts[2].split("=")[1].toLowerCase();
-              }
+function formatAsElementId(str) {
+  return str.toLowerCase().replace(/[^\w]/, "").match(/[a-zA-Z]\w*/);
+}
 
-              const isBase64 = !!parts[3];
+function setEdges(input) {
+  console.log("Setting edges...");
+  const normalizedInput = input.toLowerCase();
+  const edgeDrawerCode =
+    ` import "source-map-support/register";
+			export ${formatAsElementId.toString()};
+			export {${normalizedInput}} from "./index";
+		` + "\n";
 
-              let data;
-              if (parts[4]) {
-                data = parts[4];
-              }
+  console.log("Successfully compiled edges.");
+  console.log("Rebuild kaavio to make changes take effect.");
 
-              const decoded = !isBase64
-                ? decodeURIComponent(data)
-                : Base64.decode(data);
-              svgStringStream = hl([decoded]);
-            } else {
-              const strippedPath = url.replace("file://", "");
-              if (urlRegex({ strict: true, exact: true }).test(strippedPath)) {
-                svgStringStream = get(strippedPath);
-              } else {
-                svgStringStream = get(strippedPath, {
-                  cwd: path.dirname(inputPath)
-                });
-              }
+  hl([edgeDrawerCode]).pipe(
+    fs.createWriteStream(
+      path.join(__dirname, "../src/drawers/edges/__bundled_dont_edit__.ts")
+    )
+  );
+}
+
+function setMarkers(input) {
+  console.log("Setting markers...");
+  const normalizedInput = input.toLowerCase();
+  const markerDrawerCode =
+    ` import "source-map-support/register";
+			export ${formatAsElementId.toString()};
+			export {${normalizedInput}} from "./index";
+		` + "\n";
+
+  console.log("Successfully compiled markers.");
+  console.log("Rebuild kaavio to make changes take effect.");
+  /*
+  build()
+    .errors(function(err) {
+      console.error(err);
+      process.exit(1);
+    })
+    .each(function(x) {});
+	//*/
+
+  hl([markerDrawerCode]).pipe(
+    fs.createWriteStream(
+      path.join(__dirname, "../src/drawers/markers/__bundled_dont_edit__.ts")
+    )
+  );
+}
+
+function setIcons(inputPath) {
+  console.log("Setting icons...");
+  const iconStream = get(inputPath)
+    .through(JSONStream.parse())
+    .flatMap(function(iconMap) {
+      return hl
+        .pairs(iconMap)
+        .flatMap(function([name, iconPath]) {
+          const iconPathComponents = iconPath.split("#");
+          const url = iconPathComponents[0];
+          const id = iconPathComponents[1];
+          const elementId = formatAsElementId(name);
+          // NOTE: data URI parsing is a variation of code from
+          // https://github.com/killmenot/parse-data-url/blob/master/index.js
+          let svgStringStream;
+          if (validDataUrl(url)) {
+            const parts = url.match(validDataUrl.regex);
+            let mediaType;
+            if (parts[1]) {
+              mediaType = parts[1].toLowerCase();
             }
 
-            return svgStringStream.map(function(svgString) {
-              var xml = svgString;
-              var doc = new dom().parseFromString(xml);
-              var node = !id
-                ? doc
-                : (node = xpath.select(`//*[@id='${id}']`, doc)[0]);
-              node.setAttribute("id", idSafeName);
-              return node.toString();
-            });
-          })
-          .collect()
-          .map(function(svgStrings) {
-            const joinedSvgString = svgStrings.join("").replace(/[\r\n]/g, "");
-            return (
-              `import "source-map-support/register";
+            let charset;
+            if (parts[2]) {
+              charset = parts[2].split("=")[1].toLowerCase();
+            }
+
+            const isBase64 = !!parts[3];
+
+            let data;
+            if (parts[4]) {
+              data = parts[4];
+            }
+
+            const decoded = !isBase64
+              ? decodeURIComponent(data)
+              : Base64.decode(data);
+            svgStringStream = hl([decoded]);
+          } else {
+            const strippedPath = url.replace("file://", "");
+            if (urlRegex({ strict: true, exact: true }).test(strippedPath)) {
+              svgStringStream = get(strippedPath);
+            } else {
+              svgStringStream = get(strippedPath, {
+                cwd: path.dirname(inputPath)
+              });
+            }
+          }
+
+          return svgStringStream.map(function(svgString) {
+            var xml = svgString;
+            var doc = new DOMParser().parseFromString(xml);
+            var node = !id
+              ? doc
+              : (node = xpath.select(`//*[@id='${id}']`, doc)[0]);
+            node.setAttribute("id", elementId);
+            return node.toString();
+          });
+        })
+        .collect()
+        .map(function(svgStrings) {
+          const joinedSvgString = svgStrings.join("").replace(/[\r\n]/g, "");
+          return (
+            `import "source-map-support/register";
 							import * as React from "react";
 							import * as ReactDom from "react-dom";
-							export class IconDefs extends React.Component<any, any> {
+							export ${formatAsElementId.toString()};
+							export class Icons extends React.Component<any, any> {
 								constructor(props) {
 									super(props);
 								}
@@ -177,62 +213,112 @@ program
 										}}/>
 								}
 							}` + "\n"
-            );
-          });
-      })
+          );
+        });
+    })
+    .errors(function(err) {
+      console.error(err);
+      process.exit(1);
+    });
+
+  iconStream.observe().each(function(x) {
+    console.log("Successfully compiled icons.");
+    console.log("Rebuild kaavio to make changes take effect.");
+    /*
+    build()
       .errors(function(err) {
         console.error(err);
         process.exit(1);
       })
-      .pipe(outputStream);
+      .each(function(x) {});
+		//*/
   });
+
+  iconStream.pipe(
+    fs.createWriteStream(
+      path.join(__dirname, "../src/drawers/icons/__bundled_dont_edit__.tsx")
+    )
+  );
+}
+
+const setterMap = {
+  icons: setIcons,
+  markers: setMarkers,
+  edges: setEdges
+};
+
+program.command("set <whatToSet> <input>").action(function(whatToSet, input) {
+  if (setterMap.hasOwnProperty(whatToSet)) {
+    setterMap[whatToSet](input);
+  } else {
+    const cmdExamples = keys(setterMap)
+      .map(key => `\tkaavio set ${key} ${input}`)
+      .join("\r\n");
+    throw new Error(
+      `"${whatToSet}" is not a supported whatToSet option. Supported options: \r\n${cmdExamples}\r\n`
+    );
+  }
+});
 
 program
   .command("json2svg [inputPath] [outputPath]")
-  .action(function(inputPath, outputPath) {
-    if (!!inputPath && !!outputPath) {
-      console.log(`inputPath: ${inputPath}`);
-      console.log(`outputPath: ${outputPath}`);
-    } else {
-      hl(process.stdin)
-        .through(ndjson.parse())
-        .map(function(input) {
-          return renderToString(
+  .description("Convert Kaavio-formatted JSON into SVG")
+  .option(
+    "-s, --static [boolean]",
+    "Exclude extra DOM attributes, such as data-reactid, that React uses internally. Default: true",
+    (s: string) => ["", "true"].indexOf(s) > -1
+  )
+  .action(function(inputPath, outputPath, options) {
+    const staticMarkup = options.hasOwnProperty("static")
+      ? options.static
+      : true;
+    const render = staticMarkup ? renderToStaticMarkup : renderToString;
+    const inputStream = !!inputPath
+      ? fs.createReadStream(inputPath)
+      : process.stdin;
+    const outputStream = !!outputPath
+      ? fs.createWriteStream(outputPath)
+      : process.stdout;
+
+    hl(inputStream)
+      .through(ndjson.parse())
+      .map(function(input) {
+        return (
+          render(
             React.createElement(
               Diagram,
               {
                 entities: values(input.entityMap),
                 id: input.pathway.id,
                 backgroundColor: input.pathway.backgroundColor,
-                customStyle: {},
-                edgeDrawers: edgeDrawers,
                 entityMap: input.entityMap,
                 //filters,
                 height: input.pathway.height,
                 name: input.pathway.height,
                 organism: input.pathway.height,
-                markerDrawers: markerDrawers,
                 width: input.pathway.width,
-                zIndices: input.pathway.contains
+                zIndices: input.pathway.contains,
                 //highlightedNodes,
-                //icons: loadedIcons
                 //hiddenEntities
+                customStyle: {},
+                edgeDrawers: edgeDrawers
               },
               null
             )
-          );
-        })
-        .errors(function(err) {
-          console.error(err);
-          process.exit(1);
-        })
-        .map(x => String(x))
-        .pipe(process.stdout);
-    }
+          ) + "\n"
+        );
+      })
+      .errors(function(err) {
+        console.error(err);
+        process.exit(1);
+      })
+      .map(x => String(x))
+      .pipe(outputStream);
   });
 
 /*
-hl(source).map(x => hl([x])).each(function(jsonStream) {
+hl(source).map(x => hl([x]))
+.each(function(jsonStream) {
   jsonStream
     .errors(function(err) {
       console.error(err);
@@ -247,4 +333,12 @@ hl(source).map(x => hl([x])).each(function(jsonStream) {
 //process.exit(0);
 
 program.parse(process.argv);
-var id = program.id;
+
+// If no command is specified, output help.
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+}
+
+/*
+./bin/kaavio set markers 'arrow, tbar'
+//*/

@@ -44,7 +44,14 @@ module.exports = {
           "ts-loader?" +
             JSON.stringify({
               compilerOptions: {
-                declaration: false
+                declaration: false,
+                experimentalDecorators: true,
+                inlineSourceMap: true,
+                jsx: "react",
+                moduleResolution: "node",
+                noEmitOnError: true,
+                noImplicitAny: false,
+                pretty: true
               }
             })
       },
