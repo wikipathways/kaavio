@@ -14,6 +14,7 @@ export class Edge extends React.Component<any, any> {
       id,
       drawAs,
       color,
+      backgroundColor,
       strokeDasharray,
       borderWidth,
       edgeDrawers,
@@ -22,15 +23,7 @@ export class Edge extends React.Component<any, any> {
     } = this.props;
 
     const normalizedDrawAs = normalizeElementId(drawAs);
-    const { getPathSegments, getPointAtPosition } = edgeDrawers[
-      normalizedDrawAs
-    ];
-    const pathSegments = getPathSegments(points, id);
-    const d = pathSegments
-      .map(function(pathSegment) {
-        return pathSegment.command + pathSegment.points.join(",");
-      })
-      .join("");
+    const { d } = new edgeDrawers[normalizedDrawAs](points);
 
     const markerProperties = intersection(
       MARKER_PROPERTY_NAMES,
@@ -46,31 +39,34 @@ export class Edge extends React.Component<any, any> {
             markerLocationType,
             markerName,
             color,
-            color
+            backgroundColor
           )
         });
       }
       return acc;
     }, []) as any[];
 
-    let opts = {
-      className: type,
-      d: d,
-      fill: "transparent",
-      stroke: color,
-      strokeDasharray: strokeDasharray,
-      strokeWidth: borderWidth,
-      id: id
-    };
-    markerProperties
+    const opts = markerProperties
       .filter(attribute => {
         // Ensure only markerEnd, markerStart or markerMid
         const allowed = ["markerMid", "markerStart", "markerEnd"];
         return allowed.indexOf(attribute.name) > -1;
       })
-      .forEach(attribute => {
-        opts[attribute.name] = attribute.value;
-      });
+      .reduce(
+        function(acc, { name, value }) {
+          acc[name] = value;
+          return acc;
+        },
+        {
+          className: type,
+          d: d,
+          fill: "transparent",
+          stroke: color,
+          strokeDasharray: strokeDasharray,
+          strokeWidth: borderWidth,
+          id: id
+        }
+      );
 
     return <path key={`path-for-${id}`} {...opts} />;
   }

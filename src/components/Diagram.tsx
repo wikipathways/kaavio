@@ -1,40 +1,35 @@
 import "source-map-support/register";
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { Base64 } from "js-base64";
 import {
   defaults,
-  find,
+  defaultsDeep,
   intersection,
   keys,
   forOwn,
   omitBy,
   toPairs,
-  uniq,
   values
 } from "lodash";
-import { Entity } from "./Entity";
 import { Observable } from "rxjs/Observable";
-import { AjaxRequest } from "rxjs/observable/dom/AjaxObservable";
 import "rxjs/add/observable/dom/ajax";
 import "rxjs/add/observable/from";
 import "rxjs/add/observable/of";
 import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
-import * as validDataUrl from "valid-data-url";
+import { style, getStyles } from "typestyle";
 import {
   MARKER_PROPERTY_NAMES,
   NON_FUNC_IRI_MARKER_PROPERTY_VALUES
 } from "./Marker";
-import { getHighlighted } from "../utils/getHighlighted";
 import { getMarkerId, Marker } from "./Marker";
-import { getHidden } from "../utils/getHidden";
 import * as kaavioStyle from "../kaavio.style";
 import { normalizeElementId } from "../utils/normalizeElementId";
 import { Icons } from "../drawers/icons/__bundled_dont_edit__";
 import * as markerDrawers from "../drawers/markers/__bundled_dont_edit__";
 import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
+import { Group } from "./Group";
 
 export class Diagram extends React.Component<any, any> {
   constructor(props) {
@@ -50,54 +45,6 @@ export class Diagram extends React.Component<any, any> {
     handleClick(
       omitBy(defaults({ entity: entity }, e), (v, k) => k.indexOf("_") === 0)
     );
-  }
-
-  getGroupedZIndexedEntities(zIndexedEntities) {
-    const { entityMap } = this.props;
-    return zIndexedEntities
-      .filter(entity => !entity.isPartOf)
-      .reduce(function(acc, entity) {
-        const kaavioType = entity.kaavioType;
-        if (kaavioType === "Group") {
-          // TODO: refactor this so that contains is actually a map of the contained elements. Not just an array of their IDs
-          entity.contains = entity.contains
-            .map(id => entityMap[id])
-            .sort(function(a, b) {
-              const zIndexA = a.zIndex;
-              const zIndexB = b.zIndex;
-              if (zIndexA < zIndexB) {
-                return 1;
-              } else if (zIndexA > zIndexB) {
-                return -1;
-              } else {
-                return 0;
-              }
-            })
-            .map(entity => entity.id);
-        } else if (entity.hasOwnProperty("burrs")) {
-          entity.burrs = entity.burrs
-            .map(id => entityMap[id])
-            .sort(function(a, b) {
-              const zIndexA = a.zIndex;
-              const zIndexB = b.zIndex;
-              if (zIndexA < zIndexB) {
-                return 1;
-              } else if (zIndexA > zIndexB) {
-                return -1;
-              } else {
-                return 0;
-              }
-            })
-            .map(entity => entity.id);
-        }
-        if (
-          ["Burr"].indexOf(kaavioType) === -1 &&
-          !entity.hasOwnProperty("isPartOf")
-        ) {
-          acc.push(entity);
-        }
-        return acc;
-      }, []);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -119,15 +66,7 @@ export class Diagram extends React.Component<any, any> {
     });
   }
 
-  getMarkerInputs(zIndexedEntities) {
-    const backgroundColor = this.props.backgroundColor;
-    const edges = zIndexedEntities.filter(
-      entity => entity.kaavioType === "Edge"
-    );
-
-    // TODO Currently just using the background color of the diagram as a whole.
-    // Do we want to handle the case where the marker is on top of another entity?
-
+  getMarkerInputs(edges) {
     const markerColors = Array.from(
       edges
         .filter(edge => edge.hasOwnProperty("color"))
@@ -137,22 +76,35 @@ export class Diagram extends React.Component<any, any> {
         }, new Set())
     );
 
-    // TODO Currently just keeping the background colors the same as the colours. I.e. arrowhead is same as line
-    // Do we want to handle the case where the marker is on top of another entity?
-    const markerBackgroundColors = markerColors.slice();
+    const markerBackgroundColors = Array.from(
+      edges
+        .filter(edge => edge.hasOwnProperty("backgroundColor"))
+        .reduce(function(acc, edge) {
+          acc.add(edge.backgroundColor);
+          return acc;
+        }, new Set())
+    );
 
     const markerNames = Array.from(
       edges.reduce(function(acc, edge: any) {
-        intersection(MARKER_PROPERTY_NAMES, keys(edge)).forEach(function(
-          markerLocationType
-        ) {
-          const markerName: string & NonFuncIriMarkerPropertyValue =
-            edge[markerLocationType];
-          // we don't want to create a marker def for markers with names like "none"
-          if (NON_FUNC_IRI_MARKER_PROPERTY_VALUES.indexOf(markerName) === -1) {
-            acc.add(edge[markerLocationType]);
-          }
-        });
+        intersection(MARKER_PROPERTY_NAMES, keys(edge))
+          .map((markerLocationType: string): string =>
+            normalizeElementId(edge[markerLocationType])
+          )
+          // We don't want to create marker defs for markers when
+          // it has an SVG-standard non-functional name, such as "none".
+          .filter(
+            (markerName: string & NonFuncIriMarkerPropertyValue) =>
+              NON_FUNC_IRI_MARKER_PROPERTY_VALUES.indexOf(markerName) === -1
+          )
+          .forEach(function(markerName) {
+            if (markerDrawers.hasOwnProperty(markerName)) {
+              acc.add(markerName);
+            } else {
+              // Can't draw it if we don't have a markerDrawer for it.
+              console.warn(`Missing markerDrawer for "${markerName}"`);
+            }
+          });
         return acc;
       }, new Set())
     );
@@ -209,20 +161,26 @@ export class Diagram extends React.Component<any, any> {
       filters,
       height,
       name,
-      organism,
+      pathway,
       width,
       zIndices,
       highlightedNodes,
       hiddenEntities
     } = this.props;
+    const { contains } = pathway;
 
-    const zIndexedEntities = zIndices.map(id => entityMap[id]);
+    const zIndexedEntities = contains.map(id => entityMap[id]);
 
-    const groupedZIndexedEntities = this.getGroupedZIndexedEntities(
-      zIndexedEntities
+    const markerInputs = this.getMarkerInputs(
+      values(entityMap).filter(
+        (x: Record<string, any>) => x.kaavioType === "Edge"
+      )
     );
-
-    const markerInputs = this.getMarkerInputs(zIndexedEntities);
+    const mergedStyle: Record<string, any> = defaultsDeep(
+      customStyle,
+      kaavioStyle
+    );
+    style(mergedStyle);
 
     return (
       <svg
@@ -232,7 +190,7 @@ export class Diagram extends React.Component<any, any> {
         baseProfile="full"
         preserveAspectRatio="xMidYMid"
         onClick={this.handleClick.bind(this)}
-        className={`kaavio-diagram ${customStyle.diagramClass}`}
+        className={`kaavio-diagram ${mergedStyle.diagramClass}`}
         viewBox={`0 0 ${width} ${height}`}
       >
 
@@ -241,14 +199,14 @@ export class Diagram extends React.Component<any, any> {
           dangerouslySetInnerHTML={{
             __html: `
 				<![CDATA[
-					${"" /*customStyle*/}
+					${getStyles()}
 				]]>
 			`
           }}
         />
 
         <g
-          className={`viewport ${customStyle.viewportClass} svg-pan-zoom_viewport`}
+          className={`viewport ${mergedStyle.viewportClass} svg-pan-zoom_viewport`}
         >
 
           <defs>
@@ -289,6 +247,23 @@ export class Diagram extends React.Component<any, any> {
             })}
           </defs>
 
+          <Group
+            drawAs="rectangle"
+            x="0"
+            y="0"
+            className="kaavio-viewport-background"
+            borderWidth="0"
+            highlightedNodes={highlightedNodes}
+            entityMap={entityMap}
+            hiddenEntities={hiddenEntities}
+            edgeDrawers={edgeDrawers}
+            mergedStyle={mergedStyle}
+            {...pathway}
+          />
+          {/*
+import { getHighlighted } from "../utils/getHighlighted";
+import { getHidden } from "../utils/getHidden";
+import { Entity } from "./Entity";
           <rect
             x="0"
             y="0"
@@ -298,30 +273,27 @@ export class Diagram extends React.Component<any, any> {
             fill={backgroundColor}
           />
           <g width={width} height={height}>
-            {groupedZIndexedEntities
-              .filter(
-                entity =>
-                  ["Node", "Edge", "Group"].indexOf(entity.kaavioType) > -1
-              )
-              .filter(entity => !entity.hasOwnProperty("isPartOf"))
-              .map(function(entity) {
-                const highlighted = getHighlighted(entity, highlightedNodes);
-                const hidden = getHidden(entity, hiddenEntities);
-                return (
-                  <Entity
-                    key={entity.id}
-                    isHighlighted={highlighted.highlighted}
-                    highlightedColor={highlighted.color}
-                    highlightedNodes={highlightedNodes}
-                    entityMap={entityMap}
-                    hidden={hidden}
-                    hiddenEntities={hiddenEntities}
-                    edgeDrawers={edgeDrawers}
-                    {...entity}
-                  />
-                );
-              })}
+            {zIndexedEntities.map(function(entity) {
+              const highlighted = getHighlighted(entity, highlightedNodes);
+              const hidden = getHidden(entity, hiddenEntities);
+              return (
+                <Entity
+                  key={entity.id}
+                  isHighlighted={highlighted.highlighted}
+                  highlightedColor={highlighted.color}
+                  highlightedNodes={highlightedNodes}
+                  entityMap={entityMap}
+                  hidden={hidden}
+                  hiddenEntities={hiddenEntities}
+                  edgeDrawers={edgeDrawers}
+                  mergedStyle={mergedStyle}
+                  {...entity}
+                />
+              );
+            })}
           </g>
+						
+						*/}
         </g>
       </svg>
     );

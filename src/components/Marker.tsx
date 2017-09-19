@@ -26,17 +26,17 @@ export function getMarkerId(
 
 export function getMarkerPropertyValue(
   markerLocationType: MarkerPropertyName,
-  normalizedName: NonFuncIriMarkerPropertyValue & string,
+  markerName: NonFuncIriMarkerPropertyValue & string,
   color: string,
   backgroundColor: string
 ): NonFuncIriMarkerPropertyValue | string {
   // Don't make a funciri out of any of the names in NON_FUNC_IRI_MARKER_PROPERTY_VALUES
-  if (NON_FUNC_IRI_MARKER_PROPERTY_VALUES.indexOf(normalizedName) > -1) {
-    return normalizedName;
+  if (NON_FUNC_IRI_MARKER_PROPERTY_VALUES.indexOf(markerName) > -1) {
+    return markerName;
   }
   return `url(#${getMarkerId(
     markerLocationType,
-    normalizedName,
+    normalizeElementId(markerName),
     color,
     backgroundColor
   )})`;

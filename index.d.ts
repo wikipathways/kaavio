@@ -1,3 +1,5 @@
+/// <reference path="./src/topublish/react-fixes.d.ts" />
+
 // Type definitions for Kaavio
 // Project: Kaavio
 // Definitions by: Anders Riutta

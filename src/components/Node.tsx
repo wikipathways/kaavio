@@ -3,7 +3,6 @@ import * as ReactDOM from "react-dom";
 import { Observable, AjaxRequest, Subject } from "rxjs";
 import * as _ from "lodash";
 import * as validDataUrl from "valid-data-url";
-import { Base64 } from "js-base64";
 import { NodeProps } from "../typings";
 import { normalizeElementId } from "../utils/normalizeElementId";
 
@@ -16,9 +15,6 @@ export class Node extends React.Component<any, any> {
 
   constructor(props: NodeProps) {
     super(props);
-    this.state = {
-      iconSuffix: new Date().toISOString().replace(/\W/g, "")
-    };
   }
 
   render() {
@@ -29,12 +25,10 @@ export class Node extends React.Component<any, any> {
       filter,
       height,
       id,
-      icon,
       width,
       children,
       backgroundColor
     } = this.props;
-    const { loadedIcon } = this.state;
 
     // Add the style too. Fixes firefox bug where fill, stroke etc. isn't inherited
     const style = {
@@ -54,7 +48,7 @@ export class Node extends React.Component<any, any> {
           height={height + "px"}
           style={style}
           fill={backgroundColor}
-          href={"#" + icon}
+          href={"#" + normalizeElementId(drawAs)}
           filter={!!filter ? `url(#${filter})` : null}
           stroke={color}
           strokeWidth={borderWidth}
@@ -65,5 +59,6 @@ export class Node extends React.Component<any, any> {
     );
   }
 }
+// TODO href is now preferred. Does it work in enough browsers?
 // href={icon ? "#" + icon.id : null}
 // xlinkHref={loadedIcon ? "#" + loadedIcon.id : null}

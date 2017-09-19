@@ -1,3 +1,4 @@
+import "source-map-support/register";
 import * as fs from "fs";
 import * as hl from "highland";
 import * as path from "path";
@@ -11,6 +12,7 @@ import * as getit from "getit";
 import * as JSONStream from "JSONStream";
 import { Base64 } from "js-base64";
 import {
+  compact,
   defaults,
   find,
   filter,
@@ -47,6 +49,12 @@ import * as customStyle from "./drawers/style/custom.style";
 var npmPackage = require("../package.json");
 
 const exec = hl.wrapCallback(require("child_process").exec);
+
+/* TODO get this working
+const DEFAULT_FONTS = ["Arial", "Times New Roman"];
+import { NodeTextSizer } from "./NodeTextSizer";
+const nodeTextSizer = new NodeTextSizer(DEFAULT_FONTS);
+//*/
 
 program
   .version(npmPackage.version)
@@ -89,10 +97,10 @@ function build() {
 
 function setEdges(input) {
   console.log("Setting edges...");
-  const normalizedInput = input.toLowerCase();
+  const normalizedInput = input === "*" ? input : `{${input.toLowerCase()}}`;
   const edgeDrawerCode =
     ` import "source-map-support/register";
-			export {${normalizedInput}} from "./index";
+			export ${normalizedInput} from "./index";
 		` + "\n";
 
   console.log("Successfully compiled edges.");
@@ -107,10 +115,10 @@ function setEdges(input) {
 
 function setMarkers(input) {
   console.log("Setting markers...");
-  const normalizedInput = input.toLowerCase();
+  const normalizedInput = input === "*" ? input : `{${input.toLowerCase()}}`;
   const markerDrawerCode =
     ` import "source-map-support/register";
-			export {${normalizedInput}} from "./index";
+			export ${normalizedInput} from "./index";
 		` + "\n";
 
   console.log("Successfully compiled markers.");
@@ -277,20 +285,80 @@ program
 
     hl(inputStream)
       .through(ndjson.parse())
+      //      .flatMap(function(input) {
+      //        const entitiesWithText = values(input.entityMap).filter(entity =>
+      //          entity.hasOwnProperty("textContent")
+      //        );
+      //        const fontFamilies = compact(
+      //          uniq(
+      //            entitiesWithText.map(
+      //              (entity: Record<string, any>) => entity.fontFamily
+      //            )
+      //          )
+      //        );
+      //
+      //        /* this was an older version
+      //        return hl(nodeTextSizer.loadWrapprMap(fontFamilies)).map(function(
+      //          wrapprMap
+      //        ) {
+      //          entitiesWithText.forEach(function(entity: Record<string, any>) {
+      //            const {
+      //              fontFamily,
+      //              fontSize,
+      //              textContent,
+      //              width,
+      //              padding
+      //            } = entity;
+      //            var lines = wrapprMap[fontFamily].wrap(
+      //              textContent,
+      //              fontSize,
+      //              width - padding
+      //            );
+      //            console.log("lines");
+      //            console.log(lines);
+      //          });
+      //
+      //          return input;
+      //        });
+      //				//*/
+      //
+      //        return hl(
+      //          nodeTextSizer.loadOpentypeLayoutMap(fontFamilies)
+      //        ).map(function(opentypeLayoutMap) {
+      //          entitiesWithText.forEach(function(entity: Record<string, any>) {
+      //            const {
+      //              fontFamily,
+      //              fontSize,
+      //              textContent,
+      //              width,
+      //              padding
+      //            } = entity;
+      //            console.log(`trying to use opentypeLayoutMap[${fontFamily}]`);
+      //            console.log(opentypeLayoutMap);
+      //            var lines = opentypeLayoutMap[fontFamily](textContent, {
+      //              //fontSize,
+      //              width: width - padding
+      //            });
+      //            console.log("lines");
+      //            console.log(lines);
+      //          });
+      //
+      //          return input;
+      //        });
+      //      })
       .map(function(input) {
         return (
           render(
             React.createElement(
               Diagram,
               {
-                entities: values(input.entityMap),
+                pathway: input.pathway,
                 id: input.pathway.id,
                 backgroundColor: input.pathway.backgroundColor,
                 entityMap: input.entityMap,
                 //filters,
                 height: input.pathway.height,
                 name: input.pathway.height,
-                organism: input.pathway.height,
                 width: input.pathway.width,
                 zIndices: input.pathway.contains,
                 //highlightedNodes,
@@ -336,6 +404,7 @@ if (!process.argv.slice(2).length) {
 
 /*
 ./bin/kaavio set markers 'arrow, tbar'
+./bin/kaavio set markers '*'
 ./bin/kaavio set icons ./src/drawers/icons/defaultIconMap.json 
 ./bin/kaavio set edges 'straightline,curvedline,elbowline,segmentedline'
 ./bin/kaavio json2svg ./WP4.json 
