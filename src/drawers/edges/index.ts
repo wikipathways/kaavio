@@ -12,8 +12,8 @@ export class SVGPointElement implements SVGPoint {
   x: number;
   y: number;
   matrixTransform;
-  // NOTE: attachmentDisplay is not actually a property of SVGPoint
-  attachmentDisplay: any;
+  // NOTE: orientation is not actually a property of SVGPoint
+  orientation: any;
   constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
@@ -182,14 +182,14 @@ export class curvedline extends SVGPath {
       var pathData = [new SVGPathSegment("M", [firstPoint.x, firstPoint.y])];
 
       var direction = [];
-      if (firstPoint.attachmentDisplay) {
+      if (firstPoint.orientation) {
         const orientation = firstPoint.orientation;
         direction.push(orientation[0]);
         direction.push(orientation[1]);
       } else {
         console.error(points);
         throw new Error(
-          "No attachmentDisplay specified for edge w/ points logged above"
+          "No orientation specified for curvedline edge w/ points logged above"
         );
       }
 
@@ -199,7 +199,7 @@ export class curvedline extends SVGPath {
       var markerHeightFactor = 0.75;
       if (
         !!markerStart &&
-        firstPoint.attachmentDisplay &&
+        firstPoint.orientation &&
         typeof firstPoint.orientation[0] !== "undefined" &&
         typeof firstPoint.orientation[1] !== "undefined"
       ) {
@@ -226,7 +226,7 @@ export class curvedline extends SVGPath {
 
       if (
         !!markerEnd &&
-        lastPoint.attachmentDisplay &&
+        lastPoint.orientation &&
         typeof lastPoint.orientation[0] !== "undefined" &&
         typeof lastPoint.orientation[1] !== "undefined"
       ) {
@@ -313,13 +313,13 @@ export class elbowline extends SVGPath {
 
       var direction = [];
 
-      if (firstPoint.attachmentDisplay) {
+      if (firstPoint.orientation) {
         direction.push(firstPoint.orientation[0]);
         direction.push(firstPoint.orientation[1]);
       } else {
         console.error(points);
         throw new Error(
-          "No attachmentDisplay specified for edge w/ points logged above"
+          "No orientation specified for elbowline edge w/ points logged above"
         );
       }
 

@@ -21,6 +21,8 @@ export class Node extends React.Component<any, any> {
     const {
       borderWidth,
       color,
+      fillOpacity,
+      strokeDasharray,
       drawAs,
       filter,
       height,
@@ -35,7 +37,9 @@ export class Node extends React.Component<any, any> {
       fill: backgroundColor,
       color: color,
       stroke: color,
-      strokeWidth: borderWidth
+      strokeWidth: borderWidth,
+      strokeDasharray: strokeDasharray,
+      fillOpacity: fillOpacity || 1
     };
     return (
       <g ref={containerRef => (this.containerRef = containerRef)}>
