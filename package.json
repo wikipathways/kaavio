@@ -23,6 +23,7 @@
     "serve": "webpack-dev-server --config webpack.dev.config.js --open --progress --inline",
     "start": "npm run serve",
     "test": "echo 'get some tests working'",
+    "test:gpml": "mkdir -p unified && for f in ../bulk-gpml2pvjson/unified/*.json; do echo \"Testing converter against $f\" && WPID=`echo \"$f\" | sed s/.*WP/WP/ | sed s/.json//`; cat \"$f\" | bin/kaavio json2svg > \"./unified/\"$WPID\".svg\"; done",
     "gulp": "gulp",
     "watch": "rimraf ./lib && npm run assets && npm-run-all watch:*",
     "watch:compile": "tsc --project tsconfig.json --watch"

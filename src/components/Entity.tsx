@@ -106,13 +106,12 @@ export class Entity extends React.Component<any, any> {
         return burr;
       })
       .map(burr => {
-        // Return a new entity with the burr
-        // If just a Node is returned then actions such as highlighting the burr individually cannot be done
-        //burr.kaavioType = "Node";
+        // Even though burr.kaavioType = "Node", we render the Burr as a new Entity.
+        // If we just render it a Node, we can't do things like individually highlighting the burr.
         const highlighted = getHighlighted(burr, highlightedNodes);
         const hidden = getHidden(burr, hiddenEntities);
         return (
-          <Node
+          <Entity
             key={burr.id}
             {...burr}
             edgeDrawers={edgeDrawers}
@@ -149,8 +148,7 @@ export class Entity extends React.Component<any, any> {
     if (x || y || rotation) {
       entityTransform = `translate(${x},${y})`;
       if (rotation) {
-        entityTransform += ` rotate(${rotation},${x + width / 2},${y +
-          height / 2})`;
+        entityTransform += ` rotate(${rotation},${width / 2},${height / 2})`;
       }
     }
 

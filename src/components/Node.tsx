@@ -32,6 +32,7 @@ export class Node extends React.Component<any, any> {
       backgroundColor
     } = this.props;
 
+    /*
     // Add the style too. Fixes firefox bug where fill, stroke etc. isn't inherited
     const style = {
       fill: backgroundColor,
@@ -41,6 +42,8 @@ export class Node extends React.Component<any, any> {
       strokeDasharray: strokeDasharray,
       fillOpacity: fillOpacity || 1
     };
+		style={style}
+		//*/
     return (
       <g ref={containerRef => (this.containerRef = containerRef)}>
         <use
@@ -50,7 +53,6 @@ export class Node extends React.Component<any, any> {
           y="0"
           width={width + "px"}
           height={height + "px"}
-          style={style}
           fill={backgroundColor}
           href={"#" + normalizeElementId(drawAs)}
           filter={!!filter ? `url(#${filter})` : null}
