@@ -6,6 +6,7 @@ import { Entity } from "./Entity";
 import { Node } from "./Node";
 import { getHidden } from "../utils/getHidden";
 import { normalizeElementId } from "../utils/normalizeElementId";
+import { interpolate } from "../spinoffs/interpolate";
 
 // Must also export this class for type definitions to work
 export class nodeWithGroup extends React.Component<any, any> {
@@ -18,13 +19,21 @@ export class nodeWithGroup extends React.Component<any, any> {
       y,
       entityMap,
       highlightedNodes,
-      backgroundColor: parentBackgroundColor,
+      backgroundColor,
+      parentBackgroundColor,
+      fillOpacity,
       mergedStyle,
       edgeDrawers,
       contains,
       id,
       hiddenEntities
     } = this.props;
+
+    const interpolatedBackgroundColor = interpolate(
+      parentBackgroundColor,
+      backgroundColor,
+      fillOpacity
+    );
 
     const children = contains
       .map(containedId => entityMap[containedId])
@@ -36,7 +45,7 @@ export class nodeWithGroup extends React.Component<any, any> {
             key={entity.id}
             {...entity}
             edgeDrawers={edgeDrawers}
-            parentBackgroundColor={parentBackgroundColor}
+            parentBackgroundColor={interpolatedBackgroundColor}
             mergedStyle={mergedStyle}
             entityMap={entityMap}
             isHighlighted={highlighted.highlighted}

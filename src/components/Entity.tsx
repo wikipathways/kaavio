@@ -159,6 +159,9 @@ export class Entity extends React.Component<any, any> {
       case "SingleFreeNode":
         child = <Node {...this.props} />;
         break;
+      case "Burr":
+        child = <Node {...this.props} />;
+        break;
       case "Edge":
         child = <Edge {...this.props} />;
         break;

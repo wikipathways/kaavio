@@ -218,6 +218,11 @@ export function mimcleavage(backgroundColor, color) {
     ]
   };
 }
+
+// This is the graphical representation of a covalent irreversible binding.
+// See 7.2.3 from https://discover.nci.nih.gov/mim/formal_mim_spec.pdf
+// PathVisio-Java doesn't do this quite right, because the arrowheads are
+// not visible.
 export function mimcovalentbond(backgroundColor, color) {
   const markerWidth = 12;
   const markerHeight = 12;
@@ -227,17 +232,11 @@ export function mimcovalentbond(backgroundColor, color) {
       markerHeight: markerHeight
     },
     groupChildren: [
-      <g
-        key="mim-covalent-bond"
-        transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
-      >
-        <rect
-          x="0"
-          y="0"
-          width="0"
-          height="0"
-          stroke={backgroundColor}
-          strokeWidth="0"
+      <g key="mim-covalent-bond">
+        <path
+          d="M 11,1 L 1,1 L 1,11 L 11,11"
+          stroke={color}
+          strokeWidth="1"
           fill={backgroundColor}
         />
       </g>

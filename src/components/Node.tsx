@@ -53,11 +53,14 @@ export class Node extends React.Component<any, any> {
           y="0"
           width={width + "px"}
           height={height + "px"}
+          color={color}
           fill={backgroundColor}
+          fillOpacity={fillOpacity || 1}
           href={"#" + normalizeElementId(drawAs)}
           filter={!!filter ? `url(#${filter})` : null}
           stroke={color}
           strokeWidth={borderWidth}
+          strokeDasharray={strokeDasharray}
           className="Icon"
         />
         {children}

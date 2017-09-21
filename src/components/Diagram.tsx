@@ -19,6 +19,7 @@ import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 import { style, getStyles } from "typestyle";
+import { interpolate } from "../spinoffs/interpolate";
 import {
   MARKER_PROPERTY_NAMES,
   NON_FUNC_IRI_MARKER_PROPERTY_VALUES
@@ -66,7 +67,14 @@ export class Diagram extends React.Component<any, any> {
     });
   }
 
-  getMarkerInputs(edges) {
+  getMarkerInputs(
+    parentBackgroundColor: string,
+    entityMap: Record<string, any>
+  ) {
+    const edges = values(entityMap).filter(
+      (x: Record<string, any>) => x.kaavioType === "Edge"
+    );
+
     const markerColors = Array.from(
       edges
         .filter(edge => edge.hasOwnProperty("color"))
@@ -76,14 +84,22 @@ export class Diagram extends React.Component<any, any> {
         }, new Set())
     );
 
-    const markerBackgroundColors = Array.from(
-      edges
-        .filter(edge => edge.hasOwnProperty("backgroundColor"))
-        .reduce(function(acc, edge) {
-          acc.add(edge.backgroundColor);
+    const parentBackgroundColors = [parentBackgroundColor];
+    Array.from(
+      values(entityMap)
+        .filter((x: Record<string, any>) => x.kaavioType === "Group")
+        .reduce(function(acc, group) {
+          const fill = interpolate(
+            parentBackgroundColor,
+            group.backgroundColor,
+            group.fillOpacity
+          );
+          acc.add(fill);
           return acc;
         }, new Set())
-    );
+    ).forEach(function(groupColor: string) {
+      parentBackgroundColors.push(groupColor);
+    });
 
     const markerNames = Array.from(
       edges.reduce(function(acc, edge: any) {
@@ -114,11 +130,11 @@ export class Diagram extends React.Component<any, any> {
       .reduce(function(acc: any[], partialInput) {
         const pairs = toPairs(partialInput);
         return acc.concat(
-          markerBackgroundColors.map(function(markerBackgroundColor) {
+          parentBackgroundColors.map(function(parentBackgroundColor) {
             return pairs.reduce(function(subAcc: any, pair) {
               const key = pair[0];
               subAcc[key] = pair[1];
-              subAcc.markerBackgroundColor = markerBackgroundColor;
+              subAcc.parentBackgroundColor = parentBackgroundColor;
               return subAcc;
             }, {});
           })
@@ -171,11 +187,7 @@ export class Diagram extends React.Component<any, any> {
 
     const zIndexedEntities = contains.map(id => entityMap[id]);
 
-    const markerInputs = this.getMarkerInputs(
-      values(entityMap).filter(
-        (x: Record<string, any>) => x.kaavioType === "Edge"
-      )
-    );
+    const markerInputs = this.getMarkerInputs(backgroundColor, entityMap);
     const mergedStyle: Record<string, any> = defaultsDeep(
       customStyle,
       kaavioStyle
@@ -226,7 +238,7 @@ export class Diagram extends React.Component<any, any> {
                 markerLocationType,
                 markerName,
                 color,
-                markerBackgroundColor
+                parentBackgroundColor
               } = input;
               const normalizedName = normalizeElementId(markerName);
               return (
@@ -235,10 +247,10 @@ export class Diagram extends React.Component<any, any> {
                     markerLocationType,
                     markerName,
                     color,
-                    markerBackgroundColor
+                    parentBackgroundColor
                   )}
                   color={color}
-                  backgroundColor={markerBackgroundColor}
+                  parentBackgroundColor={parentBackgroundColor}
                   normalizedName={normalizedName}
                   markerLocationType={markerLocationType}
                   markerDrawer={markerDrawers[normalizedName]}
@@ -253,6 +265,8 @@ export class Diagram extends React.Component<any, any> {
             y="0"
             className="kaavio-viewport-background"
             borderWidth="0"
+            parentBackgroundColor={backgroundColor}
+            fillOpacity={1}
             highlightedNodes={highlightedNodes}
             entityMap={entityMap}
             hiddenEntities={hiddenEntities}

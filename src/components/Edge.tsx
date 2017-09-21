@@ -14,7 +14,7 @@ export class Edge extends React.Component<any, any> {
       id,
       drawAs,
       color,
-      backgroundColor,
+      parentBackgroundColor,
       strokeDasharray,
       borderWidth,
       edgeDrawers,
@@ -33,13 +33,11 @@ export class Edge extends React.Component<any, any> {
       if (markerName) {
         acc.push({
           name: markerLocationType,
-          // Currently just using the same color for backgroundColor (arrow head) as color (line)
-          // See line 86 in Kaavio.tsx
           value: getMarkerPropertyValue(
             markerLocationType,
             markerName,
             color,
-            backgroundColor
+            parentBackgroundColor
           )
         });
       }
@@ -49,6 +47,8 @@ export class Edge extends React.Component<any, any> {
     const opts = markerProperties
       .filter(attribute => {
         // Ensure only markerEnd, markerStart or markerMid
+        // TODO is marker not allowed? if not, let's get rid of
+        // it wherever it came from.
         const allowed = ["markerMid", "markerStart", "markerEnd"];
         return allowed.indexOf(attribute.name) > -1;
       })

@@ -60,26 +60,6 @@ program
   .version(npmPackage.version)
   .description("Control and customize Kaavio from the command line.");
 
-// NOTE: this is in addition to the automatically generated help text
-program.on("--help", function() {
-  console.log();
-  console.log("  Examples:");
-  console.log();
-  console.log("    Set icons:");
-  console.log("    $ kaavio set icons ./src/drawers/icons/defaultIconMap.json");
-  console.log();
-  console.log("    Convert Kaavio-formatted JSON into SVG:");
-  console.log("    $ kaavio json2svg WP100.json WP100.svg");
-  console.log();
-  console.log("    Convert streaming:");
-  console.log("    $ cat WP100.json | kaavio json2svg  > WP100.svg");
-  console.log();
-  console.log("    Convert streaming w/ pretty output:");
-  console.log(
-    "cat ../bulk-gpml2pvjson/unified/WP100.json | ./bin/kaavio json2svg | xmllint --pretty 2 - | pygmentize -O encoding=UTF-8 -l xml"
-  );
-});
-
 function get(inputPath, opts = {}) {
   const strippedPath = inputPath.replace("file://", "");
   return hl.wrapCallback(getit)(strippedPath, opts);
@@ -95,8 +75,8 @@ function build() {
   }).doto(x => console.log("Build complete."));
 }
 
-function setEdges(input) {
-  console.log("Setting edges...");
+function compileEdges(input) {
+  console.log("Compiling edges...");
   const normalizedInput = input === "*" ? input : `{${input.toLowerCase()}}`;
   const edgeDrawerCode =
     ` import "source-map-support/register";
@@ -104,7 +84,7 @@ function setEdges(input) {
 		` + "\n";
 
   console.log("Successfully compiled edges.");
-  console.log("Rebuild kaavio to make changes take effect.");
+  console.log("Rebuild kaavio to make changes take effect: npm run build");
 
   hl([edgeDrawerCode]).pipe(
     fs.createWriteStream(
@@ -113,8 +93,8 @@ function setEdges(input) {
   );
 }
 
-function setMarkers(input) {
-  console.log("Setting markers...");
+function compileMarkers(input) {
+  console.log("Compiling markers...");
   const normalizedInput = input === "*" ? input : `{${input.toLowerCase()}}`;
   const markerDrawerCode =
     ` import "source-map-support/register";
@@ -122,7 +102,7 @@ function setMarkers(input) {
 		` + "\n";
 
   console.log("Successfully compiled markers.");
-  console.log("Rebuild kaavio to make changes take effect.");
+  console.log("Rebuild kaavio to make changes take effect: npm run build");
   /*
   build()
     .errors(function(err) {
@@ -139,8 +119,8 @@ function setMarkers(input) {
   );
 }
 
-function setIcons(inputPath) {
-  console.log("Setting icons...");
+function compileIcons(inputPath) {
+  console.log("Compiling icons...");
   const iconStream = get(inputPath)
     .through(JSONStream.parse())
     .flatMap(function(iconMap) {
@@ -226,7 +206,7 @@ function setIcons(inputPath) {
 
   iconStream.observe().each(function(x) {
     console.log("Successfully compiled icons.");
-    console.log("Rebuild kaavio to make changes take effect.");
+    console.log("Rebuild kaavio to make changes take effect: npm run build");
     /*
     build()
       .errors(function(err) {
@@ -244,24 +224,53 @@ function setIcons(inputPath) {
   );
 }
 
-const setterMap = {
-  icons: setIcons,
-  markers: setMarkers,
-  edges: setEdges
+const compilerMap = {
+  icons: compileIcons,
+  markers: compileMarkers,
+  edges: compileEdges
 };
 
-program.command("set <whatToSet> <input>").action(function(whatToSet, input) {
-  if (setterMap.hasOwnProperty(whatToSet)) {
-    setterMap[whatToSet](input);
-  } else {
-    const cmdExamples = keys(setterMap)
-      .map(key => `\tkaavio set ${key} ${input}`)
-      .join("\r\n");
-    throw new Error(
-      `"${whatToSet}" is not a supported whatToSet option. Supported options: \r\n${cmdExamples}\r\n`
+program
+  .command("compile <whatToCompile> <input>")
+  .action(function(whatToCompile, input) {
+    if (compilerMap.hasOwnProperty(whatToCompile)) {
+      compilerMap[whatToCompile](input);
+    } else {
+      const cmdSuggestions = keys(compilerMap)
+        .map(key => `\tkaavio compile ${key} ${input}`)
+        .join("\r\n");
+      throw new Error(
+        `"${whatToCompile}" is not a supported whatToCompile option. Supported options: \r\n${cmdSuggestions}\r\n`
+      );
+    }
+  })
+  .on("--help", function() {
+    console.log();
+    console.log(
+      `  <whatToCompile> can be one of these: ${keys(compilerMap).join(", ")}`
     );
-  }
-});
+    console.log();
+    console.log("  Examples:");
+    console.log();
+    console.log("    Compile markers (include all available):");
+    console.log("    $ kaavio compile markers '*'");
+    console.log();
+    console.log("    Compile markers (include only selected):");
+    console.log("    $ kaavio compile markers 'arrow, tbar'");
+    console.log();
+    console.log("    Compile icons:");
+    console.log(
+      "    $ kaavio compile icons ./src/drawers/icons/defaultIconMap.json"
+    );
+    console.log();
+    console.log("    Compile edges (include all available):");
+    console.log("    $ kaavio compile edges '*'");
+    console.log();
+    console.log("    Compile edges (include only selected):");
+    console.log(
+      "    $ kaavio compile edges 'straightline,curvedline,elbowline,segmentedline'"
+    );
+  });
 
 program
   .command("json2svg [inputPath] [outputPath]")
@@ -377,6 +386,22 @@ program
       })
       .map(x => String(x))
       .pipe(outputStream);
+  })
+  .on("--help", function() {
+    console.log();
+    console.log("  Examples:");
+    console.log();
+    console.log("    Convert Kaavio-formatted JSON into SVG:");
+    console.log("    $ kaavio json2svg WP100.json WP100.svg");
+    console.log();
+
+    console.log("    Convert streaming:");
+    console.log("    $ cat WP100.json | kaavio json2svg > WP100.svg");
+    console.log();
+    console.log("    Convert streaming w/ pretty output:");
+    console.log(
+      "    $ cat ../bulk-gpml2pvjson/unified/WP100.json | ./bin/kaavio json2svg | xmllint --pretty 2 - | pygmentize -O encoding=UTF-8 -l xml"
+    );
   });
 
 /*
@@ -403,9 +428,6 @@ if (!process.argv.slice(2).length) {
 }
 
 /*
-./bin/kaavio set markers 'arrow, tbar'
-./bin/kaavio set markers '*'
-./bin/kaavio set icons ./src/drawers/icons/defaultIconMap.json 
-./bin/kaavio set edges 'straightline,curvedline,elbowline,segmentedline'
 ./bin/kaavio json2svg ./WP4.json 
+cat ../gpml2pvjson-js/test/input/playground.gpml | ../gpml2pvjson-js/bin/gpml2pvjson | ./bin/kaavio json2svg > output.svg
 //*/

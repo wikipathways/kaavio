@@ -17,10 +17,10 @@ export function getMarkerId(
   markerLocationType: MarkerPropertyName,
   normalizedName: string,
   color: string,
-  backgroundColor: string
+  parentBackgroundColor: string
 ): string {
   return normalizeElementId(
-    [markerLocationType, normalizedName, color, backgroundColor].join("")
+    [markerLocationType, normalizedName, color, parentBackgroundColor].join("")
   );
 }
 
@@ -28,7 +28,7 @@ export function getMarkerPropertyValue(
   markerLocationType: MarkerPropertyName,
   markerName: NonFuncIriMarkerPropertyValue & string,
   color: string,
-  backgroundColor: string
+  parentBackgroundColor: string
 ): NonFuncIriMarkerPropertyValue | string {
   // Don't make a funciri out of any of the names in NON_FUNC_IRI_MARKER_PROPERTY_VALUES
   if (NON_FUNC_IRI_MARKER_PROPERTY_VALUES.indexOf(markerName) > -1) {
@@ -38,7 +38,7 @@ export function getMarkerPropertyValue(
     markerLocationType,
     normalizeElementId(markerName),
     color,
-    backgroundColor
+    parentBackgroundColor
   )})`;
 }
 
@@ -50,7 +50,7 @@ export class Marker extends React.Component<any, any> {
   render() {
     const {
       id,
-      backgroundColor,
+      parentBackgroundColor,
       color,
       markerLocationType,
       markerDrawer,
@@ -58,7 +58,7 @@ export class Marker extends React.Component<any, any> {
     } = this.props;
 
     const { markerAttributes, groupChildren } = markerDrawer(
-      backgroundColor,
+      parentBackgroundColor,
       color
     );
     const { markerWidth, markerHeight } = markerAttributes;
@@ -67,7 +67,7 @@ export class Marker extends React.Component<any, any> {
       markerLocationType,
       normalizedName,
       color,
-      backgroundColor
+      parentBackgroundColor
     );
 
     return (
