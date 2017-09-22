@@ -23,7 +23,6 @@ export class nodeWithGroup extends React.Component<any, any> {
       parentBackgroundColor,
       fillOpacity,
       mergedStyle,
-      edgeDrawers,
       contains,
       id,
       hiddenEntities,
@@ -45,7 +44,6 @@ export class nodeWithGroup extends React.Component<any, any> {
           <Entity
             key={entity.id}
             {...entity}
-            edgeDrawers={edgeDrawers}
             parentBackgroundColor={interpolatedBackgroundColor}
             mergedStyle={mergedStyle}
             entityMap={entityMap}

@@ -2,7 +2,7 @@ import { intersection, keys } from "lodash";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { getMarkerPropertyValue, MARKER_PROPERTIES } from "./Marker/Marker";
-import { normalizeElementId } from "../utils/normalizeElementId";
+import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 
 export class Edge extends React.Component<any, any> {
   constructor(props) {
@@ -38,12 +38,14 @@ export class Edge extends React.Component<any, any> {
       defineMarker,
       strokeDasharray,
       borderWidth,
-      edgeDrawers,
       points,
       type
     } = this.props;
 
-    const { d } = new edgeDrawers[(normalizeElementId(drawAs))](points);
+    console.log("edgeDrawers");
+    console.log(edgeDrawers);
+    console.log(`drawAs: ${drawAs}`);
+    const { d } = new edgeDrawers[drawAs](points);
 
     const markerProperties = intersection(MARKER_PROPERTIES, keys(this.props))
       /*

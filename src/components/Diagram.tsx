@@ -13,7 +13,6 @@ import { style, getStyles } from "typestyle";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import * as kaavioStyle from "../kaavio.style";
 import { Icons } from "../drawers/icons/__bundled_dont_edit__";
-import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 import { Group } from "./Group";
 
 export class Diagram extends React.Component<any, any> {
@@ -135,7 +134,6 @@ export class Diagram extends React.Component<any, any> {
             highlightedNodes={highlightedNodes}
             entityMap={entityMap}
             hiddenEntities={hiddenEntities}
-            edgeDrawers={edgeDrawers}
             mergedStyle={mergedStyle}
             defineMarker={this.defineMarker}
             {...pathway}

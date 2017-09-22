@@ -115,7 +115,7 @@ function d3_svg_lineDot4(a, b) {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
 }
 
-export class straightline extends SVGPath {
+export class StraightLine extends SVGPath {
   constructor(points: SVGPointElement[]) {
     super(points, function getPathDataFromPoints(points) {
       const { x: x0, y: y0 } = points[0];
@@ -162,7 +162,7 @@ function changeDirection(currentDirection) {
   return [xDirection, yDirection];
 }
 
-export class curvedline extends SVGPath {
+export class CurvedLine extends SVGPath {
   constructor(points: SVGPointElement[], markerStart, markerEnd) {
     super(points, function getPathDataFromPoints(
       elbowPoints,
@@ -296,7 +296,7 @@ export class curvedline extends SVGPath {
   }
 }
 
-export class elbowline extends SVGPath {
+export class ElbowLine extends SVGPath {
   constructor(points: SVGPointElement[]) {
     super(points, function getPathDataFromPoints(points) {
       function changeDirection(currentDirection) {
@@ -343,7 +343,7 @@ export class elbowline extends SVGPath {
   }
 }
 
-export class segmentedline extends SVGPath {
+export class SegmentedLine extends SVGPath {
   constructor(points: SVGPointElement[]) {
     super(points, function getPathDataFromPoints(points) {
       var firstPoint = points[0];

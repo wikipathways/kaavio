@@ -45,7 +45,6 @@ import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 import * as validDataUrl from "valid-data-url";
 import * as isVarName from "is-valid-var-name";
-import { normalizeElementId } from "./utils/normalizeElementId";
 import { Diagram } from "./components/Diagram";
 import * as edgeDrawers from "./drawers/edges/index";
 // Are the icons and markers are specific to Pvjs (less likely to useful to other applications)?
@@ -55,7 +54,11 @@ import * as customStyle from "./drawers/style/custom.style";
 const npmPackage = require("../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
 
-const titleCase = flow(camelCase, upperFirst);
+// TODO why does TS complain when I define and try using the titleCase below?
+//const titleCase = flow(camelCase, upperFirst);
+function getSuggestedVarName(str: string): string {
+  return upperFirst(camelCase(str)).match(/[_a-zA-Z]\w*/)[0];
+}
 
 /* TODO get this working
 const DEFAULT_FONTS = ["Arial", "Times New Roman"];
@@ -82,34 +85,29 @@ function build() {
   }).doto(x => console.log("Build complete."));
 }
 
-const compileInput = curry(function(name, input) {
+const compileBySelectiveImport = curry(function(name, input) {
   console.log(`Compiling ${name}...`);
   const whatToImport = !input || input === "*"
     ? `*`
-    : input
-        .split(",")
-        .map(trim)
-        .map(function(inputItem: string) {
-          if (!isVarName(inputItem)) {
-            /*
-						const validName = titleCase(
-                inputItem
+    : "{" +
+        uniq(
+          input.split(",").map(trim).map(function(inputItem: string) {
+            if (!isVarName(inputItem)) {
+              throw new Error(
+                `Input item "${inputItem}" is not a valid JS export name.
+	Suggested alternative: ${getSuggestedVarName(inputItem)}`
               );
-						//*/
-            const validName = inputItem.toLowerCase();
-            throw new Error(
-              `Input item "${inputItem}" is not a valid JS export name. Please use something like ${validName}`
-            );
-          }
-          return inputItem;
-        })
-        .join(", ");
-  console.log(`Successfully compiled ${name}.`);
-  console.log("Rebuild kaavio to make changes take effect: npm run build");
+            }
+            return inputItem;
+          })
+        ).join(", ") +
+        "}";
+  console.log(`Successfully compiled ${name}. Set includes "${whatToImport}".`);
+  console.log(`Rebuild kaavio to make changes take effect:\n\r  npm run build`);
 
   const compiledDrawerCode =
     ` import "source-map-support/register";
-			export ${whatToImport} from "./index";
+    export ${whatToImport} from "./index";
 		` + "\n";
 
   /*
@@ -128,66 +126,8 @@ const compileInput = curry(function(name, input) {
   );
 });
 
-function compileEdges(input) {
-  console.log("Compiling edges...");
-  const normalizedInput = input === "*" ? input : `{${input.toLowerCase()}}`;
-  const edgeDrawerCode =
-    ` import "source-map-support/register";
-			export ${normalizedInput} from "./index";
-		` + "\n";
-
-  console.log("Successfully compiled edges.");
-  console.log("Rebuild kaavio to make changes take effect: npm run build");
-
-  hl([edgeDrawerCode]).pipe(
-    fs.createWriteStream(
-      path.join(__dirname, "../src/drawers/edges/__bundled_dont_edit__.ts")
-    )
-  );
-}
-
-/*
-function compileMarkers(input) {
-  console.log("Compiling markers...");
-  //const whatToImport = input === "*" ? input : `{${input}}`;
-  const whatToImport = !input || input === "*" ? `* as importedDrawers` : input;
-  const importedDrawers =
-    (!input || input === "*"
-      ? ``
-      : "const importedDrawers = " +
-          JSON.stringify(
-            input.split(",").reduce(function(acc, item) {
-              acc[item] = item;
-              return acc + item;
-            }, {}),
-            null,
-            "  "
-          ).replace(/"(.*)",\n/g, "\1")) + ";\n";
-  const normalizedDrawAsToImportedDrawersMap = `
-	let normalizedDrawAsToImportedDrawersMap;
-	`;
-  console.log("importedDrawers");
-  console.log(importedDrawers);
-  const markerDrawerCode =
-    ` import "source-map-support/register";
-			import ${whatToImport} from "./index";
-			${importedDrawers}
-			export default function draw(drawAs, backgroundColor, color) {
-				return markerDrawerMap[drawAs.toLowerCase()](backgroundColor, color)
-			};
-		` + "\n";
-
-  console.log("Successfully compiled markers.");
-  console.log("Rebuild kaavio to make changes take effect: npm run build");
-
-  hl([markerDrawerCode]).pipe(
-    fs.createWriteStream(
-      path.join(__dirname, "../src/drawers/markers/__bundled_dont_edit__.tsx")
-    )
-  );
-}
-//*/
-const compileMarkers = compileInput("markers");
+const compileEdges = compileBySelectiveImport("edges");
+const compileMarkers = compileBySelectiveImport("markers");
 
 function compileIcons(inputPath) {
   console.log("Compiling icons...");
@@ -200,7 +140,6 @@ function compileIcons(inputPath) {
           const iconPathComponents = iconPath.split("#");
           const url = iconPathComponents[0];
           const id = iconPathComponents[1];
-          const elementId = normalizeElementId(name);
           // NOTE: data URI parsing is a variation of code from
           // https://github.com/killmenot/parse-data-url/blob/master/index.js
           let svgStringStream;
@@ -239,12 +178,11 @@ function compileIcons(inputPath) {
           }
 
           return svgStringStream.map(function(svgString) {
-            var xml = svgString;
-            var doc = new DOMParser().parseFromString(xml);
+            var doc = new DOMParser().parseFromString(svgString);
             var node = !id
               ? doc
               : (node = xpath.select(`//*[@id='${id}']`, doc)[0]);
-            node.setAttribute("id", elementId);
+            node.setAttribute("id", name);
             return node.toString();
           });
         })
@@ -277,14 +215,6 @@ function compileIcons(inputPath) {
   iconStream.observe().each(function(x) {
     console.log("Successfully compiled icons.");
     console.log("Rebuild kaavio to make changes take effect: npm run build");
-    /*
-    build()
-      .errors(function(err) {
-        console.error(err);
-        process.exit(1);
-      })
-      .each(function(x) {});
-		//*/
   });
 
   iconStream.pipe(
@@ -301,7 +231,7 @@ const compilerMap = {
 };
 
 program
-  .command("compile <whatToCompile> <input>")
+  .command("compile <whatToCompile> [input]")
   .action(function(whatToCompile, input) {
     if (compilerMap.hasOwnProperty(whatToCompile)) {
       compilerMap[whatToCompile](input);
