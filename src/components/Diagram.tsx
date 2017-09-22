@@ -1,16 +1,7 @@
 import "source-map-support/register";
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import {
-  defaults,
-  defaultsDeep,
-  intersection,
-  keys,
-  forOwn,
-  omitBy,
-  toPairs,
-  values
-} from "lodash";
+import { defaults, defaultsDeep, forOwn, omitBy } from "lodash";
 import { Observable } from "rxjs/Observable";
 import "rxjs/add/observable/dom/ajax";
 import "rxjs/add/observable/from";
@@ -19,16 +10,9 @@ import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 import { style, getStyles } from "typestyle";
-import { interpolate } from "../spinoffs/interpolate";
-import {
-  MARKER_PROPERTY_NAMES,
-  NON_FUNC_IRI_MARKER_PROPERTY_VALUES
-} from "./Marker";
-import { getMarkerId, Marker } from "./Marker";
+import { MarkerDefs } from "./Marker/MarkerDefs";
 import * as kaavioStyle from "../kaavio.style";
-import { normalizeElementId } from "../utils/normalizeElementId";
 import { Icons } from "../drawers/icons/__bundled_dont_edit__";
-import * as markerDrawers from "../drawers/markers/__bundled_dont_edit__";
 import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 import { Group } from "./Group";
 
@@ -37,7 +21,12 @@ export class Diagram extends React.Component<any, any> {
     super(props);
     this.state = { ...props };
     this.state.iconSuffix = new Date().toISOString().replace(/\W/g, "");
+    this.state.latestMarkerReferenced = {};
   }
+
+  defineMarker = latestMarkerReferenced => {
+    this.setState({ latestMarkerReferenced: latestMarkerReferenced });
+  };
 
   handleClick(e) {
     const { handleClick, entityMap } = this.props;
@@ -67,107 +56,6 @@ export class Diagram extends React.Component<any, any> {
     });
   }
 
-  getMarkerInputs(
-    parentBackgroundColor: string,
-    entityMap: Record<string, any>
-  ) {
-    const edges = values(entityMap).filter(
-      (x: Record<string, any>) => x.kaavioType === "Edge"
-    );
-
-    const markerColors = Array.from(
-      edges
-        .filter(edge => edge.hasOwnProperty("color"))
-        .reduce(function(acc, edge) {
-          acc.add(edge.color);
-          return acc;
-        }, new Set())
-    );
-
-    const parentBackgroundColors = [parentBackgroundColor];
-    Array.from(
-      values(entityMap)
-        .filter((x: Record<string, any>) => x.kaavioType === "Group")
-        .reduce(function(acc, group) {
-          const fill = interpolate(
-            parentBackgroundColor,
-            group.backgroundColor,
-            group.fillOpacity
-          );
-          acc.add(fill);
-          return acc;
-        }, new Set())
-    ).forEach(function(groupColor: string) {
-      parentBackgroundColors.push(groupColor);
-    });
-
-    const markerNames = Array.from(
-      edges.reduce(function(acc, edge: any) {
-        intersection(MARKER_PROPERTY_NAMES, keys(edge))
-          .map((markerLocationType: string): string =>
-            normalizeElementId(edge[markerLocationType])
-          )
-          // We don't want to create marker defs for markers when
-          // it has an SVG-standard non-functional name, such as "none".
-          .filter(
-            (markerName: string & NonFuncIriMarkerPropertyValue) =>
-              NON_FUNC_IRI_MARKER_PROPERTY_VALUES.indexOf(markerName) === -1
-          )
-          .forEach(function(markerName) {
-            if (markerDrawers.hasOwnProperty(markerName)) {
-              acc.add(markerName);
-            } else {
-              // Can't draw it if we don't have a markerDrawer for it.
-              console.warn(`Missing markerDrawer for "${markerName}"`);
-            }
-          });
-        return acc;
-      }, new Set())
-    );
-
-    return markerColors
-      .map(color => ({ color: color }))
-      .reduce(function(acc: any[], partialInput) {
-        const pairs = toPairs(partialInput);
-        return acc.concat(
-          parentBackgroundColors.map(function(parentBackgroundColor) {
-            return pairs.reduce(function(subAcc: any, pair) {
-              const key = pair[0];
-              subAcc[key] = pair[1];
-              subAcc.parentBackgroundColor = parentBackgroundColor;
-              return subAcc;
-            }, {});
-          })
-        );
-      }, [])
-      .reduce(function(acc: any[], partialInput) {
-        const pairs = toPairs(partialInput);
-        return acc.concat(
-          MARKER_PROPERTY_NAMES.map(function(markerLocationType) {
-            return pairs.reduce(function(subAcc: any, pair) {
-              const key = pair[0];
-              subAcc[key] = pair[1];
-              subAcc.markerLocationType = markerLocationType;
-              return subAcc;
-            }, {});
-          })
-        );
-      }, [])
-      .reduce(function(acc: any[], partialInput) {
-        const pairs = toPairs(partialInput);
-        return acc.concat(
-          markerNames.map(function(markerName) {
-            return pairs.reduce(function(subAcc: any, pair) {
-              const key = pair[0];
-              subAcc[key] = pair[1];
-              subAcc.markerName = markerName;
-              return subAcc;
-            }, {});
-          })
-        );
-      }, []) as any[];
-  }
-
   render() {
     const {
       id,
@@ -187,13 +75,11 @@ export class Diagram extends React.Component<any, any> {
 
     const zIndexedEntities = contains.map(id => entityMap[id]);
 
-    const markerInputs = this.getMarkerInputs(backgroundColor, entityMap);
     const mergedStyle: Record<string, any> = defaultsDeep(
       customStyle,
       kaavioStyle
     );
     style(mergedStyle);
-
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -232,31 +118,10 @@ export class Diagram extends React.Component<any, any> {
             }
             {filters}
             <Icons />
-
-            {markerInputs.map(input => {
-              const {
-                markerLocationType,
-                markerName,
-                color,
-                parentBackgroundColor
-              } = input;
-              const normalizedName = normalizeElementId(markerName);
-              return (
-                <Marker
-                  key={getMarkerId(
-                    markerLocationType,
-                    markerName,
-                    color,
-                    parentBackgroundColor
-                  )}
-                  color={color}
-                  parentBackgroundColor={parentBackgroundColor}
-                  normalizedName={normalizedName}
-                  markerLocationType={markerLocationType}
-                  markerDrawer={markerDrawers[normalizedName]}
-                />
-              );
-            })}
+            <MarkerDefs
+              latestMarkerReferenced={this.state.latestMarkerReferenced}
+              {...this.props}
+            />
           </defs>
 
           <Group
@@ -272,6 +137,7 @@ export class Diagram extends React.Component<any, any> {
             hiddenEntities={hiddenEntities}
             edgeDrawers={edgeDrawers}
             mergedStyle={mergedStyle}
+            defineMarker={this.defineMarker}
             {...pathway}
           />
           {/*

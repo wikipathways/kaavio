@@ -1,8 +1,8 @@
 <svg>
   <defs>
-    <symbol id="mim-degradation" overflow="visible"
+    <symbol id="MimDegradation" overflow="visible"
 		preserveAspectRatio="none" viewBox="0 0 100 100">
-	<desc>mim-degradation</desc>
+	<desc>MimDegradation</desc>
 	<circle cx="50" cy="50" r="49" stroke="currentColor"/>
 	<line  x1="1" y1="1" x2="100" y2="100" stroke="currentColor" stroke-width="1" />
     </symbol>

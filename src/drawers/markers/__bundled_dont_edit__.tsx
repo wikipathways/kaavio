@@ -1,3 +1,3 @@
  import "source-map-support/register";
-			export * from "./index";
+			export MimCovalentBond, Arrow, TBar from "./index";
 		

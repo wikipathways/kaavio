@@ -26,7 +26,8 @@ export class nodeWithGroup extends React.Component<any, any> {
       edgeDrawers,
       contains,
       id,
-      hiddenEntities
+      hiddenEntities,
+      defineMarker
     } = this.props;
 
     const interpolatedBackgroundColor = interpolate(
@@ -53,6 +54,7 @@ export class nodeWithGroup extends React.Component<any, any> {
             highlightedNodes={highlightedNodes}
             hidden={hidden}
             hiddenEntities={hiddenEntities}
+            defineMarker={defineMarker}
           />
         );
       });

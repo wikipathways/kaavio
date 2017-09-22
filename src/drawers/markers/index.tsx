@@ -8,7 +8,7 @@ import * as ReactDOM from "react-dom";
 
 // NOTE: All markers put the groupChildren (visible marker contents) inside a group g element.
 // Draw the groupChildren for markerEnd. If a marker is markerStart, Kaavio will rotate it 180deg.
-export function arrow(backgroundColor, color) {
+export function Arrow(backgroundColor, color) {
   const markerWidth = 12;
   const markerHeight = 12;
   return {
@@ -34,7 +34,7 @@ export function arrow(backgroundColor, color) {
     ]
   };
 }
-export function mimbinding(backgroundColor, color) {
+export function MimBinding(backgroundColor, color) {
   const markerWidth = 12;
   const markerHeight = 12;
   return {
@@ -44,7 +44,7 @@ export function mimbinding(backgroundColor, color) {
     },
     groupChildren: [
       <g
-        key="mim-binding"
+        key="MimBinding"
         transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
       >
         <rect
@@ -60,7 +60,7 @@ export function mimbinding(backgroundColor, color) {
     ]
   };
 }
-export function mimnecessarystimulation(backgroundColor, color) {
+export function MimNecessaryStimulation(backgroundColor, color) {
   const markerWidth = 16;
   const markerHeight = 12;
   return {
@@ -70,7 +70,7 @@ export function mimnecessarystimulation(backgroundColor, color) {
     },
     groupChildren: [
       <g
-        key="mim-necessary-stimulation"
+        key="MimNecessaryStimulation"
         transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
       >
         <rect
@@ -101,7 +101,7 @@ export function mimnecessarystimulation(backgroundColor, color) {
     ]
   };
 }
-export function mimstimulation(backgroundColor, color) {
+export function MimStimulation(backgroundColor, color) {
   const markerWidth = 12;
   const markerHeight = 12;
   return {
@@ -111,7 +111,7 @@ export function mimstimulation(backgroundColor, color) {
     },
     groupChildren: [
       <g
-        key="mim-stimulation"
+        key="Mimstimulation"
         transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
       >
         <rect
@@ -133,7 +133,7 @@ export function mimstimulation(backgroundColor, color) {
     ]
   };
 }
-export function mimmodification(backgroundColor, color) {
+export function MimModification(backgroundColor, color) {
   const markerWidth = 12;
   const markerHeight = 12;
   return {
@@ -143,7 +143,7 @@ export function mimmodification(backgroundColor, color) {
     },
     groupChildren: [
       <g
-        key="mim-modification"
+        key="MimModification"
         transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
       >
         <rect
@@ -159,7 +159,7 @@ export function mimmodification(backgroundColor, color) {
     ]
   };
 }
-export function mimcatalysis(backgroundColor, color) {
+export function MimCatalysis(backgroundColor, color) {
   const markerWidth = 12;
   const markerHeight = 12;
   return {
@@ -169,7 +169,7 @@ export function mimcatalysis(backgroundColor, color) {
     },
     groupChildren: [
       <g
-        key="mim-catalysis"
+        key="MimCatalysis"
         transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
       >
         <circle
@@ -184,7 +184,7 @@ export function mimcatalysis(backgroundColor, color) {
     ]
   };
 }
-export function mimcleavage(backgroundColor, color) {
+export function MimCleavage(backgroundColor, color) {
   const markerWidth = 20;
   const markerHeight = 30;
   return {
@@ -194,7 +194,7 @@ export function mimcleavage(backgroundColor, color) {
     },
     groupChildren: [
       <g
-        key="mim-cleavage"
+        key="MimCleavage"
         transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
       >
         <rect
@@ -223,7 +223,7 @@ export function mimcleavage(backgroundColor, color) {
 // See 7.2.3 from https://discover.nci.nih.gov/mim/formal_mim_spec.pdf
 // PathVisio-Java doesn't do this quite right, because the arrowheads are
 // not visible.
-export function mimcovalentbond(backgroundColor, color) {
+export function MimCovalentBond(backgroundColor, color) {
   const markerWidth = 12;
   const markerHeight = 12;
   return {
@@ -232,7 +232,7 @@ export function mimcovalentbond(backgroundColor, color) {
       markerHeight: markerHeight
     },
     groupChildren: [
-      <g key="mim-covalent-bond">
+      <g key="MimCovalentBond">
         <path
           d="M 11,1 L 1,1 L 1,11 L 11,11"
           stroke={color}
@@ -243,7 +243,7 @@ export function mimcovalentbond(backgroundColor, color) {
     ]
   };
 }
-export function mimtranscriptiontranslation(backgroundColor, color) {
+export function MimTranscriptionTranslation(backgroundColor, color) {
   const markerWidth = 20;
   const markerHeight = 24;
   return {
@@ -253,7 +253,7 @@ export function mimtranscriptiontranslation(backgroundColor, color) {
     },
     groupChildren: [
       <g
-        key="mim-transcription-translation"
+        key="MimTranscriptionTranslation"
         transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
       >
         <rect
@@ -292,7 +292,7 @@ export function mimtranscriptiontranslation(backgroundColor, color) {
     ]
   };
 }
-export function mimgap(backgroundColor, color) {
+export function MimGap(backgroundColor, color) {
   const markerWidth = 12;
   const markerHeight = 12;
   return {
@@ -302,7 +302,7 @@ export function mimgap(backgroundColor, color) {
     },
     groupChildren: [
       <g
-        key="mim-gap"
+        key="MimGap"
         transform={`rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`}
       >
         <rect
@@ -317,7 +317,7 @@ export function mimgap(backgroundColor, color) {
     ]
   };
 }
-export function tbar(backgroundColor, color) {
+export function TBar(backgroundColor, color) {
   const markerWidth = 10;
   const markerHeight = 20;
   return {
@@ -348,11 +348,11 @@ export function tbar(backgroundColor, color) {
   };
 }
 
-export const miminhibition = tbar;
-export const mimconversion = arrow;
+export const MimInhibition = TBar;
+export const MimConversion = Arrow;
 
 // TODO the branching markerDrawers are currently just be copies of Arrow,
 // because we didn't have time to draw them. But we should either delete
 // these or else draw them properly.
-export const mimbranchingleft = arrow;
-export const mimbranchingright = arrow;
+export const MimBranchingLeft = Arrow;
+export const MimBranchingRight = Arrow;

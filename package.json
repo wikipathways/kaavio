@@ -55,6 +55,7 @@
     "fast-levenshtein": "^2.0.6",
     "getit": "^1.1.0",
     "highland": "^2.11.1",
+    "is-valid-var-name": "^1.0.2",
     "js-base64": "^2.1.9",
     "json-stringify-safe": "^5.0.1",
     "leven": "^2.1.0",
