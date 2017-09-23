@@ -8,8 +8,8 @@ import { Group } from "./Group";
 import { Edge } from "./Edge";
 import { getHighlighted } from "../utils/getHighlighted";
 import { getHidden } from "../utils/getHidden";
-import { normalizeElementId } from "../utils/normalizeElementId";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
+import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 
 /**
  * Parent Entity component.
@@ -58,12 +58,11 @@ export class Entity extends React.Component<any, any> {
   renderBurrs() {
     const {
       burrs,
-      drawAs,
+      drawAs: parentDrawAs,
       entityMap,
       width,
       height,
       kaavioType,
-      edgeDrawers,
       points,
       backgroundColor,
       mergedStyle,
@@ -71,7 +70,6 @@ export class Entity extends React.Component<any, any> {
       hiddenEntities
     } = this.props;
     if (!burrs || burrs.length < 1) return;
-    const parentNormalizedDrawAs = normalizeElementId(drawAs);
 
     return burrs
       .map(burrId => entityMap[burrId])
@@ -92,7 +90,7 @@ export class Entity extends React.Component<any, any> {
         } else if (kaavioType === "Edge") {
           // TODO get edge logic working so we can position this better
           // TODO look at current production pvjs to see how this is done
-          const positionXY = new edgeDrawers[parentNormalizedDrawAs](
+          const positionXY = new edgeDrawers[parentDrawAs](
             points
           ).getPointAtPosition(position[0]);
           burr.x = positionXY.x - burr.width / 2 + offset[0];
@@ -114,7 +112,6 @@ export class Entity extends React.Component<any, any> {
           <Entity
             key={burr.id}
             {...burr}
-            edgeDrawers={edgeDrawers}
             backgroundColor={backgroundColor}
             mergedStyle={mergedStyle}
             isHighlighted={highlighted.highlighted}

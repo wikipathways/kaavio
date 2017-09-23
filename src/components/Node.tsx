@@ -4,7 +4,6 @@ import { Observable, AjaxRequest, Subject } from "rxjs";
 import * as _ from "lodash";
 import * as validDataUrl from "valid-data-url";
 import { NodeProps } from "../typings";
-import { normalizeElementId } from "../utils/normalizeElementId";
 
 /**
  * Node is a rectangle within a Kaavio diagram.
@@ -56,7 +55,7 @@ export class Node extends React.Component<any, any> {
           color={color}
           fill={backgroundColor}
           fillOpacity={fillOpacity || 1}
-          href={"#" + normalizeElementId(drawAs)}
+          href={"#" + drawAs}
           filter={!!filter ? `url(#${filter})` : null}
           stroke={color}
           strokeWidth={borderWidth}

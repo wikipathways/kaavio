@@ -42,9 +42,6 @@ export class Edge extends React.Component<any, any> {
       type
     } = this.props;
 
-    console.log("edgeDrawers");
-    console.log(edgeDrawers);
-    console.log(`drawAs: ${drawAs}`);
     const { d } = new edgeDrawers[drawAs](points);
 
     const markerProperties = intersection(MARKER_PROPERTIES, keys(this.props))

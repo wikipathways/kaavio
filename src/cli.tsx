@@ -1,5 +1,6 @@
 import "source-map-support/register";
 import * as fs from "fs";
+import * as fse from "fs-extra";
 import * as hl from "highland";
 import * as path from "path";
 import * as ndjson from "ndjson";
@@ -12,21 +13,24 @@ import * as getit from "getit";
 import * as JSONStream from "JSONStream";
 import { Base64 } from "js-base64";
 import {
+  assign,
   camelCase,
   curry,
-  upperFirst,
   compact,
   defaults,
   find,
   filter,
   intersection,
+  isEmpty,
   keys,
   flow,
+  fromPairs,
   forOwn,
   omitBy,
   toPairs,
-  trim,
+  union,
   uniq,
+  upperFirst,
   values
 } from "lodash";
 import * as React from "react";
@@ -54,10 +58,19 @@ import * as customStyle from "./drawers/style/custom.style";
 const npmPackage = require("../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
 
+const ICONS_DIR = path.join(__dirname, "../src/drawers/icons/");
+const ICONS_BUNDLE_PATH = path.join(ICONS_DIR, "__bundled_dont_edit__.tsx");
+
+const readdir = hl.wrapCallback(fs.readdir);
+const readFile = hl.wrapCallback(fs.readFile);
+
 // TODO why does TS complain when I define and try using the titleCase below?
 //const titleCase = flow(camelCase, upperFirst);
 function getSuggestedVarName(str: string): string {
-  return upperFirst(camelCase(str)).match(/[_a-zA-Z]\w*/)[0];
+  const titleCasedName = upperFirst(camelCase(str));
+  return !titleCasedName
+    ? "SampleName"
+    : titleCasedName.match(/[_a-zA-Z]\w*/)[0];
 }
 
 /* TODO get this working
@@ -85,25 +98,25 @@ function build() {
   }).doto(x => console.log("Build complete."));
 }
 
-const compileBySelectiveImport = curry(function(name, input) {
-  console.log(`Compiling ${name}...`);
-  const whatToImport = !input || input === "*"
+const compileBySelectiveImport = curry(function(name, inputs) {
+  const whatToImport = isEmpty(inputs) || inputs[0] === "*"
     ? `*`
     : "{" +
         uniq(
-          input.split(",").map(trim).map(function(inputItem: string) {
-            if (!isVarName(inputItem)) {
+          inputs.map(function(input: string) {
+            if (!isVarName(input)) {
               throw new Error(
-                `Input item "${inputItem}" is not a valid JS export name.
-	Suggested alternative: ${getSuggestedVarName(inputItem)}`
+                `Input item "${input}" is not a valid name.
+	Suggested Replacement: ${getSuggestedVarName(input)}
+	Must be a valid JS identifier <https://tc39.github.io/ecma262/#prod-Identifier>`
               );
             }
-            return inputItem;
+            return input;
           })
         ).join(", ") +
         "}";
-  console.log(`Successfully compiled ${name}. Set includes "${whatToImport}".`);
-  console.log(`Rebuild kaavio to make changes take effect:\n\r  npm run build`);
+
+  console.log(`Importing "${whatToImport}"`);
 
   const compiledDrawerCode =
     ` import "source-map-support/register";
@@ -119,24 +132,58 @@ const compileBySelectiveImport = curry(function(name, input) {
     .each(function(x) {});
 	//*/
 
-  hl([compiledDrawerCode]).pipe(
-    fs.createWriteStream(
-      path.join(__dirname, `../src/drawers/${name}/__bundled_dont_edit__.tsx`)
-    )
-  );
+  return hl([compiledDrawerCode]);
 });
 
 const compileEdges = compileBySelectiveImport("edges");
 const compileMarkers = compileBySelectiveImport("markers");
 
-function compileIcons(inputPath) {
-  console.log("Compiling icons...");
-  const iconStream = get(inputPath)
-    .through(JSONStream.parse())
+function getIconMap(inputs: string[]) {
+  return readdir(ICONS_DIR).flatMap(function(filenames) {
+    const allLocalIconNames = filenames
+      .filter(filename => filename.slice(-4) === ".svg")
+      .map(filename => filename.slice(0, -4));
+    if (isEmpty(inputs)) {
+      inputs = allLocalIconNames;
+    } else if (inputs[0] === "*") {
+      inputs = union(allLocalIconNames, inputs.slice(1));
+    }
+
+    return hl(uniq(inputs))
+      .flatMap(function(input) {
+        if (allLocalIconNames.indexOf(input) > -1) {
+          return hl([
+            {
+              [input]: `file://${ICONS_DIR}${input}.svg#${input}`
+            }
+          ]);
+        } else if (input.indexOf("=") > -1) {
+          const inputParts = input.split("=");
+          const iconName = inputParts[0];
+          const iconLocation = inputParts.slice(1).join("=");
+          return hl([
+            {
+              [iconName]: iconLocation
+            }
+          ]);
+        } else {
+          return get(input).through(JSONStream.parse());
+        }
+      })
+      .reduce1(function(acc, iconMap) {
+        return assign(acc, iconMap);
+      });
+  });
+}
+
+function compileIcons(inputs) {
+  const iconStream = getIconMap(inputs)
     .flatMap(function(iconMap) {
+      console.log("Importing:");
       return hl
         .pairs(iconMap)
         .flatMap(function([name, iconPath]) {
+          console.log(`  ${name} from ${iconPath}`);
           const iconPathComponents = iconPath.split("#");
           const url = iconPathComponents[0];
           const id = iconPathComponents[1];
@@ -171,9 +218,13 @@ function compileIcons(inputPath) {
             if (urlRegex({ strict: true, exact: true }).test(strippedPath)) {
               svgStringStream = get(strippedPath);
             } else {
-              svgStringStream = get(strippedPath, {
-                cwd: path.dirname(inputPath)
-              });
+              // TODO check this
+              svgStringStream = get(strippedPath);
+              /*
+							svgStringStream = get(strippedPath, {
+								cwd: path.dirname(inputPath)
+							});
+							//*/
             }
           }
 
@@ -207,21 +258,13 @@ function compileIcons(inputPath) {
           );
         });
     })
-    .errors(function(err) {
-      console.error(err);
-      process.exit(1);
+    .errors(function(err, push) {
+      err.message = err.message || "";
+      err.message += ` in compileIcons(${JSON.stringify(inputs)})`;
+      push(err);
     });
 
-  iconStream.observe().each(function(x) {
-    console.log("Successfully compiled icons.");
-    console.log("Rebuild kaavio to make changes take effect: npm run build");
-  });
-
-  iconStream.pipe(
-    fs.createWriteStream(
-      path.join(__dirname, "../src/drawers/icons/__bundled_dont_edit__.tsx")
-    )
-  );
+  return iconStream;
 }
 
 const compilerMap = {
@@ -231,18 +274,55 @@ const compilerMap = {
 };
 
 program
-  .command("compile <whatToCompile> [input]")
-  .action(function(whatToCompile, input) {
-    if (compilerMap.hasOwnProperty(whatToCompile)) {
-      compilerMap[whatToCompile](input);
-    } else {
+  .command("compile <whatToCompile> [input...]")
+  .action(function(whatToCompile, inputs: string[]) {
+    console.log(`Compiling ${whatToCompile}...`);
+
+    if (!compilerMap.hasOwnProperty(whatToCompile)) {
       const cmdSuggestions = keys(compilerMap)
-        .map(key => `\tkaavio compile ${key} ${input}`)
+        .map(key => `\tkaavio compile ${key} ${inputs.join(", ")}`)
         .join("\r\n");
       throw new Error(
         `"${whatToCompile}" is not a supported whatToCompile option. Supported options: \r\n${cmdSuggestions}\r\n`
       );
     }
+
+    const drawerDir = path.join(__dirname, `../src/drawers/${whatToCompile}/`);
+    const bundlePath: string = path.join(
+      drawerDir,
+      `__bundled_dont_edit__.tsx`
+    );
+
+    const compiler = compilerMap[whatToCompile];
+
+    readFile(bundlePath)
+      .errors(function(err) {
+        err.message = err.message || "";
+        err.message += `for compile ${whatToCompile} (${JSON.stringify(
+          inputs
+        )})`;
+        throw err;
+      })
+      .each(function(bundle) {
+        const compilerStream = compiler(inputs).errors(function(err) {
+          console.error(err);
+          fs.writeFile(bundlePath, bundle, function(err) {
+            if (!!err) {
+              throw err;
+            }
+            //process.exit(1);
+          });
+        });
+
+        compilerStream.observe().each(function(x) {
+          console.log(`Successfully compiled ${whatToCompile}.`);
+          console.log(
+            `Rebuild kaavio to make changes take effect:\n\r  npm run build`
+          );
+        });
+
+        compilerStream.pipe(fs.createWriteStream(bundlePath));
+      });
   })
   .on("--help", function() {
     console.log();
@@ -253,22 +333,27 @@ program
     console.log("  Examples:");
     console.log();
     console.log("    Compile markers (include all available):");
-    console.log("    $ kaavio compile markers '*'");
+    console.log("    $ kaavio compile markers");
+    // also allowed:
+    //console.log("    $ kaavio compile markers '*'");
     console.log();
     console.log("    Compile markers (include only selected):");
-    console.log("    $ kaavio compile markers 'arrow, tbar'");
+    console.log("    $ kaavio compile markers Arrow TBar");
     console.log();
-    console.log("    Compile icons:");
+    console.log("    Compile icons (include all available):");
+    console.log("    $ kaavio compile icons");
+    console.log();
+    console.log("    Compile icons from JSON icon map file:");
     console.log(
       "    $ kaavio compile icons ./src/drawers/icons/defaultIconMap.json"
     );
     console.log();
     console.log("    Compile edges (include all available):");
-    console.log("    $ kaavio compile edges '*'");
+    console.log("    $ kaavio compile edges");
     console.log();
     console.log("    Compile edges (include only selected):");
     console.log(
-      "    $ kaavio compile edges 'straightline,curvedline,elbowline,segmentedline'"
+      "    $ kaavio compile edges StraightLine CurvedLine ElbowLine SegmentedLine"
     );
   });
 
