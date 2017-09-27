@@ -1,9 +1,21 @@
-var webpack = require("webpack");
+const webpack = require("webpack");
 const path = require("path");
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
+//const tsconfig = require("./tsconfig.json");
+//const babelrc = require(".babelrc");
+
+const babelLoader = {
+  loader: "babel-loader",
+  options: { presets: ["env", "react"] }
+};
+//{ loader: "babel-loader", options: { presets: ["env"] } }
+//{ loader: "babel-loader", options: { presets: babelrc.presets } }
+//{ loader: "babel-loader" }
 
 module.exports = {
   entry: "./src/index.ts",
+  //entry: "./lib/index.js",
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "index.js",
@@ -19,9 +31,10 @@ module.exports = {
       ".tsx",
       ".js",
       ".jsx",
-      "json"
-    ],
-    modules: [path.join(__dirname, "src"), "node_modules"]
+      ".json"
+    ]
+    //modules: [path.join(__dirname, "src"), "node_modules"]
+    //modules: [path.join(__dirname, "lib"), "node_modules"]
   },
   module: {
     rules: [
@@ -40,28 +53,18 @@ module.exports = {
       { test: /\.json$/, use: "json-loader" },
       {
         test: /\.ts(x?)$/,
-        use:
-          "ts-loader?" +
-            JSON.stringify({
-              compilerOptions: {
-                declaration: false,
-                experimentalDecorators: true,
-                inlineSourceMap: true,
-                jsx: "react",
-                moduleResolution: "node",
-                noEmitOnError: true,
-                noImplicitAny: false,
-                pretty: true
-              }
-            })
+        //include: [path.resolve(__dirname, "lib/")],
+        use: [
+          babelLoader,
+          {
+            //loader: "ts-loader?" + JSON.stringify(tsconfig)
+            loader: "ts-loader"
+          }
+        ]
       },
       {
-        test: /\.(ttf|eot|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        use: "url-loader?limit=10000&name=assets/fonts/[name].[hash].[ext]"
-      },
-      {
-        test: /\.(png|jpe?g|gif|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        use: "url-loader?limit=10000&name=assets/images/[name].[hash].[ext]"
+        test: /\.js(x?)$/,
+        use: [babelLoader]
       }
     ]
   },
@@ -70,11 +73,12 @@ module.exports = {
       "process.env.NODE_ENV": JSON.stringify("production")
     }),
     new webpack.LoaderOptionsPlugin({
-      minimize: true,
+      //minimize: true,
       debug: false
     }),
-    new webpack.optimize.UglifyJsPlugin({
+    new UglifyJsPlugin({
       beautify: false,
+      ecma: "8",
       mangle: {
         screw_ie8: true,
         keep_fnames: true
