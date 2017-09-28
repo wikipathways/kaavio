@@ -48,7 +48,6 @@ export class Marker extends React.Component<any, any> {
       id,
       markerDrawer,
       markerProperty,
-      markerName,
       color,
       parentBackgroundColor
     } = this.props;
@@ -59,17 +58,9 @@ export class Marker extends React.Component<any, any> {
     );
     const { markerWidth, markerHeight } = markerAttributes;
 
-    const markerId = getMarkerId(
-      markerProperty,
-      markerName,
-      color,
-      parentBackgroundColor
-    );
-
     return (
       <marker
-        id={markerId}
-        key={markerId}
+        id={id}
         markerUnits="strokeWidth"
         orient="auto"
         preserveAspectRatio="none"
@@ -79,8 +70,8 @@ export class Marker extends React.Component<any, any> {
         {...markerAttributes}
       >
         <g
-          id={`g-${markerId}`}
-          key={`g-${markerId}`}
+          id={`g-${id}`}
+          key={`g-${id}`}
           transform={
             markerProperty === "markerEnd"
               ? ""

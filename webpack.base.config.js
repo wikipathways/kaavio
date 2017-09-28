@@ -1,15 +1,28 @@
-var webpack = require("webpack");
 const path = require("path");
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
+const webpack = require("webpack");
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const StringReplacePlugin = require("string-replace-webpack-plugin");
+
+const babelLoader = {
+  loader: "babel-loader",
+  options: { presets: ["env", "react"] }
+};
+
+const shebangRemovalLoader = {
+  loader: StringReplacePlugin.replace({
+    replacements: [
+      {
+        pattern: /^#!.*$/m,
+        replacement: function(match, p1, offset, string) {
+          return "";
+        }
+      }
+    ]
+  })
+};
 
 module.exports = {
-  entry: "./src/icons/main.ts",
-  output: {
-    path: path.resolve(__dirname, "dist"),
-    filename: "icons.js",
-    library: "icons",
-    libraryTarget: "umd"
-  },
+  context: path.resolve(__dirname),
   devtool: "source-map",
   resolve: {
     extensions: [
@@ -19,9 +32,8 @@ module.exports = {
       ".tsx",
       ".js",
       ".jsx",
-      "json"
-    ],
-    modules: [path.join(__dirname, "src"), "node_modules"]
+      ".json"
+    ]
   },
   module: {
     rules: [
@@ -39,22 +51,18 @@ module.exports = {
       },
       { test: /\.json$/, use: "json-loader" },
       {
-        test: /\.ts(x?)$/,
-        use:
-          "ts-loader?" +
-            JSON.stringify({
-              compilerOptions: {
-                declaration: false
-              }
-            })
+        test: /\.tsx?$/,
+        use: [
+          babelLoader,
+          shebangRemovalLoader,
+          {
+            loader: "ts-loader"
+          }
+        ]
       },
       {
-        test: /\.(ttf|eot|woff|woff2)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        use: "url-loader?limit=10000&name=assets/fonts/[name].[hash].[ext]"
-      },
-      {
-        test: /\.(png|jpe?g|gif|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-        use: "url-loader?limit=10000&name=assets/images/[name].[hash].[ext]"
+        test: /\.jsx?$/,
+        use: [babelLoader, shebangRemovalLoader]
       }
     ]
   },
@@ -63,23 +71,17 @@ module.exports = {
       "process.env.NODE_ENV": JSON.stringify("production")
     }),
     new webpack.LoaderOptionsPlugin({
-      minimize: true,
+      //minimize: true,
       debug: false
-    }),
-    new webpack.optimize.UglifyJsPlugin({
-      beautify: false,
-      mangle: {
-        screw_ie8: true,
-        keep_fnames: true
-      },
-      compress: {
-        screw_ie8: true
-      },
-      comments: false
     }),
     new ExtractTextPlugin({
       filename: "style.css",
       allChunks: true
+    }),
+    new webpack.BannerPlugin({
+      banner: "require('source-map-support').install();",
+      //entryOnly: true,
+      raw: true
     })
   ]
 };

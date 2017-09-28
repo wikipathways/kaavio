@@ -19,7 +19,7 @@ get other bugs ironed out so it works!
 
 */
 
-import "source-map-support/register";
+//import "source-map-support/register";
 import * as hl from "highland";
 import { curry, get, keys } from "lodash/fp";
 import * as path from "path";

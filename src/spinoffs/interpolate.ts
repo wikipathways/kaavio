@@ -1,5 +1,5 @@
-import * as colorInterpolate from "color-interpolate";
-import * as rgb2hex from "rgb2hex";
+const colorInterpolate = require("color-interpolate");
+const rgb2hex = require("rgb2hex");
 
 export function interpolate(parentBackgroundColor, backgroundColor, opacity) {
   if (parentBackgroundColor === backgroundColor) {

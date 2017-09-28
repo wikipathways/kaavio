@@ -59,7 +59,7 @@ const getit = require("getit");
 const validDataUrl = require("valid-data-url");
 
 import { Diagram } from "./components/Diagram";
-import * as edgeDrawers from "./drawers/edges/index";
+//import * as edgeDrawers from "./drawers/edges/index";
 // Are the icons and markers are specific to Pvjs (less likely to useful to other applications)?
 // Should they be part of Kaavio?
 import * as markerDrawers from "./drawers/markers";
@@ -116,7 +116,7 @@ function build() {
 const bundleBySelectiveImport = curry(function(
   name,
   inputs,
-  { fillOnly, preserveAspectRatio }
+  { preserveAspectRatio }
 ) {
   const whatToImport = isEmpty(inputs) || inputs[0] === "*"
     ? `*`
@@ -203,23 +203,19 @@ function getIconMap(inputs: string[]) {
   });
 }
 
-function bundleIcons(inputs, { fillOnly, preserveAspectRatio }) {
+function bundleIcons(inputs, { preserveAspectRatio }) {
   const iconStream = getIconMap(inputs)
     .flatMap(function(iconMap) {
       console.log("Importing:");
       return hl
         .pairs(iconMap)
         .flatMap(function([name, iconPath]) {
-          const thisFillOnly =
-            fillOnly === true ||
-            (isArray(fillOnly) && fillOnly.indexOf(name) > -1);
           const thisPreserveAspectRatio =
             preserveAspectRatio === true ||
             (isArray(preserveAspectRatio) &&
               preserveAspectRatio.indexOf(name) > -1);
           console.log(`  ${name} 
 	source: ${iconPath}
-	fillOnly: ${thisFillOnly}
 	preserveAspectRatio: ${thisPreserveAspectRatio}`);
           const [url, idInSource] = iconPath.split("#");
           // NOTE: data URI parsing is a variation of code from
@@ -273,23 +269,6 @@ function bundleIcons(inputs, { fillOnly, preserveAspectRatio }) {
               node.setAttribute("preserveAspectRatio", "none");
             }
 
-            /*
-            let style: any = {};
-            if (thisFillOnly) {
-              style.fill = "currentColor";
-              style.stroke = "none";
-            }
-
-            const styleString = toPairs(style)
-              .map(([key, value]) => `${key}: ${value};`)
-              .join(" ");
-
-            if (styleString) {
-							const nodeStyle = node.getAttribute("style") || "";
-							node.setAttribute("style", nodeStyle + ' ' + styleString);
-            }
-						//*/
-
             const viewBox = node.getAttribute("viewBox");
             if (!viewBox) {
               const width = node.getAttribute("width") || 200;
@@ -324,11 +303,6 @@ function bundleIcons(inputs, { fillOnly, preserveAspectRatio }) {
           const suggestedFillOnlyCSS = keys(iconMap)
             .map((key, i) => `.Icon.${key} {fill: currentColor; stroke: none;}`)
             .join("\n\t");
-          /*
-            // replacing first one only, because it automatically uses initial indent.
-            // the subsequent items need to keep that indent.
-            .replace("\t", "");
-						//*/
 
           console.log(`
 Note that most SVG glyph sets expect a fill color but not a stroke.
@@ -387,23 +361,6 @@ program
     `Automatically rebuild after bundling so changes take effect. Default: true.`,
     (s: string) => s === "true"
   )
-  /* TODO should we enable this, or is it something to be handled by the custom CSS?
-  .option(
-    "-f, --fill-only [comma-separated list or boolean]",
-    `
-		Set icon color to be controlled by fill only. Ignore stroke.
-
-		true: applies to all icons
-		list: applies to the icon(s) with the specified name(s)
-
-		If this option is specified without a value, the value is set to true`,
-    // NOTE: s below is always a string.
-    // If the user specifies true, it comes through as a string, not a boolean.
-    // If the user doesn't use this option, the function below is not called.
-    (s: string) =>
-      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
-  )
-	//*/
   .option(
     "-p, --preserve-aspect-ratio [comma-separated list or boolean]",
     `
@@ -425,9 +382,9 @@ program
     const buildAutomatically = options.hasOwnProperty("build")
       ? options.build
       : true;
-    const fillOnly = options.hasOwnProperty("fillOnly") && options.fillOnly;
     const preserveAspectRatio =
-      options.hasOwnProperty("fillOnly") && options.preserveAspectRatio;
+      options.hasOwnProperty("preserveAspectRatio") &&
+      options.preserveAspectRatio;
 
     if (!bundlerMap.hasOwnProperty(whatToBundle)) {
       const cmdSuggestions = keys(bundlerMap)
@@ -454,7 +411,6 @@ program
       })
       .each(function(bundle) {
         const bundlerStream = bundler(inputs, {
-          fillOnly,
           preserveAspectRatio
         }).errors(function(err) {
           console.error(err);
@@ -483,6 +439,7 @@ program
             console.log(
               `Rebuild Kaavio to make changes take effect:\n\r  npm run build`
             );
+            process.exit(0);
           }
         });
 
@@ -532,20 +489,17 @@ program
 				want to use the element with id "ic_check_box_outline_blank_24px"
 				from INSIDE the SVG specified by the URL):
 			$ kaavio bundle icons Ellipse \\
-				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
-				--fill-only=RoundedRectangle
+				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px
 
 			Include all built-ins, but override the ones for Brace, Ellipse,
 				Mitochondria and RoundedRectangle.
-				Set Brace, Ellipse and RoundedRectangle to use fill color but not stroke.
-				Set Mitochondria to retain its original aspect ratio.
+				Set wikidata:Q218642 (L-Alanine) and Mitochondria to retain their original aspect ratios.
 			$ kaavio bundle icons '*' Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg \\
 				Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg \\
 				Mitochondria=http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg \\
 				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
-				wikidata:Q218642=http://cdkdepict-openchem.rhcloud.com/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C \\
-				--fill-only=Brace,Ellipse,RoundedRectangle \\
-				--preserve-aspect-ratio=Mitochondria
+				wikidata:Q218642="http://cdkdepict-openchem.rhcloud.com/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \\
+				--preserve-aspect-ratio=wikidata:Q218642,Mitochondria
 
 			Include the icons specified in an icon map JSON file:
 			$ kaavio bundle icons ./src/drawers/icons/defaultIconMap.json
@@ -563,7 +517,20 @@ program
     // also allowed:
     //console.log("    $ kaavio bundle markers '*'");
     /*
-./bin/kaavio bundle icons '*' Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg Mitochondria=http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px --fill-only=Brace,Ellipse,RoundedRectangle --preserve-aspect-ratio=Mitochondria
+./bin/kaavio bundle icons '*' Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg Mitochondria=http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px --preserve-aspect-ratio=Mitochondria
+
+
+./bin/kaavio bundle icons '*' Brace="https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg" \
+				Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg \
+				Mitochondria="http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg" \
+				RoundedRectangle="https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px" \
+				wikidata:Q218642="http://cdkdepict-openchem.rhcloud.com/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \
+				--preserve-aspect-ratio=wikidata:Q218642,Mitochondria
+
+cat ../gpml2pvjson-js/test/input/playground.gpml | ../gpml2pvjson-js/bin/gpml2pvjson | jq -c '(. | .entityMap[] | select(.dbId == "HMDB00161")) as {id: $id} | .entityMap[$id].drawAs |= "wikidata:Q218642" | .entityMap[$id].height=81' | ./bin/kaavio json2svg --static true | sed 's/\[\]$//' > output.svg
+
+cat ../bulk-gpml2pvjson/wikipathways-20170910-json-Homo_sapiens-unified/WP106.json | jq -c '(. | .entityMap[] | select(has("wikidata"))) as {id: $id, width: $width, wikidata: $wikidata} | .entityMap[$id].drawAs |= $wikidata | .entityMap[$id].height |= $width' | ./bin/kaavio json2svg --static true | sed 's/\[\]$//' > output.svg
+
 //*/
     //
   });
@@ -652,35 +619,32 @@ program
       //        });
       //      })
       .map(function(input) {
-        return (
-          render(
-            React.createElement(
-              Diagram,
-              {
-                pathway: input.pathway,
-                id: input.pathway.id,
-                backgroundColor: input.pathway.backgroundColor,
-                entityMap: input.entityMap,
-                //filters,
-                height: input.pathway.height,
-                name: input.pathway.height,
-                width: input.pathway.width,
-                zIndices: input.pathway.contains,
-                //highlightedNodes,
-                //hiddenEntities
-                customStyle: customStyle,
-                edgeDrawers: edgeDrawers
-              },
-              null
-            )
-          ) + "\n"
+        return render(
+          React.createElement(
+            Diagram,
+            {
+              pathway: input.pathway,
+              id: input.pathway.id,
+              backgroundColor: input.pathway.backgroundColor,
+              entityMap: input.entityMap,
+              //filters,
+              height: input.pathway.height,
+              name: input.pathway.height,
+              width: input.pathway.width,
+              zIndices: input.pathway.contains,
+              customStyle: customStyle
+              //edgeDrawers: edgeDrawers
+              //highlightedNodes,
+              //hiddenEntities
+            },
+            null
+          )
         );
       })
       .errors(function(err) {
         console.error(err);
         process.exit(1);
       })
-      .map(x => String(x))
       .pipe(outputStream);
   })
   .on("--help", function() {

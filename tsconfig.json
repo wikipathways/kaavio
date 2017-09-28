@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "inlineSourceMap": true,
     "lib": [
       "dom",
       "dom.iterable",
@@ -9,7 +10,7 @@
       "scripthost"
     ],
     "module": "es2015",
-    "target": "es5",
+    "target": "es2015",
     "outDir": "lib"
   }
 }

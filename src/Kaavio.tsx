@@ -1,4 +1,4 @@
-import "source-map-support/register";
+//import "source-map-support/register";
 import * as React from "react";
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";

@@ -1,4 +1,4 @@
-import "source-map-support/register";
+//import "source-map-support/register";
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { getHighlighted } from "../utils/getHighlighted";

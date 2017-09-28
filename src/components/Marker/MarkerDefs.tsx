@@ -170,15 +170,10 @@ export class MarkerDefs extends React.Component<any, any> {
           } = details;
           return (
             <Marker
-              key={getMarkerId(
-                markerProperty,
-                markerName,
-                color,
-                parentBackgroundColor
-              )}
+              id={markerId}
+              key={markerId}
               color={color}
               parentBackgroundColor={parentBackgroundColor}
-              markerName={markerName}
               markerProperty={markerProperty}
               markerDrawer={markerDrawers[markerName]}
             />

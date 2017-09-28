@@ -1,4 +1,3 @@
-import "source-map-support/register";
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { defaults, defaultsDeep, forOwn, omitBy } from "lodash";
@@ -12,6 +11,7 @@ import "rxjs/add/operator/mergeMap";
 import { style, getStyles } from "typestyle";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import * as kaavioStyle from "../kaavio.style";
+//import * as customStyle from "../drawers/style/custom.style";
 import { Icons } from "../drawers/icons/__bundled_dont_edit__";
 import { Group } from "./Group";
 

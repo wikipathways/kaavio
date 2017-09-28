@@ -1,4 +1,5 @@
-import * as createSVGPathCalculator from "point-at-length";
+//import * as createSVGPathCalculator from "point-at-length";
+const createSVGPathCalculator = require("point-at-length");
 import { toPoints } from "svg-points";
 
 export interface ColinMeinkeSVGPoint {
