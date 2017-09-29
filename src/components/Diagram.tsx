@@ -9,9 +9,10 @@ import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 import { style, getStyles } from "typestyle";
+import { FilterDefs } from "./Filter/FilterDefs";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import * as kaavioStyle from "../kaavio.style";
-//import * as customStyle from "../drawers/style/custom.style";
+import * as customStyle from "../drawers/styles/__bundled_dont_edit__";
 import { Icons } from "../drawers/icons/__bundled_dont_edit__";
 import { Group } from "./Group";
 
@@ -21,7 +22,12 @@ export class Diagram extends React.Component<any, any> {
     this.state = { ...props };
     this.state.iconSuffix = new Date().toISOString().replace(/\W/g, "");
     this.state.latestMarkerReferenced = {};
+    this.state.latestFilterReferenced = {};
   }
+
+  defineFilter = latestFilterReferenced => {
+    this.setState({ latestFilterReferenced: latestFilterReferenced });
+  };
 
   defineMarker = latestMarkerReferenced => {
     this.setState({ latestMarkerReferenced: latestMarkerReferenced });
@@ -59,7 +65,6 @@ export class Diagram extends React.Component<any, any> {
     const {
       id,
       backgroundColor,
-      customStyle,
       entityMap,
       filters,
       height,
@@ -115,7 +120,10 @@ export class Diagram extends React.Component<any, any> {
                 <rect x="0" y="0" rx="0.125" ry="0.25" width="1" height="1" />
               </clipPath>
             }
-            {filters}
+            <FilterDefs
+              latestFilterReferenced={this.state.latestFilterReferenced}
+              {...this.props}
+            />
             <Icons />
             <MarkerDefs
               latestMarkerReferenced={this.state.latestMarkerReferenced}
@@ -135,6 +143,7 @@ export class Diagram extends React.Component<any, any> {
             entityMap={entityMap}
             hiddenEntities={hiddenEntities}
             mergedStyle={mergedStyle}
+            defineFilter={this.defineFilter}
             defineMarker={this.defineMarker}
             {...pathway}
           />

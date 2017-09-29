@@ -24,6 +24,7 @@ import {
   fromPairs,
   forOwn,
   omitBy,
+  partition,
   toPairs,
   union,
   uniq,
@@ -63,7 +64,6 @@ import { Diagram } from "./components/Diagram";
 // Are the icons and markers are specific to Pvjs (less likely to useful to other applications)?
 // Should they be part of Kaavio?
 import * as markerDrawers from "./drawers/markers";
-import * as customStyle from "./drawers/style/custom.style";
 
 const npmPackage = require("../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
@@ -201,6 +201,54 @@ function getIconMap(inputs: string[]) {
         return assign(acc, iconMap);
       });
   });
+}
+
+function bundleStyles(inputs: string[]) {
+  // NOTE: we're not accepting CSS strings. Must be filepaths.
+  const strippedInputs = inputs.map((input: string) =>
+    input.replace("file://", "")
+  );
+  const [
+    typeStyleFileInputs,
+    nonTypeStyleFileInputs
+  ] = partition(strippedInputs, strippedInput =>
+    strippedInput.match(/\.style.tsx$/)
+  );
+  const cssStream = hl(nonTypeStyleFileInputs)
+    .flatMap(get)
+    .collect()
+    .map(function(styleStrings) {
+      return styleStrings.join("").replace(/[\r\n]/g, "");
+    });
+
+  const typeStyleExportString =
+    typeStyleFileInputs
+      .map(function(typeStyleFilepath) {
+        return path.resolve(typeStyleFilepath).replace(/\.tsx$/, "");
+      })
+      .map(function(modulePath) {
+        return `export * from "${modulePath}"`;
+      })
+      .join("\n") || "export const _placeholder = 1;";
+
+  return cssStream
+    .filter(cssString => cssString !== "")
+    .doto(x => console.log("css"))
+    .doto(console.log)
+    .map(
+      cssString => `import { cssRaw } from 'typestyle';
+cssRaw(${cssString || ""})`
+    )
+    .otherwise([""])
+    .map(function(cssRawTypeStyleString) {
+      return `${cssRawTypeStyleString}
+${typeStyleExportString}`;
+    })
+    .errors(function(err, push) {
+      err.message = err.message || "";
+      err.message += ` in bundleIcons(${JSON.stringify(inputs)})`;
+      push(err);
+    });
 }
 
 function bundleIcons(inputs, { preserveAspectRatio }) {
@@ -346,7 +394,8 @@ To disable stroke for your icon(s) and enable fill, you can use this in your cus
 const bundlerMap = {
   icons: bundleIcons,
   markers: bundleMarkers,
-  edges: bundleEdges
+  edges: bundleEdges,
+  styles: bundleStyles
 };
 
 const STRING_TO_BOOLEAN = {
@@ -423,7 +472,9 @@ program
           });
         });
 
-        bundlerStream.observe().each(function(x) {
+        console.log("bundlePath");
+        console.log(bundlePath);
+        bundlerStream.observe().last().each(function(x) {
           console.log(`Successfully bundled ${whatToBundle}.`);
           if (buildAutomatically) {
             build()
@@ -439,7 +490,12 @@ program
             console.log(
               `Rebuild Kaavio to make changes take effect:\n\r  npm run build`
             );
-            process.exit(0);
+            // TODO I don't seem to be able to get the process to both finish
+            // piping the the bundlePath and to also quit, unless I use this
+            // kludge with the timeout and process.exit.
+            setTimeout(function() {
+              process.exit(0);
+            }, 500);
           }
         });
 
@@ -627,13 +683,11 @@ program
               id: input.pathway.id,
               backgroundColor: input.pathway.backgroundColor,
               entityMap: input.entityMap,
-              //filters,
               height: input.pathway.height,
               name: input.pathway.height,
               width: input.pathway.width,
-              zIndices: input.pathway.contains,
-              customStyle: customStyle
-              //edgeDrawers: edgeDrawers
+              zIndices: input.pathway.contains
+              //filters,
               //highlightedNodes,
               //hiddenEntities
             },

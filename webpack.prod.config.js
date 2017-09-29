@@ -3,7 +3,7 @@ const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 
 const webpackConfig = require("./webpack.base.config");
 
-webpackConfig.entry = "./src/index.ts";
+webpackConfig.entry = path.resolve(__dirname, "src/index.ts");
 webpackConfig.output = {
   path: path.resolve(__dirname, "dist"),
   filename: "index.js",

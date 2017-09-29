@@ -26,6 +26,7 @@ export class nodeWithGroup extends React.Component<any, any> {
       contains,
       id,
       hiddenEntities,
+      defineFilter,
       defineMarker
     } = this.props;
 
@@ -52,6 +53,7 @@ export class nodeWithGroup extends React.Component<any, any> {
             highlightedNodes={highlightedNodes}
             hidden={hidden}
             hiddenEntities={hiddenEntities}
+            defineFilter={defineFilter}
             defineMarker={defineMarker}
           />
         );

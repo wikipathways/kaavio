@@ -1,5 +1,5 @@
 {
-  "name": "@wikipathways/kaavio",
+  "name": "kaavio",
   "version": "3.7.5-beta",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "dist/index.js",
@@ -10,6 +10,7 @@
     "lib",
     "dist"
   ],
+  "bin": "./bin/kaavio",
   "scripts": {
     "assets": "npm run gulp copy:assets",
     "build": "npm-run-all build:*",
@@ -22,9 +23,10 @@
     "placeholders:dirs": "mkdir -p src/drawers/edges src/drawers/icons src/drawers/markers",
     "placeholders:markers": "echo \"export const a = 1;\" > src/drawers/markers/__bundled_dont_edit__.tsx",
     "placeholders:edges": "echo \"export const a = 1;\" > src/drawers/edges/__bundled_dont_edit__.tsx",
-    "placeholders:Icons": "echo \"import * as React from 'React'; export class Icons extends React.Component<any, any> {render(){return <div />}};\" > src/drawers/icons/__bundled_dont_edit__.tsx ",
-    "postinstall": "npm run placeholders && ./bin/kaavio bundle edges && ./bin/kaavio bundle icons && ./bin/kaavio bundle markers",
-    "prepare": "npm run build",
+    "placeholders:icons": "echo \"import * as React from 'React'; export class Icons extends React.Component<any, any> {render(){return <div />}};\" > src/drawers/icons/__bundled_dont_edit__.tsx ",
+    "placeholders:styles": "echo \"export const a = 1;\" > src/drawers/styles/__bundled_dont_edit__.tsx",
+    "postinstall": "npm run placeholders",
+    "prepare": "./bin/kaavio bundle --build false edges && ./bin/kaavio bundle icons --build false && ./bin/kaavio bundle markers --build false && npm run build",
     "serve": "webpack-dev-server --config webpack.dev.config.js --open --progress --inline",
     "start": "npm run serve",
     "test": "echo 'get some tests working'",
