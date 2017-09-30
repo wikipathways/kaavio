@@ -1,4 +1,5 @@
 #!/usr/bin/env node
 
-var cli = require("../dist/cli");
+var path = require("path");
+var cli = require(path.resolve(__dirname, "../dist/cli"));
 module.exports = cli;

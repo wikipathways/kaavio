@@ -10,10 +10,10 @@
     "pretty": true
   },
   "files": [
-    "index.d.ts",
+    "src/index.d.ts",
     "src/typings/index.d.ts",
     "src/index.ts",
-    "./src/cli.tsx"
+    "src/cli.tsx"
   ],
   "exclude": [
     "dist/**/*",

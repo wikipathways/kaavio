@@ -8,6 +8,13 @@ import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { DOMParser } from "xmldom";
 import * as JSONStream from "JSONStream";
 import { Base64 } from "js-base64";
+
+/*
+import {
+  assign
+} from "lodash/fp";
+//*/
+
 import {
   assign,
   camelCase,
@@ -101,9 +108,27 @@ function get(inputPath, opts = {}) {
   return hl.wrapCallback(getit)(strippedPath, opts);
 }
 
+/*
 function build() {
   console.log("Rebuilding Kaavio (may take some time)...");
-  return exec("npm run build", {
+  return exec("npm run build:lib", {
+    // NOTE: we want to build from the top level of the package
+    // __dirname is kaavio/src/, even after compilation
+    // we want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
+    cwd: path.join(__dirname, "..")
+  })
+    .last()
+    .doto(x => console.log("Build complete."));
+}
+//*/
+
+function build() {
+  console.log("Rebuilding Kaavio (may take some time)...");
+  const webpackProdConfigPath = path.resolve(
+    __dirname,
+    "../webpack.prod.config.js"
+  );
+  return exec(`webpack --config ${webpackProdConfigPath}`, {
     // NOTE: we want to build from the top level of the package
     // __dirname is kaavio/src/, even after compilation
     // we want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
@@ -488,7 +513,7 @@ program
               });
           } else {
             console.log(
-              `Rebuild Kaavio to make changes take effect:\n\r  npm run build`
+              `Rebuild Kaavio to make changes take effect: npm run build`
             );
             // TODO I don't seem to be able to get the process to both finish
             // piping the the bundlePath and to also quit, unless I use this
