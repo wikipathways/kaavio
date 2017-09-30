@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "3.7.5-beta11",
+  "version": "3.7.5-beta12",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "dist/index.js",
   "module": "lib/index.js",
@@ -14,8 +14,7 @@
     "tsconfig.json",
     "tsconfig.*.json",
     "yarn.lock",
-    "webpack.*.config.js",
-    "index.d.ts"
+    "webpack.*.config.js"
   ],
   "bin": "./bin/kaavio",
   "scripts": {
