@@ -1,12 +1,19 @@
 import { fill, flatten, last, range } from "lodash";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { normalizeElementId } from "../../utils/normalizeElementId";
 
 //import * as RGBColor from 'rgbcolor';
 
-export function DoubleStroke({ source = "SourceGraphic", strokeWidth = 1 }) {
+export type FilterResponse = { id: string; filterPrimitives: JSX.Element[] };
+
+export function Double({
+  source = "SourceGraphic",
+  strokeWidth = 1
+}): FilterResponse {
+  let filterPrimitives;
   if (strokeWidth === 1) {
-    return [
+    filterPrimitives = [
       <feComposite
         in={source}
         in2={source}
@@ -26,39 +33,50 @@ export function DoubleStroke({ source = "SourceGraphic", strokeWidth = 1 }) {
         result="doubleStrokeResult"
       />
     ];
+  } else {
+    filterPrimitives = [
+      <feMorphology
+        in={source}
+        operator="dilate"
+        radius={strokeWidth}
+        result="doubleStrokedilated"
+      />,
+      <feComposite
+        in="doubleStrokedilated"
+        operator="xor"
+        in2={source}
+        result="doubleStrokeResult"
+      />
+    ];
   }
 
-  return [
-    <feMorphology
-      in={source}
-      operator="dilate"
-      radius={strokeWidth}
-      result="doubleStrokedilated"
-    />,
-    <feComposite
-      in="doubleStrokedilated"
-      operator="xor"
-      in2={source}
-      result="doubleStrokeResult"
-    />
-  ];
+  return {
+    id: normalizeElementId(["double", strokeWidth, "filter"].join("-")),
+    filterPrimitives: filterPrimitives
+  };
 }
 
-export function Highlight({ color }) {
-  return [
-    /* Desaturate all colours before highlighting */
-    <feColorMatrix
-      in="SourceGraphic"
-      type="saturate"
-      values="0"
-      result="toHighlight"
-    />,
-    <feFlood floodColor={color} floodOpacity="0.5" result="highlight" />,
-    <feComposite in="highlight" in2="toHighlight" operator="atop" />
-  ];
+export function Highlight({ source = "SourceGraphic", color }): FilterResponse {
+  return {
+    id: normalizeElementId(["highlight", color, "filter"].join("-")),
+    filterPrimitives: [
+      /* Desaturate all colours before highlighting */
+      <feColorMatrix
+        in="SourceGraphic"
+        type="saturate"
+        values="0"
+        result="toHighlight"
+      />,
+      <feFlood floodColor={color} floodOpacity="0.5" result="highlight" />,
+      <feComposite in="highlight" in2="toHighlight" operator="atop" />
+    ]
+  };
 }
 
-export function Round({ source = "SourceGraphic", strokeWidth = 1 }) {
+export function Round({
+  source = "SourceGraphic",
+  strokeWidth = 1
+}): FilterResponse {
   // Can we handle a strokeWidth of 0.4?
   //const roundedStrokeWidth = Math.max(1, Math.round(strokeWidth || 1));
 
@@ -144,9 +162,11 @@ export function Round({ source = "SourceGraphic", strokeWidth = 1 }) {
       ];
   //*/
 
-  return normalizedDark.concat([
-    //<feMorphology in="roundnormalizeddarkinput" operator={strokeWidthNormalizationOperator} radius={ normalizationRadius - 1/2 } result="roundnormalized" />,
-    /*
+  return {
+    id: normalizeElementId(["round", strokeWidth, "filter"].join("-")),
+    filterPrimitives: normalizedDark.concat([
+      //<feMorphology in="roundnormalizeddarkinput" operator={strokeWidthNormalizationOperator} radius={ normalizationRadius - 1/2 } result="roundnormalized" />,
+      /*
 		<feComponentTransfer in={source} colorInterpolationFilters="sRGB" result="rounddarkinput">
 			<feFuncR type="linear" slope={darkInputSlope} intercept={darkInputIntercept}/>
 			<feFuncG type="linear" slope={darkInputSlope} intercept={darkInputIntercept}/>
@@ -154,7 +174,7 @@ export function Round({ source = "SourceGraphic", strokeWidth = 1 }) {
 			<feFuncA type="linear" slope={darkInputSlope} intercept={darkInputIntercept}/>
 		</feComponentTransfer>,
 		//*/
-    /*
+      /*
 		<feComponentTransfer in={source} result="rounddarkinput">
 			<feFuncR type="discrete" tableValues="0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"/>
 			<feFuncG type="discrete" tableValues="0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"/>
@@ -162,33 +182,33 @@ export function Round({ source = "SourceGraphic", strokeWidth = 1 }) {
 			<feFuncA type="discrete" tableValues="0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"/>
 		</feComponentTransfer>,
 	 	//*/
-    <feGaussianBlur
-      in="roundnormalized"
-      stdDeviation={3 * 2}
-      result="roundblurred"
-    />,
-    <feColorMatrix
-      in="roundblurred"
-      mode="matrix"
-      values={`1   0   0   0   0
+      <feGaussianBlur
+        in="roundnormalized"
+        stdDeviation={3 * 2}
+        result="roundblurred"
+      />,
+      <feColorMatrix
+        in="roundblurred"
+        mode="matrix"
+        values={`1   0   0   0   0
                             0   1   0   0   0
                             0   0   1   0   0
                             0   0   0  17  -3`}
-      result="roundcolored"
-    />,
-    <feBlend
-      in="roundcolored"
-      in2="roundcolored"
-      mode="multiply"
-      result="rounddarkoutput"
-    />,
-    <feBlend
-      in="rounddarkoutput"
-      in2="rounddarkoutput"
-      mode="multiply"
-      result="rounddarkeroutput"
-    />,
-    /*
+        result="roundcolored"
+      />,
+      <feBlend
+        in="roundcolored"
+        in2="roundcolored"
+        mode="multiply"
+        result="rounddarkoutput"
+      />,
+      <feBlend
+        in="rounddarkoutput"
+        in2="rounddarkoutput"
+        mode="multiply"
+        result="rounddarkeroutput"
+      />,
+      /*
 		<feComponentTransfer in="rounddarkeroutput" result="roundoutput">
 			<feFuncR type="linear" slope={darkOutputSlope} intercept={darkOutputIntercept}/>
 			<feFuncG type="linear" slope={darkOutputSlope} intercept={darkOutputIntercept}/>
@@ -196,11 +216,12 @@ export function Round({ source = "SourceGraphic", strokeWidth = 1 }) {
 			<feFuncA type="linear" slope={darkOutputSlope} intercept={darkOutputIntercept}/>
 		</feComponentTransfer>,
 	 	//*/
-    <feMorphology
-      in="rounddarkeroutput"
-      operator={strokeWidthRevertOperator}
-      radius={radius}
-      result="roundResult"
-    />
-  ]);
+      <feMorphology
+        in="rounddarkeroutput"
+        operator={strokeWidthRevertOperator}
+        radius={radius}
+        result="roundResult"
+      />
+    ])
+  };
 }

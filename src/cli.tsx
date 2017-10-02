@@ -1,13 +1,14 @@
 import "source-map-support/register";
 
 import * as fs from "fs";
-import * as fse from "fs-extra";
+const fse = require("fs-extra");
 import * as ndjson from "ndjson";
 import * as path from "path";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { DOMParser } from "xmldom";
 import * as JSONStream from "JSONStream";
 import { Base64 } from "js-base64";
+const parent = require("parent-package-json");
 
 /*
 import {
@@ -20,6 +21,7 @@ import {
   camelCase,
   curry,
   compact,
+  defaults,
   filter,
   intersection,
   isArray,
@@ -54,26 +56,37 @@ import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 import * as isVarName from "is-valid-var-name";
 
-// TODO why doesn't "import * as name" work with Webpack for the following packages?
-//import * as hl from "highland";
+//// TODO why doesn't "import * as name" work with Webpack for the following packages?
 const hl = require("highland");
-//import * as program from "commander";
 const program = require("commander");
-//import * as urlRegex from "url-regex";
 const urlRegex = require("url-regex");
-//import * as getit from "getit";
 const getit = require("getit");
-//import * as validDataUrl from "valid-data-url";
 const validDataUrl = require("valid-data-url");
+const RGBColor = require("rgbcolor");
 
 import { Diagram } from "./components/Diagram";
+import { arrayify } from "../src/spinoffs/jsonld-utils";
 //import * as edgeDrawers from "./drawers/edges/index";
 // Are the icons and markers are specific to Pvjs (less likely to useful to other applications)?
 // Should they be part of Kaavio?
-import * as markerDrawers from "./drawers/markers";
+//import * as markerDrawers from "./drawers/markers";
 
 const npmPackage = require("../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
+const pathToParent0 = parent(__dirname) ? parent(__dirname).path : false;
+const pathToParent1 = parent(__dirname, 1) ? parent(__dirname, 1).path : false;
+const dirs = uniq(
+  [pathToParent1 || pathToParent0 || path.join(__dirname, "..")]
+    .filter(p => !!p)
+    .map(p => p.replace(/package\.json$/, ""))
+);
+/*
+console.log(`__dirname: ${__dirname}`);
+console.log(`pathToParent0: ${pathToParent0}`);
+console.log(`pathToParent1: ${pathToParent1}`);
+console.log("dirs");
+console.log(dirs);
+//*/
 
 const BUILTIN_ICONS_DIR = path.join(__dirname, "../src/drawers/icons/");
 const ICONS_BUNDLE_PATH = path.join(
@@ -112,9 +125,9 @@ function get(inputPath, opts = {}) {
 function build() {
   console.log("Rebuilding Kaavio (may take some time)...");
   return exec("npm run build:lib", {
-    // NOTE: we want to build from the top level of the package
-    // __dirname is kaavio/src/, even after compilation
-    // we want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
+    // NOTE: we want to build from the top level of the package.
+    // __dirname is kaavio/src/, even after compilation.
+    // We want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
     cwd: path.join(__dirname, "..")
   })
     .last()
@@ -122,21 +135,56 @@ function build() {
 }
 //*/
 
+/*
 function build() {
   console.log("Rebuilding Kaavio (may take some time)...");
-  const webpackProdConfigPath = path.resolve(
+  const reactTypeFix = path.resolve(
     __dirname,
-    "../webpack.prod.config.js"
+    path.join("..", "src/spinoffs/react/v15/index.d.ts")
   );
+  return hl(dirs)
+    .flatMap(function(p) {
+      return hl(fse.copyFile(reactTypeFix, p));
+    })
+    .last()
+    .flatMap(function(x): boolean {
+      const webpackProdConfigPath = path.resolve(
+        __dirname,
+        "../webpack.prod.config.js"
+      );
+      return exec(`webpack --config ${webpackProdConfigPath}`, {
+        // NOTE: we want to build from the top level of the package.
+        // __dirname is kaavio/src/, even after compilation.
+        // We want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
+        cwd: dirs[0]
+      });
+    })
+    .last()
+    .doto(x => console.log("Build complete."));
+}
+//*/
+
+//*
+function build() {
+  console.log("Rebuilding Kaavio (may take some time)...");
+
+  // NOTE: we want to build from the top level of the package.
+  // __dirname is kaavio/src/, even after compilation.
+  // We want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
+  const targetCWD = dirs[0];
+
+  const webpackProdConfigPath = path.resolve(
+    targetCWD,
+    path.join(__dirname, "../webpack.prod.config.js")
+  );
+
   return exec(`webpack --config ${webpackProdConfigPath}`, {
-    // NOTE: we want to build from the top level of the package
-    // __dirname is kaavio/src/, even after compilation
-    // we want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
-    cwd: path.join(__dirname, "..")
+    cwd: targetCWD
   })
     .last()
     .doto(x => console.log("Build complete."));
 }
+//*/
 
 const bundleBySelectiveImport = curry(function(
   name,
@@ -178,6 +226,7 @@ function getIconMap(inputs: string[]) {
     const allLocalIconNames = filenames
       .filter(filename => filename.slice(-4) === ".svg")
       .map(filename => filename.slice(0, -4));
+
     if (isEmpty(inputs)) {
       inputs = allLocalIconNames;
     } else if (inputs[0] === "*") {
@@ -203,7 +252,7 @@ function getIconMap(inputs: string[]) {
           ]);
         } else {
           // User must have specified an icon map saved as a JSON file.
-          return get(input).through(JSONStream.parse()).map(function(iconMap) {
+          return get(input).through(ndjson.parse()).map(function(iconMap) {
             return fromPairs(
               toPairs(iconMap).map(function([key, value]) {
                 const [pathRelativeToJSONFile, id] = value
@@ -287,7 +336,7 @@ function bundleIcons(inputs, { preserveAspectRatio }) {
             preserveAspectRatio === true ||
             (isArray(preserveAspectRatio) &&
               preserveAspectRatio.indexOf(name) > -1);
-          console.log(`  ${name} 
+          console.log(`  ${name}
 	source: ${iconPath}
 	preserveAspectRatio: ${thisPreserveAspectRatio}`);
           const [url, idInSource] = iconPath.split("#");
@@ -487,6 +536,7 @@ program
         const bundlerStream = bundler(inputs, {
           preserveAspectRatio
         }).errors(function(err) {
+          console.error("err");
           console.error(err);
           fs.writeFile(bundlePath, bundle, function(err) {
             if (!!err) {
@@ -504,12 +554,15 @@ program
           if (buildAutomatically) {
             build()
               .errors(function(err) {
+                console.error("err");
                 console.error(err);
-                process.exit(1);
+                process.exitCode = 1;
+                //process.exit(1);
               })
               .last()
               .each(function(x) {
-                process.exit(0);
+                process.exitCode = 0;
+                //process.exit(0);
               });
           } else {
             console.log(
@@ -519,7 +572,8 @@ program
             // piping the the bundlePath and to also quit, unless I use this
             // kludge with the timeout and process.exit.
             setTimeout(function() {
-              process.exit(0);
+              process.exitCode = 0;
+              //process.exit(0);
             }, 500);
           }
         });
@@ -562,7 +616,7 @@ program
 				http://cdkdepict-openchem.rhcloud.com/depict.html
 					Use BridgeDb to get the SMILES string:
 					http://webservice.bridgedb.org/Human/attributes/Ch/HMDB00161?attrName=SMILES
-				
+
 			Note that most SVG glyph sets expect a fill color but not a stroke.
 
 			Include a built-in icon and one from Wikimedia (the hash and value
@@ -612,6 +666,12 @@ cat ../gpml2pvjson-js/test/input/playground.gpml | ../gpml2pvjson-js/bin/gpml2pv
 
 cat ../bulk-gpml2pvjson/wikipathways-20170910-json-Homo_sapiens-unified/WP106.json | jq -c '(. | .entityMap[] | select(has("wikidata"))) as {id: $id, width: $width, wikidata: $wikidata} | .entityMap[$id].drawAs |= $wikidata | .entityMap[$id].height |= $width' | ./bin/kaavio json2svg --static true | sed 's/\[\]$//' > output.svg
 
+cat ../bulk-gpml2pvjson/wikipathways-20170910-gpml-Homo_sapiens/Hs_Apoptosis-related_network_due_to_altered_Notch3_in_ovarian_cancer_WP2864_79278.gpml | ../gpml2pvjson-js/bin/gpml2pvjson | ./bin/kaavio json2svg --highlight red=abd6e > output.svg
+
+cat ../bulk-gpml2pvjson/wikipathways-20170910-json-Homo_sapiens-unified/WP2864.json | ./bin/kaavio json2svg --highlight green=b99fe,ensembl:ENSG00000124762 > output.svg
+
+TODO what about coloring of text vs. edge for Chloroplast in this pathway:
+http://www.wikipathways.org/index.php/Pathway:WP2623
 //*/
     //
   });
@@ -624,10 +684,64 @@ program
     "Exclude extra DOM attributes, such as data-reactid, that React uses internally. Default: true",
     (s: string) => ["", "true"].indexOf(s) > -1
   )
-  .action(function(inputPath, outputPath, options) {
-    const staticMarkup = options.hasOwnProperty("static")
-      ? options.static
-      : true;
+  .option(
+    "--hide [target...]",
+    `Specify entities to hide. 
+		target: entity id or typeof value
+
+		Examples:
+			--hide b99fe
+			--hide b99fe abd6e
+			--hide ensembl:ENSG00000124762
+			--hide b99fe ensembl:ENSG00000124762`
+  )
+  .option(
+    "--highlight [color=target,target,target...]",
+    `Specify entities to highlight.
+		color: hex value or CSS/SVG color keyword
+			<https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords>
+		target: entity id or typeof value
+
+		Examples:
+			--highlight red=b99fe
+			--highlight #ff000=b99fe
+			--highlight red=b99fe,abd6e
+			--highlight red=ensembl:ENSG00000124762
+			--highlight red=b99fe,ensembl:ENSG00000124762`,
+    (s: string) => {
+      const [color, targetString] = s.split(/=/);
+      return {
+        color,
+        targets: targetString.split(",")
+      };
+    }
+  )
+  .action(function(inputPath, outputPath, optionsRaw) {
+    const options = defaults(optionsRaw, {
+      static: true,
+      hide: [],
+      highlight: []
+    });
+    const { static: staticMarkup, hide, highlight } = options;
+    const hiddenEntities = arrayify(hide);
+    const highlightedEntities = arrayify(highlight).reduce(function(
+      acc,
+      { color: rawColor, targets }
+    ) {
+      let color = new RGBColor(rawColor);
+      if (!color.ok) {
+        throw new Error(
+          `
+					Could not parse provided highlight color ${rawColor}
+					`
+        );
+      }
+      targets.forEach(function(target) {
+        acc.push({ target, color: color.toHex() });
+      });
+      return acc;
+    }, []);
+
     const render = staticMarkup ? renderToStaticMarkup : renderToString;
     const inputStream = !!inputPath
       ? fs.createReadStream(inputPath)
@@ -711,18 +825,18 @@ program
               height: input.pathway.height,
               name: input.pathway.height,
               width: input.pathway.width,
-              zIndices: input.pathway.contains
-              //filters,
-              //highlightedNodes,
-              //hiddenEntities
+              highlightedEntities,
+              hiddenEntities
             },
             null
           )
         );
       })
       .errors(function(err) {
+        console.error("err");
         console.error(err);
-        process.exit(1);
+        process.exitCode = 1;
+        //process.exit(1);
       })
       .pipe(outputStream);
   })

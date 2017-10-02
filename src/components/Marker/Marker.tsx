@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { normalizeElementId } from "../../utils/normalizeElementId";
 
 export const MARKER_PROPERTIES: ReadonlyArray<MarkerProperty> = [
   "markerStart",
@@ -17,7 +18,9 @@ export function getMarkerId(
   color: string,
   parentBackgroundColor: string
 ): string {
-  return [markerProperty, markerName, color, parentBackgroundColor].join("");
+  return normalizeElementId(
+    [markerProperty, markerName, color, parentBackgroundColor].join("")
+  );
 }
 
 export function getMarkerPropertyValue(
@@ -30,12 +33,13 @@ export function getMarkerPropertyValue(
   if (NON_FUNCIRI_MARKER_PROPERTY_VALUES.indexOf(markerName) > -1) {
     return markerName;
   }
-  return `url(#${getMarkerId(
+  const markerId = getMarkerId(
     markerProperty,
     markerName,
     color,
     parentBackgroundColor
-  )})`;
+  );
+  return `url(#${markerId})`;
 }
 
 export class Marker extends React.Component<any, any> {
@@ -48,6 +52,7 @@ export class Marker extends React.Component<any, any> {
       id,
       markerDrawer,
       markerProperty,
+      markerName,
       color,
       parentBackgroundColor
     } = this.props;
@@ -58,9 +63,17 @@ export class Marker extends React.Component<any, any> {
     );
     const { markerWidth, markerHeight } = markerAttributes;
 
+    const markerId = getMarkerId(
+      markerProperty,
+      markerName,
+      color,
+      parentBackgroundColor
+    );
+
     return (
       <marker
-        id={id}
+        id={markerId}
+        key={markerId}
         markerUnits="strokeWidth"
         orient="auto"
         preserveAspectRatio="none"
@@ -70,8 +83,8 @@ export class Marker extends React.Component<any, any> {
         {...markerAttributes}
       >
         <g
-          id={`g-${id}`}
-          key={`g-${id}`}
+          id={`g-${markerId}`}
+          key={`g-${markerId}`}
           transform={
             markerProperty === "markerEnd"
               ? ""

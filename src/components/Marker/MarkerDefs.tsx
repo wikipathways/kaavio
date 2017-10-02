@@ -160,7 +160,7 @@ export class MarkerDefs extends React.Component<any, any> {
     const { defined } = this.state;
 
     return (
-      <g>
+      <g id="marker-defs">
         {toPairs(defined).map(([markerId, details]) => {
           const {
             markerProperty,
@@ -170,10 +170,10 @@ export class MarkerDefs extends React.Component<any, any> {
           } = details;
           return (
             <Marker
-              id={markerId}
               key={markerId}
               color={color}
               parentBackgroundColor={parentBackgroundColor}
+              markerName={markerName}
               markerProperty={markerProperty}
               markerDrawer={markerDrawers[markerName]}
             />

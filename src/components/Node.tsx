@@ -23,7 +23,6 @@ export class Node extends React.Component<any, any> {
       fillOpacity,
       strokeDasharray,
       drawAs,
-      filter,
       height,
       id,
       width,
@@ -56,7 +55,6 @@ export class Node extends React.Component<any, any> {
           fill={backgroundColor}
           fillOpacity={fillOpacity || 1}
           href={"#" + drawAs}
-          filter={!!filter ? `url(#${filter})` : null}
           stroke={color}
           strokeWidth={borderWidth}
           strokeDasharray={strokeDasharray}

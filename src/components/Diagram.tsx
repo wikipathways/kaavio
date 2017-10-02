@@ -1,6 +1,7 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { defaults, defaultsDeep, forOwn, omitBy } from "lodash";
+import { values } from "lodash/fp";
 import { Observable } from "rxjs/Observable";
 import "rxjs/add/observable/dom/ajax";
 import "rxjs/add/observable/from";
@@ -9,12 +10,13 @@ import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 import { style, getStyles } from "typestyle";
+import { Group } from "./Group";
 import { FilterDefs } from "./Filter/FilterDefs";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import * as kaavioStyle from "../kaavio.style";
+import * as filterDrawers from "../drawers/filters/index";
 import * as customStyle from "../drawers/styles/__bundled_dont_edit__";
 import { Icons } from "../drawers/icons/__bundled_dont_edit__";
-import { Group } from "./Group";
 
 export class Diagram extends React.Component<any, any> {
   constructor(props) {
@@ -25,8 +27,11 @@ export class Diagram extends React.Component<any, any> {
     this.state.latestFilterReferenced = {};
   }
 
-  defineFilter = latestFilterReferenced => {
+  getFilterId = latestFilterReferenced => {
     this.setState({ latestFilterReferenced: latestFilterReferenced });
+    const { filterName } = latestFilterReferenced;
+    const { id } = filterDrawers[filterName](latestFilterReferenced);
+    return id;
   };
 
   defineMarker = latestMarkerReferenced => {
@@ -63,27 +68,59 @@ export class Diagram extends React.Component<any, any> {
 
   render() {
     const {
-      id,
       backgroundColor,
       entityMap,
       filters,
       height,
+      hiddenEntities,
+      highlightedEntities,
+      id,
       name,
       pathway,
-      width,
-      zIndices,
-      highlightedNodes,
-      hiddenEntities
+      width
     } = this.props;
     const { contains } = pathway;
-
-    const zIndexedEntities = contains.map(id => entityMap[id]);
 
     const mergedStyle: Record<string, any> = defaultsDeep(
       customStyle,
       kaavioStyle
     );
     style(mergedStyle);
+    const drawnEntities = values(entityMap).filter(entity =>
+      entity.hasOwnProperty("drawAs")
+    );
+    const drawnValueTypes = drawnEntities.reduce(function(acc, entity) {
+      if (entity.hasOwnProperty("type")) {
+        entity.type.forEach(function(typeValue) {
+          if (acc.indexOf(typeValue) === -1) {
+            acc.push(typeValue);
+          }
+        });
+      }
+      return acc;
+    }, []);
+    const highlightedStyle = (highlightedEntities || [])
+      .map(function({ target, color }) {
+        const { id: filterId } = filterDrawers.Highlight({
+          color
+        });
+        let selector;
+        if (
+          entityMap.hasOwnProperty(target) &&
+          entityMap[target].hasOwnProperty("drawAs")
+        ) {
+          selector = `#icon-for-${target}`;
+        } else if (drawnValueTypes.indexOf(target) > -1) {
+          selector = `[typeof~="${target}"] .Icon`;
+        } else {
+          // TODO should this be a warning or an error?
+          // If it's a warning, should we ignore it or use the target as the selector?
+          //selector = target;
+          throw new Error(`Unrecognized highlight target ${target}`);
+        }
+        return `${selector} {filter: url(#${filterId});}`;
+      })
+      .join("\n");
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -102,6 +139,7 @@ export class Diagram extends React.Component<any, any> {
             __html: `
 				<![CDATA[
 					${getStyles()}
+					${highlightedStyle}
 				]]>
 			`
           }}
@@ -110,7 +148,6 @@ export class Diagram extends React.Component<any, any> {
         <g
           className={`viewport ${mergedStyle.viewportClass} svg-pan-zoom_viewport`}
         >
-
           <defs>
             {
               <clipPath
@@ -139,48 +176,12 @@ export class Diagram extends React.Component<any, any> {
             borderWidth="0"
             parentBackgroundColor={backgroundColor}
             fillOpacity={1}
-            highlightedNodes={highlightedNodes}
             entityMap={entityMap}
-            hiddenEntities={hiddenEntities}
             mergedStyle={mergedStyle}
-            defineFilter={this.defineFilter}
+            getFilterId={this.getFilterId}
             defineMarker={this.defineMarker}
             {...pathway}
           />
-          {/*
-import { getHighlighted } from "../utils/getHighlighted";
-import { getHidden } from "../utils/getHidden";
-import { Entity } from "./Entity";
-          <rect
-            x="0"
-            y="0"
-            width="100%"
-            height="100%"
-            className="kaavio-viewport-background"
-            fill={backgroundColor}
-          />
-          <g width={width} height={height}>
-            {zIndexedEntities.map(function(entity) {
-              const highlighted = getHighlighted(entity, highlightedNodes);
-              const hidden = getHidden(entity, hiddenEntities);
-              return (
-                <Entity
-                  key={entity.id}
-                  isHighlighted={highlighted.highlighted}
-                  highlightedColor={highlighted.color}
-                  highlightedNodes={highlightedNodes}
-                  entityMap={entityMap}
-                  hidden={hidden}
-                  hiddenEntities={hiddenEntities}
-                  edgeDrawers={edgeDrawers}
-                  mergedStyle={mergedStyle}
-                  {...entity}
-                />
-              );
-            })}
-          </g>
-						
-						*/}
         </g>
       </svg>
     );

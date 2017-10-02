@@ -1,13 +1,11 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { highlighter } from "../filters/highlighter";
+import { isEmpty } from "lodash/fp";
 import { Text } from "./Text";
 import { Node } from "./Node";
 import { EntityProps } from "../typings";
 import { Group } from "./Group";
 import { Edge } from "./Edge";
-import { getHighlighted } from "../utils/getHighlighted";
-import { getHidden } from "../utils/getHidden";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
 import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 
@@ -32,25 +30,33 @@ export class Entity extends React.Component<any, any> {
       fontStyle,
       fontWeight,
       textAlign,
+      textRotation,
       color
     } = this.props;
     if (!textContent) return;
 
+    let textTransform;
+    if (textRotation) {
+      textTransform = `rotate(${textRotation},${width / 2},${height / 2})`;
+    }
+
     return (
-      <Text
-        id={`text-for-${id}`}
-        key={`text-for-${id}`}
-        className="textlabel"
-        textContent={textContent}
-        fontFamily={fontFamily}
-        fontSize={fontSize}
-        fontWeight={fontWeight}
-        fontStyle={fontStyle}
-        textAlign={textAlign}
-        color={color}
-        width={width}
-        height={height}
-      />
+      <g transform={textTransform}>
+        <Text
+          id={`text-for-${id}`}
+          key={`text-for-${id}`}
+          className="textlabel"
+          textContent={textContent}
+          fontFamily={fontFamily}
+          fontSize={fontSize}
+          fontWeight={fontWeight}
+          fontStyle={fontStyle}
+          textAlign={textAlign}
+          color={color}
+          width={width}
+          height={height}
+        />
+      </g>
     );
   }
 
@@ -65,9 +71,7 @@ export class Entity extends React.Component<any, any> {
       kaavioType,
       points,
       backgroundColor,
-      mergedStyle,
-      highlightedNodes,
-      hiddenEntities
+      mergedStyle
     } = this.props;
     if (!burrs || burrs.length < 1) return;
 
@@ -106,20 +110,13 @@ export class Entity extends React.Component<any, any> {
       .map(burr => {
         // Even though burr.kaavioType = "Node", we render the Burr as a new Entity.
         // If we just render it a Node, we can't do things like individually highlighting the burr.
-        const highlighted = getHighlighted(burr, highlightedNodes);
-        const hidden = getHidden(burr, hiddenEntities);
         return (
           <Entity
             key={burr.id}
             {...burr}
             backgroundColor={backgroundColor}
             mergedStyle={mergedStyle}
-            isHighlighted={highlighted.highlighted}
-            highlightedColor={highlighted.color}
-            highlightedNodes={highlightedNodes}
             entityMap={entityMap}
-            hiddenEntities={hiddenEntities}
-            hidden={hidden}
           />
         );
       });
@@ -137,9 +134,10 @@ export class Entity extends React.Component<any, any> {
       color,
       kaavioType,
       customClass,
-      isHighlighted,
-      highlightedColor,
-      hidden
+      parentBackgroundColor,
+      borderWidth,
+      filters,
+      getFilterId
     } = this.props;
     let entityTransform;
     if (x || y || rotation) {
@@ -180,14 +178,8 @@ export class Entity extends React.Component<any, any> {
         key={id}
         className={customClass}
         color={color}
-        visibility={hidden ? "hidden" : "visible"}
         transform={entityTransform}
         typeof={type.join(" ")}
-        filter={
-          isHighlighted
-            ? "url(#" + highlighter(id, highlightedColor).url + ")"
-            : null
-        }
       >
         {/*
         // NOTE: recommendation is to only use one metadata child per element,
@@ -220,14 +212,22 @@ export class Entity extends React.Component<any, any> {
 					</rdf:RDF>
 				</metadata>
 				*/}
-        {isHighlighted
-          ? <defs>
-              {/*Define any SVG definitions that apply to the whole entity. Filters etc. */}
-              {highlighter(id, highlightedColor).filter}
-            </defs>
-          : null}
 
-        {child}
+        {isEmpty(filters)
+          ? child
+          : filters.reduce(function(acc, filterName) {
+              const filterId = getFilterId({
+                filterName,
+                parentBackgroundColor,
+                color,
+                strokeWidth: borderWidth
+              });
+              return (
+                <g filter={`url(#${filterId})`}>
+                  {acc}
+                </g>
+              );
+            }, child)}
 
         {this.renderBurrs()}
 

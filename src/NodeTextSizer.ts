@@ -112,8 +112,10 @@ export class NodeTextSizer {
 			//*/
       //*
       .map(function(fontPath) {
+        /*
         console.log("fontPath");
         console.log(fontPath);
+				//*/
         const fontFamily = path
           .basename(fontPath)
           .replace(/\.(ttf)|(otf)$/, "");
@@ -146,8 +148,10 @@ export class NodeTextSizer {
       .filter(x => fontFamiliesToLoad.indexOf(x.fontFamily) > -1)
       //*
       .flatMap(function({ fontFamily, fontPath }) {
+        /*
         console.log("fontPath");
         console.log(fontPath);
+				//*/
         return loadOpentype(fontPath).map(function(font) {
           var fontFamilyGood = get("font.names.fontFamily.en", font);
           var fontFamily = !!fontFamilyGood

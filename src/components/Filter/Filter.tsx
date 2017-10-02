@@ -1,5 +1,8 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+//import * as filterDrawers from "../../drawers/filters/__bundled_dont_edit__";
+import * as filterDrawers from "../../drawers/filters/index";
+import { normalizeElementId } from "../../utils/normalizeElementId";
 
 export const NON_FUNCIRI_VALUES = ["none", "inherit"];
 
@@ -7,7 +10,7 @@ export function getFilterUrl(
   filterName: string,
   color: string,
   parentBackgroundColor: string,
-  strokeWidth: number
+  borderWidth: number
 ): string {
   // Don't make a funciri out of any of the names in NON_FUNCIRI_VALUES
   if (NON_FUNCIRI_VALUES.indexOf(filterName) > -1) {
@@ -15,19 +18,21 @@ export function getFilterUrl(
   }
   return `url(#${getId(
     filterName,
-    color,
     parentBackgroundColor,
-    strokeWidth
+    color,
+    borderWidth
   )})`;
 }
 
 export function getId(
   filterName: string,
-  color: string,
   parentBackgroundColor: string,
-  strokeWidth: number
+  color: string,
+  borderWidth: number
 ): string {
-  return [filterName, color, parentBackgroundColor].join("");
+  return normalizeElementId(
+    [filterName, color, parentBackgroundColor, borderWidth].join("")
+  );
 }
 
 /* TODO which one should we use?
@@ -50,18 +55,19 @@ export class Filter extends React.Component<any, any> {
   render() {
     const {
       id,
-      filterDrawer,
-      color,
+      filterName,
       parentBackgroundColor,
-      strokeWidth
+      color,
+      borderWidth
     } = this.props;
 
+    const filterDrawer = filterDrawers[filterName];
     const children = filterDrawer({
       parentBackgroundColor,
       color,
-      strokeWidth
+      strokeWidth: borderWidth
     });
 
-    return <filter id={id} key={id} children={children} />;
+    return <filter id={id} children={children} />;
   }
 }

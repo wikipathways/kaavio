@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "3.7.5-beta12",
+  "version": "3.7.5-beta24",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "dist/index.js",
   "module": "lib/index.js",
@@ -14,7 +14,8 @@
     "tsconfig.json",
     "tsconfig.*.json",
     "yarn.lock",
-    "webpack.*.config.js"
+    "webpack.*.config.js",
+    "gulpfile.js"
   ],
   "bin": "./bin/kaavio",
   "scripts": {
@@ -25,7 +26,7 @@
     "build:assets": "npm run assets",
     "compile": "npm-run-all compile:*",
     "compile:clean": "rimraf ./lib",
-    "compile:react-type-kludge": "echo 'TODO: Make pull request to DefinitelyTyped for react (RDFa attributes in SVG).' && cp src/spinoffs/react/v15/index.d.ts node_modules/@types/react/index.d.ts",
+    "compile1:react-type-kludge": "echo 'TODO: Make pull request to DefinitelyTyped for react (RDFa attributes in SVG).' && cp src/spinoffs/react/v15/index.d.ts node_modules/@types/react/index.d.ts",
     "compile:tsc": "tsc --project tsconfig.json && npm run assets",
     "placeholders": "npm-run-all placeholders:*",
     "placeholders:dirs": "mkdir -p src/drawers/edges src/drawers/icons src/drawers/markers src/drawers/styles",
@@ -33,8 +34,8 @@
     "placeholders:icons": "echo \"import * as React from 'React'; export class Icons extends React.Component<any, any> {render(){return <div />}};\" > src/drawers/icons/__bundled_dont_edit__.tsx ",
     "placeholders:markers": "echo \"export const a = 1;\" > src/drawers/markers/__bundled_dont_edit__.tsx",
     "placeholders:styles": "echo \"export const a = 1;\" > src/drawers/styles/__bundled_dont_edit__.tsx",
-    "postinstall": "npm run placeholders",
-    "prepare": "npm run placeholders && npm run build:assets && npm run compile:react-type-kludge && npm run build:cli && ./bin/kaavio bundle --build false edges && ./bin/kaavio bundle icons --build false && ./bin/kaavio bundle markers --build false && npm run build:lib",
+    "postinstall1": "npm run placeholders && npm dedupe",
+    "prepare": "npm run placeholders && npm run build:assets && npm run build:cli && ./bin/kaavio bundle --build false edges && ./bin/kaavio bundle icons --build false && ./bin/kaavio bundle markers --build false && npm run build:lib",
     "serve": "webpack-dev-server --config webpack.dev.config.js --open --progress --inline",
     "start": "npm run serve",
     "test": "echo 'get some tests working'",
@@ -69,7 +70,7 @@
   "dependencies": {
     "@types/js-base64": "^2.1.5",
     "@types/node": "^8.0.31",
-    "@types/react": "^15.6.4",
+    "@types/react": "file:./src/spinoffs/react/v15/",
     "@types/react-dom": "^15.5.5",
     "JSONStream": "^1.3.1",
     "babel-core": "^6.26.0",
@@ -78,7 +79,6 @@
     "babel-preset-react": "^6.24.1",
     "color-interpolate": "^1.0.2",
     "commander": "^2.11.0",
-    "copyfiles": "^1.2.0",
     "csstips": "^0.2.0",
     "csx": "^8.2.1",
     "extract-text-webpack-plugin": "^2.1.2",
@@ -109,6 +109,7 @@
     "react-selectize": "^2.1.0",
     "react-spinkit": "^3.0.0",
     "rgb2hex": "^0.1.0",
+    "rgbcolor": "^1.0.1",
     "rimraf": "^2.6.1",
     "roboto-fontface": "^0.7.0",
     "rx-extra": "^2.0.3",
@@ -118,12 +119,10 @@
     "style-loader": "^0.16.1",
     "svg-pan-zoom": "^3.5.2",
     "svg-points": "^6.0.0",
-    "svg-url-loader": "^2.0.2",
     "ts-loader": "^2.3.7",
     "typescript": "^2.5.3",
     "typestyle": "^0.22.3",
     "uglifyjs-webpack-plugin": "^0.4.6",
-    "url-loader": "^0.5.8",
     "url-regex": "^4.1.1",
     "valid-data-url": "^0.1.4",
     "verror": "^1.10.0",
@@ -136,7 +135,7 @@
     "xmldom": "^0.1.27",
     "xpath": "0.0.24"
   },
-  "devDependencies": {},
+  "peerDependencies": {},
   "semverBumper": {
     "jsonFiles": [
       {

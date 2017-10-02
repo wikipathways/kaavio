@@ -26,7 +26,7 @@ export class nodeWithGroup extends React.Component<any, any> {
       contains,
       id,
       hiddenEntities,
-      defineFilter,
+      getFilterId,
       defineMarker
     } = this.props;
 
@@ -41,6 +41,7 @@ export class nodeWithGroup extends React.Component<any, any> {
       .map(entity => {
         const highlighted = getHighlighted(entity, highlightedNodes);
         const hidden = getHidden(entity, hiddenEntities);
+
         return (
           <Entity
             key={entity.id}
@@ -53,7 +54,7 @@ export class nodeWithGroup extends React.Component<any, any> {
             highlightedNodes={highlightedNodes}
             hidden={hidden}
             hiddenEntities={hiddenEntities}
-            defineFilter={defineFilter}
+            getFilterId={getFilterId}
             defineMarker={defineMarker}
           />
         );

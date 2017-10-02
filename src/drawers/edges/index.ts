@@ -188,6 +188,7 @@ export class CurvedLine extends SVGPath {
         direction.push(orientation[0]);
         direction.push(orientation[1]);
       } else {
+        console.error("points");
         console.error(points);
         throw new Error(
           "No orientation specified for curvedline edge w/ points logged above"
@@ -318,6 +319,7 @@ export class ElbowLine extends SVGPath {
         direction.push(firstPoint.orientation[0]);
         direction.push(firstPoint.orientation[1]);
       } else {
+        console.error("points");
         console.error(points);
         throw new Error(
           "No orientation specified for elbowline edge w/ points logged above"
