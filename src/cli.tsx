@@ -7,8 +7,6 @@ import { renderToStaticMarkup, renderToString } from "react-dom/server";
 import { DOMParser } from "xmldom";
 import * as JSONStream from "JSONStream";
 import { Base64 } from "js-base64";
-const parent = require("parent-package-json");
-const VError = require("verror");
 
 /* TODO use lodash/fp instead of regular lodash
 import {
@@ -59,10 +57,12 @@ import "rxjs/add/operator/mergeMap";
 const hl = require("highland");
 const isVarName = require("is-valid-var-name");
 const getit = require("getit");
+const parent = require("parent-package-json");
 const program = require("commander");
 const RGBColor = require("rgbcolor");
 const urlRegex = require("url-regex");
 const validDataUrl = require("valid-data-url");
+const VError = require("verror");
 
 import { Diagram } from "./components/Diagram";
 import { arrayify } from "../src/spinoffs/jsonld-utils";
@@ -471,11 +471,16 @@ program
     (s: string) => s === "true"
   )
   .option(
-    "-p, --preserve-aspect-ratio [name...]",
+    "-p, --preserve-aspect-ratio [name1,name2,name3...]",
     `Preserve original aspect ratio of icon(s).
 		--build: preserve for all icons (notice no value specified)
 		--build name1 name2 name3: preserve for the icon(s) with the specified name(s)
-		not specified: don't preserve for any icons (all icons stretch to fit their container)`
+		not specified: don't preserve for any icons (all icons stretch to fit their container)`,
+    // NOTE: s below is always a string.
+    // If the user specifies true, it comes through as a string, not a boolean.
+    // If the user doesn't use this option, the function below is not called.
+    (s: string) =>
+      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
   )
   .action(function(whatToBundle, inputs: string[], options) {
     console.log(`Bundling ${whatToBundle}...`);
@@ -634,36 +639,42 @@ program
     (s: string) => ["", "true"].indexOf(s) > -1
   )
   .option(
-    "--hide [target...]",
+    "--hide [target1,target2,target3...]",
     `Specify entities to hide. 
 		target: entity id or typeof value
 
 		Examples:
 			--hide b99fe
-			--hide b99fe abd6e
+			--hide b99fe,abd6e
 			--hide ensembl:ENSG00000124762
-			--hide b99fe ensembl:ENSG00000124762`
+			--hide b99fe,ensembl:ENSG00000124762`
   )
   .option(
-    "--highlight [color=target1,target2,target3...]",
+    "--highlight [color=target1,target2,target3]",
     `Specify entities to highlight.
+		To specify multiple colors, you can specify multiple "--highlight" options.
+
 		color: hex value or CSS/SVG color keyword
 			<https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords>
 		target: entity id or typeof value
 
 		Examples:
 			--highlight red=b99fe
-			--highlight #ff000=b99fe
+			--highlight ff000=b99fe
+			--highlight "#ff000=b99fe"
 			--highlight red=b99fe,abd6e
 			--highlight red=ensembl:ENSG00000124762
-			--highlight red=b99fe,ensembl:ENSG00000124762`,
-    (s: string) => {
+			--highlight red=b99fe,ensembl:ENSG00000124762
+			--highlight 66c2a5=b99fe --highlight 8da0cb=ensembl:ENSG00000124762`,
+    (s: string, acc) => {
       const [color, targetString] = s.split(/=/);
-      return {
+      acc.push({
         color,
         targets: targetString.split(",")
-      };
-    }
+      });
+      return acc;
+    },
+    []
   )
   .action(function(inputPath, outputPath, optionsRaw) {
     const options = defaults(optionsRaw, {

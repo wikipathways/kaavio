@@ -30,8 +30,10 @@ export class Diagram extends React.Component<any, any> {
   getFilterId = latestFilterReferenced => {
     this.setState({ latestFilterReferenced: latestFilterReferenced });
     const { filterName } = latestFilterReferenced;
-    const { id } = filterDrawers[filterName](latestFilterReferenced);
-    return id;
+    const { filterProperties } = filterDrawers[filterName](
+      latestFilterReferenced
+    );
+    return filterProperties.id;
   };
 
   defineMarker = latestMarkerReferenced => {
@@ -86,9 +88,11 @@ export class Diagram extends React.Component<any, any> {
       kaavioStyle
     );
     style(mergedStyle);
+
     const drawnEntities = values(entityMap).filter(entity =>
       entity.hasOwnProperty("drawAs")
     );
+
     const drawnValueTypes = drawnEntities.reduce(function(acc, entity) {
       if (entity.hasOwnProperty("type")) {
         entity.type.forEach(function(typeValue) {
@@ -99,28 +103,32 @@ export class Diagram extends React.Component<any, any> {
       }
       return acc;
     }, []);
+
     const highlightedStyle = (highlightedEntities || [])
       .map(function({ target, color }) {
-        const { id: filterId } = filterDrawers.Highlight({
+        const { filterProperties } = filterDrawers.Highlight({
           color
         });
+        const filterId = filterProperties.id;
         let selector;
         if (
           entityMap.hasOwnProperty(target) &&
           entityMap[target].hasOwnProperty("drawAs")
         ) {
-          selector = `#icon-for-${target}`;
+          selector = `#${target} .Icon,#${target} path`;
         } else if (drawnValueTypes.indexOf(target) > -1) {
-          selector = `[typeof~="${target}"] .Icon`;
+          selector = `[typeof~="${target}"] .Icon,[typeof~="${target}"] path`;
         } else {
-          // TODO should this be a warning or an error?
-          // If it's a warning, should we ignore it or use the target as the selector?
-          //selector = target;
-          throw new Error(`Unrecognized highlight target ${target}`);
+          console.warn(
+            `"${target}" is neither an id nor a type. Failed to highlight it.`
+          );
+          return;
         }
         return `${selector} {filter: url(#${filterId});}`;
       })
+      .filter(s => !!s)
       .join("\n");
+
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"

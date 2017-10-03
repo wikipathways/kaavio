@@ -21,22 +21,26 @@ export class FilterDefs extends React.Component<any, any> {
       .filter(entity => entity.hasOwnProperty("filters"))
       .reduce(function(acc, entity) {
         entity.filters.forEach(function(filterName) {
-          const { id, filterPrimitives } = filterDrawers[filterName]({
+          const { filterProperties, filterPrimitives } = filterDrawers[
+            filterName
+          ]({
             parentBackgroundColor: entity.parentBackgroundColor,
             color: entity.color,
             strokeWidth: entity.borderWidth
           });
-          acc[id] = filterPrimitives;
+          acc[filterProperties.id] = { filterProperties, filterPrimitives };
         });
         return acc;
       }, {});
 
     const definedFromHighlights = (highlightedEntities || [])
       .reduce(function(acc, highlightedEntity) {
-        const { id, filterPrimitives } = filterDrawers["Highlight"]({
+        const { filterProperties, filterPrimitives } = filterDrawers[
+          "Highlight"
+        ]({
           color: highlightedEntity.color
         });
-        acc[id] = filterPrimitives;
+        acc[filterProperties.id] = { filterProperties, filterPrimitives };
         return acc;
       }, {});
 
@@ -44,33 +48,6 @@ export class FilterDefs extends React.Component<any, any> {
       defined: defaults(definedFromEntities, definedFromHighlights)
     };
   }
-
-  /*
-  getId = ({
-    filterName,
-    parentBackgroundColor,
-    color,
-    borderWidth
-  }): string => {
-    const { defined } = this.state;
-    const { id, filterPrimitives } = filterDrawers[filterName]({
-      parentBackgroundColor: parentBackgroundColor,
-      color: color,
-      strokeWidth: borderWidth
-    });
-
-    const definedIds = keys(defined);
-    if (definedIds.indexOf(id) === -1) {
-      defined[id] = filterPrimitives;
-      // NOTE: side effect
-      this.setState({
-        defined
-      });
-    }
-
-    return id;
-  };
-	//*/
 
   /* If the diagram is updated after the initial render, this step will handle
 	 * the case of needing a filter definition that wasn't defined in the
@@ -91,14 +68,15 @@ export class FilterDefs extends React.Component<any, any> {
         borderWidth
       } = latestFilterReferenced;
 
-      const { id, filterPrimitives } = filterDrawers[filterName]({
+      const { filterProperties, filterPrimitives } = filterDrawers[filterName]({
         parentBackgroundColor: parentBackgroundColor,
         color: color,
         strokeWidth: borderWidth
       });
+      const id = filterProperties.id;
 
       if (definedIds.indexOf(id) === -1) {
-        defined[id] = filterPrimitives;
+        defined[id] = { filterProperties, filterPrimitives };
         this.setState({
           defined
         });
@@ -111,9 +89,11 @@ export class FilterDefs extends React.Component<any, any> {
 
     return (
       <g id="filter-defs">
-        {toPairs(defined).map(([filterId, filterPrimitives]) => {
+        {toPairs(
+          defined
+        ).map(([filterId, { filterProperties, filterPrimitives }]) => {
           return (
-            <filter id={filterId} key={filterId}>
+            <filter key={filterId} {...filterProperties}>
               {filterPrimitives}
             </filter>
           );

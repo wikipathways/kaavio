@@ -2,7 +2,10 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { normalizeElementId } from "../../utils/normalizeElementId";
 
-export type FilterResponse = { id: string; filterPrimitives: JSX.Element[] };
+export type FilterResponse = {
+  filterProperties: { id: string; filterUnits?: string };
+  filterPrimitives: JSX.Element[];
+};
 
 export function Double({ strokeWidth = 1 }): FilterResponse {
   const source = "SourceGraphic";
@@ -46,7 +49,9 @@ export function Double({ strokeWidth = 1 }): FilterResponse {
   }
 
   return {
-    id: normalizeElementId(["double", strokeWidth, "filter"].join("-")),
+    filterProperties: {
+      id: normalizeElementId(["double", strokeWidth, "filter"].join("-"))
+    },
     filterPrimitives: filterPrimitives
   };
 }
@@ -54,17 +59,21 @@ export function Double({ strokeWidth = 1 }): FilterResponse {
 export function Highlight({ color }): FilterResponse {
   const source = "SourceGraphic";
   return {
-    id: normalizeElementId(["highlight", color, "filter"].join("-")),
+    filterProperties: {
+      id: normalizeElementId(["highlight", color, "filter"].join("-")),
+      filterUnits: "userSpaceOnUse"
+    },
     filterPrimitives: [
       /* Desaturate all colours before highlighting */
-      <feColorMatrix
-        in="SourceGraphic"
-        type="saturate"
-        values="0"
-        result="toHighlight"
-      />,
-      <feFlood floodColor={color} floodOpacity="0.5" result="highlight" />,
-      <feComposite in="highlight" in2="toHighlight" operator="atop" />
+      <feColorMatrix type="saturate" values="0" />,
+      <feFlood floodColor={color} floodOpacity="1" />,
+      <feComposite operator="atop" in2="SourceGraphic" />,
+      <feMorphology operator="dilate" radius="2" />,
+      <feGaussianBlur stdDeviation="3" />,
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
     ]
   };
 }
@@ -140,7 +149,9 @@ export function Round({ strokeWidth = 1 }): FilterResponse {
       ];
 
   return {
-    id: normalizeElementId(["round", strokeWidth, "filter"].join("-")),
+    filterProperties: {
+      id: normalizeElementId(["round", strokeWidth, "filter"].join("-"))
+    },
     filterPrimitives: normalizedDark.concat([
       <feGaussianBlur
         in="roundnormalized"
