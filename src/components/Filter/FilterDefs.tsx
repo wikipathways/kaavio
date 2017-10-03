@@ -2,7 +2,7 @@ import * as React from "react";
 import * as ReactDom from "react-dom";
 import { defaults, keys, toPairs, values } from "lodash/fp";
 import { interpolate } from "../../spinoffs/interpolate";
-import * as filterDrawers from "../../drawers/filters/index";
+import * as filterDrawers from "../../drawers/filters/__bundled_dont_edit__";
 
 export class FilterDefs extends React.Component<any, any> {
   constructor(props) {

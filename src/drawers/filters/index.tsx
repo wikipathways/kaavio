@@ -1,16 +1,11 @@
-import { fill, flatten, last, range } from "lodash";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { normalizeElementId } from "../../utils/normalizeElementId";
 
-//import * as RGBColor from 'rgbcolor';
-
 export type FilterResponse = { id: string; filterPrimitives: JSX.Element[] };
 
-export function Double({
-  source = "SourceGraphic",
-  strokeWidth = 1
-}): FilterResponse {
+export function Double({ strokeWidth = 1 }): FilterResponse {
+  const source = "SourceGraphic";
   let filterPrimitives;
   if (strokeWidth === 1) {
     filterPrimitives = [
@@ -56,7 +51,8 @@ export function Double({
   };
 }
 
-export function Highlight({ source = "SourceGraphic", color }): FilterResponse {
+export function Highlight({ color }): FilterResponse {
+  const source = "SourceGraphic";
   return {
     id: normalizeElementId(["highlight", color, "filter"].join("-")),
     filterPrimitives: [
@@ -73,10 +69,8 @@ export function Highlight({ source = "SourceGraphic", color }): FilterResponse {
   };
 }
 
-export function Round({
-  source = "SourceGraphic",
-  strokeWidth = 1
-}): FilterResponse {
+export function Round({ strokeWidth = 1 }): FilterResponse {
+  const source = "SourceGraphic";
   // Can we handle a strokeWidth of 0.4?
   //const roundedStrokeWidth = Math.max(1, Math.round(strokeWidth || 1));
 
@@ -109,22 +103,6 @@ export function Round({
     ? "dilate"
     : "contract";
 
-  /*
- 	return Math.max(normalizedWidth - strokeWidth, 1);
-	let normalizedDark = [
-		<feBlend in="SourceGraphic" in2="SourceGraphic" mode="multiply" result="rounddarkinput"/>
-	].concat(
-		range(0, normalizedBlendIterations)
-			.map(function(i) {
-				return <feBlend in={`rounddarkinput${(i - 1)}`} in2={`rounddarkinput${i}`} mode="multiply" result="roundnormalizeddarkinput"/>;
-			})
-  )
-	.concat([
-		<feBlend in="rounddarkinput" in2="rounddarkinput" mode="multiply" result={`roundnormalizeddarkinput${normalizedBlendIterations}`}/>,
-	  ...
-  //*/
-
-  //*
   const normalizedDark = strokeWidth === 1
     ? [
         <feBlend
@@ -160,28 +138,10 @@ export function Round({
           result="roundnormalized"
         />
       ];
-  //*/
 
   return {
     id: normalizeElementId(["round", strokeWidth, "filter"].join("-")),
     filterPrimitives: normalizedDark.concat([
-      //<feMorphology in="roundnormalizeddarkinput" operator={strokeWidthNormalizationOperator} radius={ normalizationRadius - 1/2 } result="roundnormalized" />,
-      /*
-		<feComponentTransfer in={source} colorInterpolationFilters="sRGB" result="rounddarkinput">
-			<feFuncR type="linear" slope={darkInputSlope} intercept={darkInputIntercept}/>
-			<feFuncG type="linear" slope={darkInputSlope} intercept={darkInputIntercept}/>
-			<feFuncB type="linear" slope={darkInputSlope} intercept={darkInputIntercept}/>
-			<feFuncA type="linear" slope={darkInputSlope} intercept={darkInputIntercept}/>
-		</feComponentTransfer>,
-		//*/
-      /*
-		<feComponentTransfer in={source} result="rounddarkinput">
-			<feFuncR type="discrete" tableValues="0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"/>
-			<feFuncG type="discrete" tableValues="0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"/>
-			<feFuncB type="discrete" tableValues="0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"/>
-			<feFuncA type="discrete" tableValues="0.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0"/>
-		</feComponentTransfer>,
-	 	//*/
       <feGaussianBlur
         in="roundnormalized"
         stdDeviation={3 * 2}
@@ -208,14 +168,6 @@ export function Round({
         mode="multiply"
         result="rounddarkeroutput"
       />,
-      /*
-		<feComponentTransfer in="rounddarkeroutput" result="roundoutput">
-			<feFuncR type="linear" slope={darkOutputSlope} intercept={darkOutputIntercept}/>
-			<feFuncG type="linear" slope={darkOutputSlope} intercept={darkOutputIntercept}/>
-			<feFuncB type="linear" slope={darkOutputSlope} intercept={darkOutputIntercept}/>
-			<feFuncA type="linear" slope={darkOutputSlope} intercept={darkOutputIntercept}/>
-		</feComponentTransfer>,
-	 	//*/
       <feMorphology
         in="rounddarkeroutput"
         operator={strokeWidthRevertOperator}

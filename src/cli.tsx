@@ -1,7 +1,6 @@
 import "source-map-support/register";
 
-import * as fs from "fs";
-const fse = require("fs-extra");
+const fs = require("fs-extra");
 import * as ndjson from "ndjson";
 import * as path from "path";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
@@ -9,8 +8,9 @@ import { DOMParser } from "xmldom";
 import * as JSONStream from "JSONStream";
 import { Base64 } from "js-base64";
 const parent = require("parent-package-json");
+const VError = require("verror");
 
-/*
+/* TODO use lodash/fp instead of regular lodash
 import {
   assign
 } from "lodash/fp";
@@ -54,22 +54,18 @@ import "rxjs/add/operator/toPromise";
 import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
-import * as isVarName from "is-valid-var-name";
 
-//// TODO why doesn't "import * as name" work with Webpack for the following packages?
+// TODO why doesn't "import * as name" work with Webpack for the following packages?
 const hl = require("highland");
-const program = require("commander");
-const urlRegex = require("url-regex");
+const isVarName = require("is-valid-var-name");
 const getit = require("getit");
-const validDataUrl = require("valid-data-url");
+const program = require("commander");
 const RGBColor = require("rgbcolor");
+const urlRegex = require("url-regex");
+const validDataUrl = require("valid-data-url");
 
 import { Diagram } from "./components/Diagram";
 import { arrayify } from "../src/spinoffs/jsonld-utils";
-//import * as edgeDrawers from "./drawers/edges/index";
-// Are the icons and markers are specific to Pvjs (less likely to useful to other applications)?
-// Should they be part of Kaavio?
-//import * as markerDrawers from "./drawers/markers";
 
 const npmPackage = require("../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
@@ -95,6 +91,7 @@ const ICONS_BUNDLE_PATH = path.join(
 );
 
 const readdir = hl.wrapCallback(fs.readdir);
+const ensureFile = hl.wrapCallback(fs.ensureFile);
 const readFile = hl.wrapCallback(fs.readFile);
 
 // TODO why does TS complain when I define and try using the titleCase below?
@@ -116,55 +113,52 @@ program
   .version(npmPackage.version)
   .description("Control and customize Kaavio from the command line.");
 
+const STRING_TO_BOOLEAN = {
+  true: true,
+  false: false
+};
+
 function get(inputPath, opts = {}) {
   const strippedPath = inputPath.replace("file://", "");
   return hl.wrapCallback(getit)(strippedPath, opts);
 }
 
-/*
-function build() {
-  console.log("Rebuilding Kaavio (may take some time)...");
-  return exec("npm run build:lib", {
-    // NOTE: we want to build from the top level of the package.
-    // __dirname is kaavio/src/, even after compilation.
-    // We want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
-    cwd: path.join(__dirname, "..")
-  })
-    .last()
-    .doto(x => console.log("Build complete."));
-}
-//*/
+function pipeToFilepath(inputStream, destPath) {
+  return ensureFile(destPath)
+    .flatMap(success => readFile(destPath))
+    .collect()
+    .flatMap(function(originalContentChunks) {
+      const destStream = fs.createWriteStream(destPath);
 
-/*
-function build() {
-  console.log("Rebuilding Kaavio (may take some time)...");
-  const reactTypeFix = path.resolve(
-    __dirname,
-    path.join("..", "src/spinoffs/react/v15/index.d.ts")
-  );
-  return hl(dirs)
-    .flatMap(function(p) {
-      return hl(fse.copyFile(reactTypeFix, p));
-    })
-    .last()
-    .flatMap(function(x): boolean {
-      const webpackProdConfigPath = path.resolve(
-        __dirname,
-        "../webpack.prod.config.js"
-      );
-      return exec(`webpack --config ${webpackProdConfigPath}`, {
-        // NOTE: we want to build from the top level of the package.
-        // __dirname is kaavio/src/, even after compilation.
-        // We want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
-        cwd: dirs[0]
+      const observerStream = hl([
+        hl("finish", destStream),
+        hl("error", destStream)
+      ]).merge();
+
+      inputStream.pipe(destStream);
+
+      return observerStream.errors(function(err, push) {
+        const augmentedErr = new VError(
+          err,
+          `Error in pipeToFilepath(${inputStream}, ${destPath}).`
+        );
+        pipeToFilepath(hl(originalContentChunks), destPath)
+          .errors(function(revertErr, revertPush) {
+            push(
+              VError.errorFromList(
+                augmentedErr,
+                new VError(revertErr, `Failed to revert to initial contents.`)
+              )
+            );
+          })
+          .last()
+          .each(function() {
+            push(new VError(augmentedErr, `Reverted to initial contents.`));
+          });
       });
-    })
-    .last()
-    .doto(x => console.log("Build complete."));
+    });
 }
-//*/
 
-//*
 function build() {
   console.log("Rebuilding Kaavio (may take some time)...");
 
@@ -184,7 +178,6 @@ function build() {
     .last()
     .doto(x => console.log("Build complete."));
 }
-//*/
 
 const bundleBySelectiveImport = curry(function(
   name,
@@ -217,9 +210,6 @@ const bundleBySelectiveImport = curry(function(
 
   return hl([bundledDrawerCode]);
 });
-
-const bundleEdges = bundleBySelectiveImport("edges");
-const bundleMarkers = bundleBySelectiveImport("markers");
 
 function getIconMap(inputs: string[]) {
   return readdir(BUILTIN_ICONS_DIR).flatMap(function(filenames) {
@@ -466,15 +456,11 @@ To disable stroke for your icon(s) and enable fill, you can use this in your cus
 }
 
 const bundlerMap = {
+  edges: bundleBySelectiveImport("edges"),
+  filters: bundleBySelectiveImport("filters"),
   icons: bundleIcons,
-  markers: bundleMarkers,
-  edges: bundleEdges,
+  markers: bundleBySelectiveImport("markers"),
   styles: bundleStyles
-};
-
-const STRING_TO_BOOLEAN = {
-  true: true,
-  false: false
 };
 
 program
@@ -485,19 +471,11 @@ program
     (s: string) => s === "true"
   )
   .option(
-    "-p, --preserve-aspect-ratio [comma-separated list or boolean]",
-    `
-		Freeze icon aspect ratio to original value.
-
-		true: applies to all icons
-		list: applies to the icon(s) with the specified name(s)
-
-		If this option is specified without a value, the value is set to true`,
-    // NOTE: s below is always a string.
-    // If the user specifies true, it comes through as a string, not a boolean.
-    // If the user doesn't use this option, the function below is not called.
-    (s: string) =>
-      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
+    "-p, --preserve-aspect-ratio [name...]",
+    `Preserve original aspect ratio of icon(s).
+		--build: preserve for all icons (notice no value specified)
+		--build name1 name2 name3: preserve for the icon(s) with the specified name(s)
+		not specified: don't preserve for any icons (all icons stretch to fit their container)`
   )
   .action(function(whatToBundle, inputs: string[], options) {
     console.log(`Bundling ${whatToBundle}...`);
@@ -518,72 +496,43 @@ program
       );
     }
 
-    const drawerDir = path.join(__dirname, `../src/drawers/${whatToBundle}/`);
+    const bundler = bundlerMap[whatToBundle];
+
     const bundlePath: string = path.join(
-      drawerDir,
+      __dirname,
+      `../src/drawers/${whatToBundle}/`,
       `__bundled_dont_edit__.tsx`
     );
 
-    const bundler = bundlerMap[whatToBundle];
+    const bundlerStream = bundler(inputs, {
+      preserveAspectRatio
+    });
 
-    readFile(bundlePath)
-      .errors(function(err) {
-        err.message = err.message || "";
-        err.message += `for bundle ${whatToBundle} (${JSON.stringify(inputs)})`;
-        throw err;
+    pipeToFilepath(bundlerStream, bundlePath)
+      .flatMap(function() {
+        console.log(`Successfully bundled ${whatToBundle}.`);
+
+        if (buildAutomatically) {
+          return build();
+        } else {
+          console.log(
+            `Rebuild Kaavio to make changes take effect: npm run build`
+          );
+          return hl([]);
+        }
       })
-      .each(function(bundle) {
-        const bundlerStream = bundler(inputs, {
-          preserveAspectRatio
-        }).errors(function(err) {
-          console.error("err");
-          console.error(err);
-          fs.writeFile(bundlePath, bundle, function(err) {
-            if (!!err) {
-              throw err;
-            }
-            // TODO if we throw an error, is process.exit needed?
-            //process.exit(1);
-          });
-        });
-
-        console.log("bundlePath");
-        console.log(bundlePath);
-        bundlerStream.observe().last().each(function(x) {
-          console.log(`Successfully bundled ${whatToBundle}.`);
-          if (buildAutomatically) {
-            build()
-              .errors(function(err) {
-                console.error("err");
-                console.error(err);
-                process.exitCode = 1;
-                //process.exit(1);
-              })
-              .last()
-              .each(function(x) {
-                process.exitCode = 0;
-                //process.exit(0);
-              });
-          } else {
-            console.log(
-              `Rebuild Kaavio to make changes take effect: npm run build`
-            );
-            // TODO I don't seem to be able to get the process to both finish
-            // piping the the bundlePath and to also quit, unless I use this
-            // kludge with the timeout and process.exit.
-            setTimeout(function() {
-              process.exitCode = 0;
-              //process.exit(0);
-            }, 500);
-          }
-        });
-
-        bundlerStream.pipe(fs.createWriteStream(bundlePath));
+      .errors(function(err) {
+        console.error(err);
+        process.exitCode = 1;
+      })
+      .last()
+      .each(function(x) {
+        process.exitCode = 0;
       });
   })
   .on("--help", function() {
     console.log(`
-			<whatToBundle> can be one of these: ${keys(bundlerMap).join(", ")}
+			Valid <whatToBundle> values: ${keys(bundlerMap).join(", ")}
 
 			Examples:
 
@@ -634,7 +583,7 @@ program
 				Mitochondria=http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg \\
 				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
 				wikidata:Q218642="http://cdkdepict-openchem.rhcloud.com/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \\
-				--preserve-aspect-ratio=wikidata:Q218642,Mitochondria
+				--preserve-aspect-ratio=wikidata:Q218642 Mitochondria
 
 			Include the icons specified in an icon map JSON file:
 			$ kaavio bundle icons ./src/drawers/icons/defaultIconMap.json
@@ -660,7 +609,7 @@ program
 				Mitochondria="http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg" \
 				RoundedRectangle="https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px" \
 				wikidata:Q218642="http://cdkdepict-openchem.rhcloud.com/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \
-				--preserve-aspect-ratio=wikidata:Q218642,Mitochondria
+				--preserve-aspect-ratio=wikidata:Q218642 Mitochondria
 
 cat ../gpml2pvjson-js/test/input/playground.gpml | ../gpml2pvjson-js/bin/gpml2pvjson | jq -c '(. | .entityMap[] | select(.dbId == "HMDB00161")) as {id: $id} | .entityMap[$id].drawAs |= "wikidata:Q218642" | .entityMap[$id].height=81' | ./bin/kaavio json2svg --static true | sed 's/\[\]$//' > output.svg
 
@@ -696,7 +645,7 @@ program
 			--hide b99fe ensembl:ENSG00000124762`
   )
   .option(
-    "--highlight [color=target,target,target...]",
+    "--highlight [color=target1,target2,target3...]",
     `Specify entities to highlight.
 		color: hex value or CSS/SVG color keyword
 			<https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords>
@@ -836,7 +785,6 @@ program
         console.error("err");
         console.error(err);
         process.exitCode = 1;
-        //process.exit(1);
       })
       .pipe(outputStream);
   })
@@ -867,9 +815,6 @@ hl(source).map(x => hl([x]))
     .pipe(process.stdout);
 });
 //*/
-
-// TODO does the process exit on its own?
-//process.exit(0);
 
 program.parse(process.argv);
 

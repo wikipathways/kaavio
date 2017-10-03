@@ -14,7 +14,7 @@ import { Group } from "./Group";
 import { FilterDefs } from "./Filter/FilterDefs";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import * as kaavioStyle from "../kaavio.style";
-import * as filterDrawers from "../drawers/filters/index";
+import * as filterDrawers from "../drawers/filters/__bundled_dont_edit__";
 import * as customStyle from "../drawers/styles/__bundled_dont_edit__";
 import { Icons } from "../drawers/icons/__bundled_dont_edit__";
 
