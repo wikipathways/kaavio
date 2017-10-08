@@ -6,7 +6,6 @@ import { Entity } from "./Entity";
 import { Node } from "./Node";
 import { getHidden } from "../utils/getHidden";
 import { normalizeElementId } from "../utils/normalizeElementId";
-import { interpolate } from "../spinoffs/interpolate";
 
 // Must also export this class for type definitions to work
 export class nodeWithGroup extends React.Component<any, any> {
@@ -21,6 +20,7 @@ export class nodeWithGroup extends React.Component<any, any> {
       highlightedNodes,
       backgroundColor,
       parentBackgroundColor,
+      getPropsToPassDown,
       fillOpacity,
       mergedStyle,
       contains,
@@ -30,32 +30,14 @@ export class nodeWithGroup extends React.Component<any, any> {
       defineMarker
     } = this.props;
 
-    const interpolatedBackgroundColor = interpolate(
-      parentBackgroundColor,
-      backgroundColor,
-      fillOpacity
-    );
-
     const children = contains
       .map(containedId => entityMap[containedId])
       .map(entity => {
-        const highlighted = getHighlighted(entity, highlightedNodes);
-        const hidden = getHidden(entity, hiddenEntities);
-
         return (
           <Entity
             key={entity.id}
-            {...entity}
-            parentBackgroundColor={interpolatedBackgroundColor}
-            mergedStyle={mergedStyle}
-            entityMap={entityMap}
-            isHighlighted={highlighted.highlighted}
-            highlightedColor={highlighted.color}
-            highlightedNodes={highlightedNodes}
-            hidden={hidden}
-            hiddenEntities={hiddenEntities}
-            getFilterId={getFilterId}
-            defineMarker={defineMarker}
+            // TODO are these merging ala defaults or what?
+            {...getPropsToPassDown(this.props, entity)}
           />
         );
       });

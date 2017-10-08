@@ -1,5 +1,6 @@
 const path = require("path");
 const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
+const webpack = require("webpack");
 
 const webpackConfig = require("./webpack.base.config");
 
@@ -11,8 +12,26 @@ webpackConfig.output = {
   libraryTarget: "umd"
 };
 
-webpackConfig.plugins.push(
+webpackConfig.module.rules.push({
+  test: require.resolve("react-dom"),
+  use: [
+    {
+      loader: "expose-loader",
+      options: "ReactDOM"
+    }
+  ]
+});
+
+[
+  new webpack.DefinePlugin({
+    "process.env.NODE_ENV": JSON.stringify("production")
+  }),
+  new webpack.LoaderOptionsPlugin({
+    minimize: true,
+    debug: false
+  }),
   new UglifyJsPlugin({
+    sourceMap: true,
     beautify: false,
     ecma: "8",
     mangle: {
@@ -24,6 +43,8 @@ webpackConfig.plugins.push(
     },
     comments: false
   })
-);
+].forEach(function(plugin) {
+  webpackConfig.plugins.push(plugin);
+});
 
 module.exports = webpackConfig;

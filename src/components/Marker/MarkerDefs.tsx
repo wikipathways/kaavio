@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { intersection, keys, toPairs, values } from "lodash";
+import { intersection, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { interpolate } from "../../spinoffs/interpolate";
 
 import {
@@ -128,7 +128,7 @@ export class MarkerDefs extends React.Component<any, any> {
     const { state, props } = this;
     const { defined } = state;
     const { latestMarkerReferenced } = nextProps;
-    if (latestMarkerReferenced) {
+    if (!isEmpty(latestMarkerReferenced)) {
       const {
         markerProperty,
         markerName,

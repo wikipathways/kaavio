@@ -18,60 +18,60 @@ export class Entity extends React.Component<any, any> {
     super(props);
   }
 
-  // TODO check that rotation is rendering correctly
   renderText() {
     const {
-      width,
+      color,
       height,
       id,
-      textContent,
       fontFamily,
       fontSize,
       fontStyle,
       fontWeight,
+      lineHeight,
+      padding,
       textAlign,
+      textContent,
       textRotation,
-      color
+      verticalAlign,
+      width,
+      whiteSpace
     } = this.props;
     if (!textContent) return;
 
-    let textTransform;
-    if (textRotation) {
-      textTransform = `rotate(${textRotation},${width / 2},${height / 2})`;
-    }
-
     return (
-      <g transform={textTransform}>
-        <Text
-          id={`text-for-${id}`}
-          key={`text-for-${id}`}
-          className="textlabel"
-          textContent={textContent}
-          fontFamily={fontFamily}
-          fontSize={fontSize}
-          fontWeight={fontWeight}
-          fontStyle={fontStyle}
-          textAlign={textAlign}
-          color={color}
-          width={width}
-          height={height}
-        />
-      </g>
+      <Text
+        id={`text-for-${id}`}
+        key={`text-for-${id}`}
+        className="textlabel"
+        color={color}
+        containerHeight={height}
+        containerId={id}
+        containerPadding={padding}
+        containerVerticalAlign={verticalAlign}
+        containerWidth={width}
+        fontFamily={fontFamily}
+        fontSize={fontSize}
+        fontStyle={fontStyle}
+        fontWeight={fontWeight}
+        lineHeight={lineHeight}
+        rotation={textRotation}
+        textAlign={textAlign}
+        textContent={textContent}
+        whiteSpace={whiteSpace}
+      />
     );
   }
 
-  // TODO look at other code and determine whether to render Burrs as Entities
   renderBurrs() {
     const {
       burrs,
       drawAs: parentDrawAs,
       entityMap,
-      width,
+      getPropsToPassDown,
       height,
       kaavioType,
       points,
-      backgroundColor,
-      mergedStyle
+      width
     } = this.props;
     if (!burrs || burrs.length < 1) return;
 
@@ -82,23 +82,23 @@ export class Entity extends React.Component<any, any> {
         burr.width += 0;
         burr.height += 0;
         const attachmentDisplay = burr.attachmentDisplay;
-        const position = attachmentDisplay.position;
-        const offset = attachmentDisplay.hasOwnProperty("offset")
+        const [xFactor, yFactor] = attachmentDisplay.position;
+        const [xOffset, yOffset] = "offset" in attachmentDisplay
           ? attachmentDisplay.offset
           : [0, 0];
 
         // kaavioType is referring to the entity the burr is attached to
         if (["SingleFreeNode", "Group"].indexOf(kaavioType) > -1) {
-          burr.x = width * position[0] - burr.width / 2 + offset[0];
-          burr.y = height * position[1] - burr.height / 2 + offset[1];
+          burr.x = width * xFactor - burr.width / 2 + xOffset;
+          burr.y = height * yFactor - burr.height / 2 + yOffset;
         } else if (kaavioType === "Edge") {
           // TODO get edge logic working so we can position this better
           // TODO look at current production pvjs to see how this is done
           const positionXY = new edgeDrawers[parentDrawAs](
             points
-          ).getPointAtPosition(position[0]);
-          burr.x = positionXY.x - burr.width / 2 + offset[0];
-          burr.y = positionXY.y - burr.height / 2 + offset[1];
+          ).getPointAtPosition(xFactor);
+          burr.x = positionXY.x - burr.width / 2 + xOffset;
+          burr.y = positionXY.y - burr.height / 2 + yOffset;
         } else {
           throw new Error(
             `Cannot handle burr with parent of type ${kaavioType}`
@@ -111,33 +111,40 @@ export class Entity extends React.Component<any, any> {
         // Even though burr.kaavioType = "Node", we render the Burr as a new Entity.
         // If we just render it a Node, we can't do things like individually highlighting the burr.
         return (
-          <Entity
-            key={burr.id}
-            {...burr}
-            backgroundColor={backgroundColor}
-            mergedStyle={mergedStyle}
-            entityMap={entityMap}
-          />
+          <Entity key={burr.id} {...getPropsToPassDown(this.props, burr)} />
         );
       });
   }
 
+  componentWillReceiveProps(nextProps) {
+    const { filters, setFilter } = this.props;
+    // TODO use lodash/fp everywhere so this comparison is on immutable
+    // data structures.
+    if (filters !== nextProps.filters) {
+      filters.forEach(function(filter) {
+        setFilter(filter);
+      });
+    }
+  }
+
   render() {
     const {
-      rotation,
-      width,
-      height,
-      type,
-      id,
-      x,
-      y,
-      color,
-      kaavioType,
-      customClass,
-      parentBackgroundColor,
+      getPropsToPassDown,
       borderWidth,
+      color,
       filters,
-      getFilterId
+      getClassString,
+      getFilterId,
+      height,
+      id,
+      kaavioType,
+      parentBackgroundColor,
+      rotation,
+      textContent,
+      type,
+      width,
+      x,
+      y
     } = this.props;
     let entityTransform;
     if (x || y || rotation) {
@@ -176,7 +183,8 @@ export class Entity extends React.Component<any, any> {
       <g
         id={id}
         key={id}
-        className={customClass}
+        name={textContent}
+        className={`kaavio-diagram ${getClassString(type)}`}
         color={color}
         transform={entityTransform}
         typeof={type.join(" ")}

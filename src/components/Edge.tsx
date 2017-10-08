@@ -11,14 +11,14 @@ export class Edge extends React.Component<any, any> {
 
   // making sure we've defined any markers referenced after initial mount
   componentWillReceiveProps(nextProps) {
-    const { defineMarker, color, parentBackgroundColor } = nextProps;
+    const { getMarkerId, color, parentBackgroundColor } = nextProps;
     intersection(MARKER_PROPERTIES, keys(nextProps)).forEach(function(
       markerProperty: MarkerProperty
     ) {
       const markerName = nextProps[markerProperty];
       if (markerName) {
-        if (!!defineMarker) {
-          defineMarker({
+        if (!!getMarkerId) {
+          getMarkerId({
             markerProperty,
             markerName,
             color,
@@ -35,7 +35,7 @@ export class Edge extends React.Component<any, any> {
       drawAs,
       color,
       parentBackgroundColor,
-      defineMarker,
+      getMarkerId,
       strokeDasharray,
       borderWidth,
       points,

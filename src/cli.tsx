@@ -169,7 +169,7 @@ function build() {
 
   const webpackProdConfigPath = path.resolve(
     targetCWD,
-    path.join(__dirname, "../webpack.prod.config.js")
+    path.join(__dirname, "../webpack.lib.prod.config.js")
   );
 
   return exec(`webpack --config ${webpackProdConfigPath}`, {
@@ -641,7 +641,7 @@ program
   .option(
     "--hide [target1,target2,target3...]",
     `Specify entities to hide. 
-		target: entity id or typeof value
+		target: entity id, type or textContent
 
 		Examples:
 			--hide b99fe
@@ -652,11 +652,14 @@ program
   .option(
     "--highlight [color=target1,target2,target3]",
     `Specify entities to highlight.
-		To specify multiple colors, you can specify multiple "--highlight" options.
+		To use multiple colors, you can specify multiple "--highlight" options.
 
 		color: hex value or CSS/SVG color keyword
 			<https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords>
 		target: entity id or typeof value
+
+		If target contains a comma, you must URL encode it, e.g.,
+			mytext,moretext => mytext%2Cmoretext
 
 		Examples:
 			--highlight red=b99fe
@@ -670,7 +673,7 @@ program
       const [color, targetString] = s.split(/=/);
       acc.push({
         color,
-        targets: targetString.split(",")
+        targets: targetString.split(",").map(decodeURIComponent)
       });
       return acc;
     },
@@ -779,12 +782,14 @@ program
             Diagram,
             {
               pathway: input.pathway,
+              entityMap: input.entityMap,
+              /*
               id: input.pathway.id,
               backgroundColor: input.pathway.backgroundColor,
-              entityMap: input.entityMap,
               height: input.pathway.height,
               name: input.pathway.height,
               width: input.pathway.width,
+							//*/
               highlightedEntities,
               hiddenEntities
             },

@@ -16,18 +16,21 @@ export function Double({ strokeWidth = 1 }): FilterResponse {
         in={source}
         in2={source}
         operator="over"
+        key="doubleStrokedarkened"
         result="doubleStrokedarkened"
       />,
       <feMorphology
         in={source}
         operator="dilate"
         radius="1"
+        key="doubleStrokedilated"
         result="doubleStrokedilated"
       />,
       <feComposite
         in="doubleStrokedilated"
         in2="doubleStrokedarkened"
         operator="out"
+        key="doubleStrokeResult"
         result="doubleStrokeResult"
       />
     ];
@@ -37,12 +40,14 @@ export function Double({ strokeWidth = 1 }): FilterResponse {
         in={source}
         operator="dilate"
         radius={strokeWidth}
+        key="doubleStrokedilated"
         result="doubleStrokedilated"
       />,
       <feComposite
         in="doubleStrokedilated"
         operator="xor"
         in2={source}
+        key="doubleStrokeResult"
         result="doubleStrokeResult"
       />
     ];
@@ -65,12 +70,12 @@ export function Highlight({ color }): FilterResponse {
     },
     filterPrimitives: [
       /* Desaturate all colours before highlighting */
-      <feColorMatrix type="saturate" values="0" />,
-      <feFlood floodColor={color} floodOpacity="1" />,
-      <feComposite operator="atop" in2="SourceGraphic" />,
-      <feMorphology operator="dilate" radius="2" />,
-      <feGaussianBlur stdDeviation="3" />,
-      <feMerge>
+      <feColorMatrix type="saturate" values="0" key="saturated" />,
+      <feFlood floodColor={color} floodOpacity="1" key="flooded" />,
+      <feComposite operator="atop" in2="SourceGraphic" key="flood-composite" />,
+      <feMorphology operator="dilate" radius="4" key="dilated" />,
+      <feGaussianBlur stdDeviation="3" key="blur" />,
+      <feMerge key="merged">
         <feMergeNode />
         <feMergeNode in="SourceGraphic" />
       </feMerge>

@@ -1,7 +1,11 @@
-//import "source-map-support/register";
+import { filter, isEmpty, partition, reduce, toPairs } from "lodash/fp";
 import * as React from "react";
+const RGBColor = require("rgbcolor");
+import { style, getStyles } from "typestyle";
+
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
+import * as kaavioStyle from "./kaavio.style";
 
 /**
  * Kaavio component.
@@ -13,8 +17,102 @@ import { PanZoom } from "./components/PanZoom";
 export class Kaavio extends React.Component<any, any> {
   constructor(props) {
     super(props);
+
+    const { hiddenEntities, highlightedEntities } = this.props;
+    const searchParams = new URLSearchParams(location.search);
+
+    // TODO reconcile query params and class props for pan/zoom settings
+
+    let reconciledHiddenEntities;
+    const hideParam = searchParams.get("hide");
+    if (!isEmpty(hiddenEntities)) {
+      reconciledHiddenEntities = hiddenEntities;
+      if (!isEmpty(hideParam)) {
+        console.warn(`Warning: "hiddenEntities" was specified by two different sources, which may or may not conflict.
+		prop passed to Kaavio class:
+			hiddenEntities={${JSON.stringify(hiddenEntities)}}
+		URL query param:
+			hide=${hideParam}
+		Setting URL query params to match prop passed to Kaavio class.`);
+
+        searchParams.set("hide", hiddenEntities.join());
+
+        history.replaceState(
+          { hiddenEntities: hiddenEntities },
+          document.title,
+          "?" + searchParams.toString()
+        );
+      }
+    } else if (!isEmpty(hideParam)) {
+      reconciledHiddenEntities = hideParam.split(",").map(decodeURIComponent);
+    }
+
+    let reconciledHighlightedEntities;
+    const [highlightParams, nonHighlightParams] = partition(function(
+      [key, value]
+    ) {
+      return new RGBColor(key).ok;
+    }, Array.from(searchParams));
+
+    if (!isEmpty(highlightedEntities)) {
+      reconciledHighlightedEntities = highlightedEntities;
+
+      if (!isEmpty(highlightParams)) {
+        console.warn(`Warning: "highlightedEntities" was specified by two different sources, which may or may not conflict.
+		prop passed to Kaavio class:
+			highlightedEntities={${JSON.stringify(highlightedEntities)}}
+		URL query params:
+			${JSON.stringify(highlightParams)}
+		Setting URL query params to match prop passed to Kaavio class.`);
+
+        const updatedParams = new URLSearchParams();
+        [
+          ...nonHighlightParams,
+          ...toPairs(
+            reduce(
+              function(acc, { target, color }) {
+                acc[color] = acc[color] || [];
+                acc[color].push(target);
+                return acc;
+              },
+              {},
+              highlightedEntities
+            )
+          ).map(function([color, targets]) {
+            return [color, targets.join()];
+          })
+        ].forEach(function([name, value]) {
+          updatedParams.set(name, value);
+        });
+
+        history.replaceState(
+          { highlightedEntities: highlightedEntities },
+          document.title,
+          "?" + updatedParams.toString()
+        );
+      }
+    } else if (!isEmpty(highlightParams)) {
+      reconciledHighlightedEntities = toPairs(
+        highlightParams.reduce(function(acc, [color, targetString]) {
+          targetString
+            .split(",")
+            .map(decodeURIComponent)
+            .forEach(function(target) {
+              if (!acc.hasOwnProperty(target)) {
+                acc[target] = color;
+              }
+            });
+          return acc;
+        }, {})
+      ).map(function([target, color]) {
+        return { target, color };
+      });
+    }
+
     this.state = {
-      diagramRef: null
+      diagramRef: null,
+      hiddenEntities: reconciledHiddenEntities,
+      highlightedEntities: reconciledHighlightedEntities
     };
   }
 
@@ -32,14 +130,8 @@ export class Kaavio extends React.Component<any, any> {
 
   render() {
     const {
-      customStyle,
-      filters,
-      entities,
-      name,
-      width,
-      height,
-      highlightedEntities,
-      hiddenEntities,
+      entityMap,
+      pathway,
       zoomedEntities,
       pannedEntities,
       zoomLevel,
@@ -49,57 +141,35 @@ export class Kaavio extends React.Component<any, any> {
       panZoomLocked = false
     } = this.props;
 
-    const backgroundColor = customStyle.backgroundColor || "white";
-    const id = "kaavio-container";
-
-    // This is a port to the legacy use of node_id
-    // TODO: Change all references of highlightedNodes to the new highlightedEntities
-    const highlightedEntitiesLegacy = highlightedEntities
-      ? highlightedEntities.map(singleHighlightedEntity => {
-          return {
-            node_id: singleHighlightedEntity.entityId,
-            color: singleHighlightedEntity.color
-          };
-        })
-      : [];
-
-    const entityMap = entities.reduce(function(acc, entity) {
-      acc[entity.id] = entity;
-      return acc;
-    }, {});
-
-    const zIndices = entities
-      .sort(function(a: any, b: any) {
-        if (a.zIndex > b.zIndex) {
-          return 1;
-        } else if (a.zIndex < b.zIndex) {
-          return -1;
-        } else {
-          return 0;
-        }
-      })
-      .map(entity => entity.id);
+    const {
+      highlightedEntities,
+      hiddenEntities
+      /*
+      zoomedEntities,
+      pannedEntities,
+      zoomLevel,
+      panCoordinates,
+      showPanZoomControls = true,
+      panZoomLocked = false
+			//*/
+    } = this.state;
 
     // TODO: Don't use refs!
     // Accessing the diagram ref from the state is a little bit of a hack to get panZoom working.
     // Consider refactoring the panZoom to be truly Reactive and not use refs
     return (
-      <div id={id} className={`kaavio-container ${customStyle.containerClass}`}>
+      <div
+        id={`kaavio-container-for-${pathway.id}`}
+        className={`kaavio-container ${kaavioStyle.Container}`}
+      >
         <Diagram
           ref={diagram =>
             !this.state.diagramRef && this.setState({ diagramRef: diagram })}
-          id={`kaavio-diagram-for-${id}`}
-          name={name}
-          width={width}
-          height={height}
-          backgroundColor={backgroundColor}
           entityMap={entityMap}
-          filters={filters}
-          handleClick={this.handleClick}
-          zIndices={zIndices}
-          customStyle={customStyle}
-          highlightedNodes={highlightedEntitiesLegacy}
           hiddenEntities={hiddenEntities}
+          highlightedEntities={highlightedEntities}
+          pathway={pathway}
+          handleClick={this.handleClick}
         />
         <PanZoom
           diagram={this.state.diagramRef}

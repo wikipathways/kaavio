@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { defaults, keys, toPairs, values } from "lodash/fp";
+import { defaults, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { interpolate } from "../../spinoffs/interpolate";
 import * as filterDrawers from "../../drawers/filters/__bundled_dont_edit__";
 
@@ -60,7 +60,7 @@ export class FilterDefs extends React.Component<any, any> {
     const { defined } = state;
     const { latestFilterReferenced } = nextProps;
     const definedIds = keys(defined);
-    if (latestFilterReferenced) {
+    if (!isEmpty(latestFilterReferenced)) {
       const {
         filterName,
         parentBackgroundColor,
@@ -68,6 +68,13 @@ export class FilterDefs extends React.Component<any, any> {
         borderWidth
       } = latestFilterReferenced;
 
+      console.log("filterDrawers");
+      console.log(filterDrawers);
+      console.log("latestFilterReferenced");
+      console.log(latestFilterReferenced);
+      if (isEmpty(filterName)) {
+        throw new Error(`Missing filterName`);
+      }
       const { filterProperties, filterPrimitives } = filterDrawers[filterName]({
         parentBackgroundColor: parentBackgroundColor,
         color: color,

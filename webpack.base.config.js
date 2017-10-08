@@ -23,7 +23,6 @@ const shebangRemovalLoader = {
 
 module.exports = {
   context: path.resolve(__dirname),
-  devtool: "source-map",
   resolve: {
     extensions: [
       ".webpack.js",
@@ -67,21 +66,9 @@ module.exports = {
     ]
   },
   plugins: [
-    new webpack.DefinePlugin({
-      "process.env.NODE_ENV": JSON.stringify("production")
-    }),
-    new webpack.LoaderOptionsPlugin({
-      //minimize: true,
-      debug: false
-    }),
     new ExtractTextPlugin({
       filename: "style.css",
       allChunks: true
-    }),
-    new webpack.BannerPlugin({
-      banner: "require('source-map-support').install();",
-      //entryOnly: true,
-      raw: true
     })
   ]
 };

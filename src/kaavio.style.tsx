@@ -1,9 +1,6 @@
 import { style } from "typestyle";
 
-const kaavioBackgroundColor = "white";
-const kaavioColor = "black";
-
-export const globalClass = style({
+export const Global = style({
   fontFamily: "Roboto",
   position: "relative",
   width: "100%",
@@ -11,23 +8,17 @@ export const globalClass = style({
   overflow: "hidden"
 });
 
-export const containerClass = style({
-  color: kaavioColor,
-  backgroundColor: kaavioBackgroundColor,
+export const Container = style({
   width: "100%",
   height: "100%"
 });
 
-export const diagramClass = style({
-  backgroundColor: kaavioBackgroundColor,
+export const Diagram = style({
   width: "100%",
   height: "100%"
 });
 
-export const viewportClass = style({
-  [`.kaavio-viewport-background`]: {
-    fill: kaavioBackgroundColor
-  },
+export const Viewport = style({
   [`text`]: {
     fontSize: "12px",
     pointerEvents: "none",
@@ -35,7 +26,7 @@ export const viewportClass = style({
   }
 });
 
-export const CitationClass = style({
+export const Citation = style({
   [` .Icon`]: {
     fill: "none",
     strokeWidth: "0px"
@@ -46,9 +37,9 @@ export const CitationClass = style({
   }
 });
 
-export const InfoBoxClass = style({
+export const InfoBox = style({
   fill: "#444",
-  [`${CitationClass}`]: {
+  [`${Citation}`]: {
     fontSize: "0px"
   }
 });
