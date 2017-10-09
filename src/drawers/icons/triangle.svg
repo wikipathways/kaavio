@@ -3,7 +3,9 @@
     <symbol id="Triangle" overflow="visible"
 	preserveAspectRatio="none" viewBox="0 0 50 50">
       <desc>Triangle</desc>
-      <polygon stroke="currentColor" points="1,49 49,24 1,1"/>
+      <polygon stroke="currentColor"
+	      vector-effect="non-scaling-stroke"
+	      points="1,49 49,24 1,1"/>
     </symbol>
   </defs>
 </svg>

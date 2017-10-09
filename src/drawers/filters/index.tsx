@@ -16,22 +16,22 @@ export function Double({ strokeWidth = 1 }): FilterResponse {
         in={source}
         in2={source}
         operator="over"
-        key="doubleStrokedarkened"
-        result="doubleStrokedarkened"
+        key="doubleDarkened"
+        result="doubleDarkened"
       />,
       <feMorphology
         in={source}
         operator="dilate"
         radius="1"
-        key="doubleStrokedilated"
-        result="doubleStrokedilated"
+        key="doubleDilated"
+        result="doubleDilated"
       />,
       <feComposite
-        in="doubleStrokedilated"
-        in2="doubleStrokedarkened"
+        in="doubleDilated"
+        in2="doubleDarkened"
         operator="out"
-        key="doubleStrokeResult"
-        result="doubleStrokeResult"
+        key="doubleResult"
+        result="doubleResult"
       />
     ];
   } else {
@@ -39,16 +39,23 @@ export function Double({ strokeWidth = 1 }): FilterResponse {
       <feMorphology
         in={source}
         operator="dilate"
-        radius={strokeWidth}
-        key="doubleStrokedilated"
-        result="doubleStrokedilated"
+        radius={2 / 3 * strokeWidth}
+        key="doubleDilated"
+        result="doubleDilated"
+      />,
+      <feMorphology
+        in={source}
+        operator="erode"
+        radius={strokeWidth / 2}
+        key="doubleEroded"
+        result="doubleEroded"
       />,
       <feComposite
-        in="doubleStrokedilated"
+        in="doubleDilated"
+        in2="doubleEroded"
         operator="xor"
-        in2={source}
-        key="doubleStrokeResult"
-        result="doubleStrokeResult"
+        key="doubleResult"
+        result="doubleResult"
       />
     ];
   }

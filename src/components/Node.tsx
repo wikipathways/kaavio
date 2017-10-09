@@ -30,6 +30,20 @@ export class Node extends React.Component<any, any> {
       backgroundColor
     } = this.props;
 
+    // NOTE: the stroke width is applied to the icon, but if
+    // the icon does not have the same dimensions as the entity,
+    // the stroke width is scaled by the ratio between them, e.g.,
+    // if the Rectangle icon is 100 x 100 and
+    // the entity is 200 x 100 with a stroke width of 5, then
+    // the stroke width of the displayed entity would be
+    //   left and right sides: 5 * (200 / 100) = 10
+    //   top and bottom sides: 5 * (100 / 100) = 5
+    // Until we can figure out a better way of handling this, we're
+    // just assuming the icons all have dimensions of 100 and scaling
+    // the stroke width to 100 / the mean of the entity width and height.
+    // TODO figure out a better solution.
+    //const strokeWidth = borderWidth * (100 / ((width + height) / 2));
+
     /*
     // Add the style too. Fixes firefox bug where fill, stroke etc. isn't inherited
     const style = {

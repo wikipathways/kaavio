@@ -3,7 +3,8 @@
     <symbol id="Hexagon" overflow="visible" preserveAspectRatio="none" viewBox="0 8 100 86">
 	<desc>Hexagon</desc>
 	<path stroke="currentColor"
-		d="m1.42004,50.99635l21.07262,-42.13943l56.19152,0l21.0667,42.13943l-21.0667,42.14507l-56.19152,0l-21.07262,-42.14507z"/>
+	      vector-effect="non-scaling-stroke"
+	      d="m1.42004,50.99635l21.07262,-42.13943l56.19152,0l21.0667,42.13943l-21.0667,42.14507l-56.19152,0l-21.07262,-42.14507z"/>
     </symbol>
   </defs>
 </svg>

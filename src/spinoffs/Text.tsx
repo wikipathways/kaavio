@@ -243,7 +243,12 @@ export class Text extends React.Component<any, any> {
       );
     }
 
-    const clipPathId = `clipPath-for-text-for-${containerId}`;
+    const clipPathId = `${containerId}-text-clipPath`;
+    /*
+          x={-1 * shiftX}
+    y={-1 * containerHeight / 2}
+              y={-1 * shiftY + lineHeightPx / 2}
+		//*/
     return (
       <g>
         <defs>
