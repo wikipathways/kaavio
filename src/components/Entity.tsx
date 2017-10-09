@@ -1,7 +1,8 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { isEmpty, pick, reduce, upperFirst } from "lodash/fp";
-import { Text } from "./Text";
+//import { Text } from "./Text";
+import { Text } from "../spinoffs/Text";
 import { Node } from "./Node";
 import { EntityProps } from "../typings";
 import { Group } from "./Group";
