@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { isEmpty } from "lodash/fp";
+import { isEmpty, pick, reduce, upperFirst } from "lodash/fp";
 import { Text } from "./Text";
 import { Node } from "./Node";
 import { EntityProps } from "../typings";
@@ -19,45 +19,50 @@ export class Entity extends React.Component<any, any> {
   }
 
   renderText() {
-    const {
-      color,
-      height,
-      id,
-      fontFamily,
-      fontSize,
-      fontStyle,
-      fontWeight,
-      lineHeight,
-      padding,
-      textAlign,
-      textContent,
-      textRotation,
-      verticalAlign,
-      width,
-      whiteSpace
-    } = this.props;
+    const { props } = this;
+    const { id, textContent, textRotation } = props;
     if (!textContent) return;
+
+    const textPropsToPassDown = [
+      "color",
+      "fontFamily",
+      "fontSize",
+      "fontStyle",
+      "fontWeight",
+      "lineHeight",
+      "overflow",
+      "textAlign",
+      "textContent",
+      // Note: not including "textRotation", because we want to
+      // pass it down as just "rotation"
+      "textOverflow",
+      "whiteSpace"
+    ];
+    const containerPropsToPassDown = [
+      "height",
+      "id",
+      "padding",
+      "verticalAlign",
+      "width"
+    ];
+    const seed = pick(textPropsToPassDown, props);
+    const propsToPassDown = reduce(
+      function(acc, containerPropName) {
+        const propName = "container" + upperFirst(containerPropName);
+        acc[propName] = props[containerPropName];
+        return acc;
+      },
+      seed,
+      containerPropsToPassDown
+    );
 
     return (
       <Text
         id={`text-for-${id}`}
         key={`text-for-${id}`}
         className="textlabel"
-        color={color}
-        containerHeight={height}
-        containerId={id}
-        containerPadding={padding}
-        containerVerticalAlign={verticalAlign}
-        containerWidth={width}
-        fontFamily={fontFamily}
-        fontSize={fontSize}
-        fontStyle={fontStyle}
-        fontWeight={fontWeight}
-        lineHeight={lineHeight}
         rotation={textRotation}
-        textAlign={textAlign}
-        textContent={textContent}
-        whiteSpace={whiteSpace}
+        {...propsToPassDown}
       />
     );
   }

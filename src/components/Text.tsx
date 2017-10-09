@@ -30,9 +30,7 @@
 // left | right | center | justify | inherit
 
 const direction = require("direction");
-const he = require("he");
 import * as React from "react";
-import { TextProps } from "../typings";
 
 const LTR_CENTRIC_TEXT_ALIGNS = ["left", "right"];
 
@@ -99,6 +97,26 @@ const textAnchorCalculatorsByTextAlign = {
   }
 };
 
+export interface TextProps {
+  color: string;
+  containerHeight: number; // px
+  containerId: string;
+  containerPadding: number; // px
+  containerWidth: number; // px
+  containerVerticalAlign: string;
+  fontFamily: string;
+  fontSize: number; // px
+  fontStyle: string;
+  fontWeight: string;
+  lineHeight: number; // unitless
+  overflow: string;
+  rotation: number;
+  textAlign: "start" | "end" | "left" | "center" | "right";
+  textContent: string;
+  textOverflow: string;
+  whiteSpace: string;
+}
+
 export class Text extends React.Component<any, any> {
   constructor(props: TextProps) {
     super(props);
@@ -107,28 +125,43 @@ export class Text extends React.Component<any, any> {
   render() {
     const {
       color,
-      containerHeight, // px
+      containerHeight,
       containerId,
-      containerPadding, // px
-      containerWidth, // px
+      containerPadding = 0,
+      containerWidth,
       containerVerticalAlign,
       fontFamily,
-      fontSize, // px
-      fontStyle,
-      fontWeight,
-      lineHeight: lineHeightEm, // em
-      rotation,
-      textAlign,
+      fontSize,
+      fontStyle = "normal",
+      fontWeight = "normal",
+      lineHeight: lineHeightUnitless,
+      overflow = "visible",
+      rotation = 0,
+      textAlign = "start",
       textContent = "",
-      whiteSpace
-    } = this.props;
-    /* TODO does this handle test cases like these:
-		// mixed rtl and ltr content?
+      textOverflow = "clip",
+      whiteSpace = "normal"
+    }: TextProps = this.props;
+    // TODO text-overflow:
+    // ellipsis, clip, "…" (string)
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow
+    //
+    // SVG has an overflow property but we need to establish a new viewport to
+    // make it work for text or tspan.
+    // set a clip path to match clip?
+    //
+    // Also, there are the textLength and lengthAdjust properties, but they
+    // don't seem directly related to the text-overflow property
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/textLength
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/lengthAdjust
+
+    /* TODO does this handle test cases like these?
+		// mixed rtl and ltr content:
     const textContent = "exclamation point -- באמת! -- on the right.";
     const textContent = "בצד ימין  -- really! -- סימן קריאה.";
     const textContent = "exclamation point -- באמת!‏ -- on the left.";
     const textContent = "בצד שמאל  -- really‎! -- סימן קריאה.";
-	  // multiline rtl?
+	  // multiline rtl:
     const textContent = "אחר \nצהריים טובים";
 		// Notice also that PathVisio only produces left, center, right, so the
 		// GPML tests don't include start and end!
@@ -136,13 +169,34 @@ export class Text extends React.Component<any, any> {
     const textAlign = "end";
 		*/
     const ltrCentric = LTR_CENTRIC_TEXT_ALIGNS.indexOf(textAlign) > -1;
-    const lineHeightPx = lineHeightEm * fontSize;
+    const lineHeightPx = lineHeightUnitless * fontSize;
+    // TODO what about writing-mode and Chinese/Japanese scripts?
+    // https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/writing-mode
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/writing-mode
     const textDirection = direction(textContent);
     const textAnchor = textAnchorCalculatorsByTextAlign[textAlign](
       textDirection
     );
 
     let lines;
+
+    const supportedOverflowValues = ["visible", "hidden"];
+    if (supportedOverflowValues.indexOf(overflow) === -1) {
+      throw new Error(
+        `Only ${supportedOverflowValues.join(
+          ", "
+        )} currently supported for overflow. Pull requests welcome!`
+      );
+    }
+
+    const supportedTextOverflowValues = ["clip"];
+    if (supportedTextOverflowValues.indexOf(textOverflow) === -1) {
+      throw new Error(
+        `Only ${supportedTextOverflowValues.join(
+          ", "
+        )} currently supported for textOverflow. Pull requests welcome!`
+      );
+    }
 
     if (whiteSpace === "pre") {
       // These are the most common ways to specify linebreaks:
@@ -189,64 +243,84 @@ export class Text extends React.Component<any, any> {
       );
     }
 
-    const dx = lines
-      .reduce(function(acc, line) {
-        const characterCount = line.length;
-        for (let i = 0; i < characterCount; i++) {
-          acc.push(0);
-        }
-        acc.push(-1 * (fontSize / lineHeightEm) * characterCount);
-        return acc;
-      }, [])
-      .join(" ");
-
-    const dy = lines
-      .reduce(
-        function(acc, line) {
-          const characterCount = line.length;
-          for (let i = 0; i < line.length; i++) {
-            acc.push(0);
-          }
-          acc.push(lineHeightPx);
-          return acc;
-        },
-        [-1 * (lines.length - 1) * lineHeightPx / 2]
-      )
-      .join(" ");
-
+    const clipPathId = `clipPath-for-text-for-${containerId}`;
     return (
-      <text
-        dominantBaseline="central"
-        fill={color}
-        fontFamily={fontFamily}
-        fontSize={`${fontSize}px`}
-        fontStyle={fontStyle}
-        fontWeight={fontWeight}
-        textAnchor={textAnchor}
-        transform={transforms.join(" ")}
-      >
-        {lines.map(function(line, i) {
-          // These two are equivalent:
-          //y={(i - (lineCount - 1) / 2) * lineHeightPx}
-          //					dy={
-          //						i === 0 ? -1 * (lineCount - 1) * lineHeightPx / 2 : lineHeightPx
-          //					}
-          return (
-            <tspan
-              key={`text-line-${i}-${line}`}
-              direction={ltrCentric ? "ltr" : textDirection}
-              x="0"
-              y={(i - (lineCount - 1) / 2) * lineHeightPx}
-            >
-              {line}
-            </tspan>
-          );
-        })}
-      </text>
+      <g>
+        <defs>
+          <clipPath id={clipPathId}>
+            <rect
+              x={-1 * shiftX}
+              y={-1 * shiftY}
+              width={containerWidth}
+              height={containerHeight}
+            />
+          </clipPath>
+        </defs>
+        <text
+          clipPath={overflow === "hidden" ? `url(#${clipPathId})` : null}
+          dominantBaseline="central"
+          fill={color}
+          fontFamily={fontFamily}
+          fontStyle={fontStyle}
+          fontWeight={fontWeight}
+          overflow={overflow}
+          textAnchor={textAnchor}
+          transform={transforms.join(" ")}
+        >
+          {lines.map(function(line, i) {
+            // These two are equivalent:
+            //y={(i - (lineCount - 1) / 2) * lineHeightPx}
+            // and
+            //					dy={
+            //						i === 0 ? -1 * (lineCount - 1) * lineHeightPx / 2 : lineHeightPx
+            //					}
+            //
+            // NOTE: in Chrome, direction and fontSize need to be applied to the
+            // tspan elements, not the parent text element. Otherwise, they don't
+            // take effect.
+            return (
+              <tspan
+                key={`text-line-${i}-${line}`}
+                direction={ltrCentric ? "ltr" : textDirection}
+                fontSize={`${fontSize}px`}
+                x="0"
+                y={(i - (lineCount - 1) / 2) * lineHeightPx}
+              >
+                {line}
+              </tspan>
+            );
+          })}
+        </text>
+      </g>
     );
   }
 }
 
+//    const dx = lines
+//      .reduce(function(acc, line) {
+//        const characterCount = line.length;
+//        for (let i = 0; i < characterCount; i++) {
+//          acc.push(0);
+//        }
+//        acc.push(-1 * (fontSize / lineHeightUnitless) * characterCount);
+//        return acc;
+//      }, [])
+//      .join(" ");
+//
+//    const dy = lines
+//      .reduce(
+//        function(acc, line) {
+//          const characterCount = line.length;
+//          for (let i = 0; i < line.length; i++) {
+//            acc.push(0);
+//          }
+//          acc.push(lineHeightPx);
+//          return acc;
+//        },
+//        [-1 * (lines.length - 1) * lineHeightPx / 2]
+//      )
+//      .join(" ");
+//
 //    const totalTextWidth =
 //      Math.max.apply(undefined, lines.map(line => line.length)) * fontSize / 2;
 //    const tspanXMapper = {
@@ -283,7 +357,7 @@ export class Text extends React.Component<any, any> {
 //          return (
 //            <tspan
 //              key={`text-line-${i}-${line}`}
-//              textLength={line.length * fontSize / lineHeightEm}
+//              textLength={line.length * fontSize / lineHeightUnitless}
 //            >
 //              {line}
 //            </tspan>

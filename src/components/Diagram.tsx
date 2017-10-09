@@ -46,7 +46,7 @@ const TEXT_CONTENT_DEFAULTS = {
   color: "#141414",
   fontFamily: "arial",
   fontSize: 12, // px
-  lineHeight: 1.5, // em
+  lineHeight: 1.5, // unitless
   textAlign: "start",
   whiteSpace: "pre"
 };
