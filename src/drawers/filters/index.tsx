@@ -15,176 +15,6 @@ export type FilterResponse = {
   filterPrimitives: JSX.Element[];
 };
 
-export function Double1({
-  backgroundColor,
-  borderWidth = 1,
-  color,
-  parentBackgroundColor
-}): FilterResponse {
-  const source = "SourceGraphic";
-  const hasFill = ["none", "transparent"].indexOf(backgroundColor) === -1;
-
-  let filterPrimitives;
-
-  if (borderWidth === 1) {
-    filterPrimitives = [
-      <feComposite
-        in={source}
-        in2={source}
-        operator="over"
-        key="doubleDark"
-        result="doubleDark"
-      />,
-      <feMorphology
-        in="doubleDark"
-        operator="dilate"
-        radius={hasFill ? 1 : 0.5}
-        key="doubleInner"
-        result="doubleInner"
-      />,
-      <feMorphology
-        in={source}
-        operator="dilate"
-        radius={hasFill ? 2 : 1}
-        key="doubleOuter"
-        result="doubleOuter"
-      />
-    ];
-  } else {
-    filterPrimitives = [
-      <feMorphology
-        in={source}
-        operator="dilate"
-        radius={borderWidth}
-        key="doubleOuter"
-        result="doubleOuter"
-      />,
-      <feMorphology
-        in={source}
-        operator={hasFill ? "erode" : "dilate"}
-        radius={hasFill ? borderWidth / 2 : 1 / 3}
-        key="doubleInner"
-        result="doubleInner"
-      />
-    ];
-  }
-
-  const composited = hasFill
-    ? <feComposite
-        in="doubleInner"
-        in2="doubleOuter"
-        operator="atop"
-        key="doubleResult"
-        result="doubleResult"
-      />
-    : <feComposite
-        in="doubleOuter"
-        in2="doubleInner"
-        operator="out"
-        key="doubleResult"
-        result="doubleResult"
-      />;
-
-  filterPrimitives.push(composited);
-
-  return {
-    filterProperties: {
-      id: normalizeElementId(
-        ["double", hasFill, borderWidth, "filter"].join("-")
-      )
-    },
-    filterPrimitives: filterPrimitives
-  };
-}
-
-export function Double2({
-  backgroundColor,
-  borderWidth = 1,
-  color,
-  parentBackgroundColor
-}): FilterResponse {
-  const source = "SourceGraphic";
-  const hasFill = ["none", "transparent"].indexOf(backgroundColor) === -1;
-
-  let filterPrimitives = [];
-
-  if (borderWidth === 1) {
-    filterPrimitives = [
-      <feComposite
-        in={source}
-        in2={source}
-        operator="over"
-        key="doubleDark"
-        result="doubleDark"
-      />,
-      <feMorphology
-        in="doubleDark"
-        operator="dilate"
-        radius={hasFill ? 1 : 0.5}
-        key="doubleInner"
-        result="doubleInner"
-      />,
-      <feMorphology
-        in={source}
-        operator="dilate"
-        radius={hasFill ? 2 : 1}
-        key="doubleOuter"
-        result="doubleOuter"
-      />
-    ];
-  } else {
-    filterPrimitives = [
-      <feMorphology
-        in={source}
-        operator={hasFill ? "erode" : "dilate"}
-        radius={hasFill ? borderWidth / 2 : 1 / 3}
-        key="doubleInner"
-        result="doubleInner"
-      />,
-      <feMorphology
-        in={source}
-        operator="dilate"
-        radius={borderWidth}
-        key="doubleOuter"
-        result="doubleOuter"
-      />
-    ];
-  }
-  const composited = hasFill
-    ? <feComposite
-        in="doubleInner"
-        in2="doubleOuter"
-        operator="atop"
-        key="doubleResult"
-        result="doubleResult"
-      />
-    : <feComposite
-        in="doubleOuter"
-        in2="doubleInner"
-        operator="out"
-        key="doubleResult"
-        result="doubleResult"
-      />;
-
-  filterPrimitives.push(composited);
-
-  return {
-    filterProperties: {
-      id: normalizeElementId(
-        ["double", hasFill, borderWidth, "filter"].join("-")
-      )
-      /*
-      width: "200%",
-      height: "200%",
-      x: "-50%",
-      y: "-50%",
-      filterRes: 1000
-			//*/
-    },
-    filterPrimitives: filterPrimitives
-  };
-}
-
 export function Double({
   backgroundColor,
   borderWidth = 1,
@@ -213,26 +43,16 @@ export function Double({
         result="doubleDark"
       />
     );
-    filterPrimitives.push(
-      <feMorphology
-        in="doubleDark"
-        operator={innerRadius < 0 ? "erode" : "dilate"}
-        radius={Math.abs(innerRadius)}
-        key="doubleInner"
-        result="doubleInner"
-      />
-    );
-  } else {
-    filterPrimitives.push(
-      <feMorphology
-        in={source}
-        operator={innerRadius < 0 ? "erode" : "dilate"}
-        radius={Math.abs(innerRadius)}
-        key="doubleInner"
-        result="doubleInner"
-      />
-    );
   }
+
+  filterPrimitives.push(
+    <feMorphology
+      operator={innerRadius < 0 ? "erode" : "dilate"}
+      radius={Math.abs(innerRadius)}
+      key="doubleInner"
+      result="doubleInner"
+    />
+  );
 
   const outerRadius = hasFill
     ? Math.max(2, borderWidth)
