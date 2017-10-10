@@ -33,92 +33,82 @@ export function Double({
   const source = "SourceGraphic";
   const hasFill = ["none", "transparent"].indexOf(backgroundColor) === -1;
 
-  let filterPrimitives = [];
-  let innerRadius;
-  let outerRadius;
+  let filterPrimitives;
+  let inRadius;
   let compositeOperator;
+
+  // almost impossible to see a double line if it's under 1px wide.
+  const minBorderWidth = Math.max(borderWidth, 1);
 
   if (!hasFill) {
     compositeOperator = "out";
 
-    // darken
-    filterPrimitives.push(
+    // total width = inRadius
+    // stripe width = in2Radius
+
+    // the fat line
+    //inRadius = Math.max(1, borderWidth);
+    inRadius = minBorderWidth;
+
+    // the eraser to create the inner stripe
+    //const in2Radius = Math.max(0.5, borderWidth / 6);
+    const in2Radius = 0.5 / minBorderWidth;
+
+    filterPrimitives = [
+      // darken
       <feComposite
         in={source}
         in2={source}
         operator="over"
         key="doubleDark"
         result="doubleDark"
+      />,
+      <feMorphology
+        in="doubleDark"
+        key="in2Double"
+        result="in2Double"
+        {...getMorphProps(in2Radius)}
       />
-    );
-
-    innerRadius = Math.max(0.5, borderWidth / 6);
-    outerRadius = Math.max(1, borderWidth);
+    ];
   } else {
     compositeOperator = "atop";
 
-    // it's almost impossible to see a double line
-    // for a filled shape if this radius is < 3.
-    innerRadius = Math.max(3, borderWidth);
-    //outerRadius = Math.min(1, -1 * borderWidth / 2);
-    outerRadius = borderWidth > 1 ? -1 * borderWidth / 2 : 1;
+    // sets the outside line in units away from center
+    //in2Radius = Math.max(3, borderWidth);
+    const in2Radius = minBorderWidth;
+
+    // sets the inside line
+    //inRadius = -1 * Math.max(1, borderWidth / 2);
+    inRadius = -1 * minBorderWidth;
+
+    filterPrimitives = [
+      <feMorphology
+        in={source}
+        key="in2Double"
+        result="in2Double"
+        {...getMorphProps(in2Radius)}
+      />
+    ];
   }
 
   filterPrimitives.push(
     <feMorphology
-      key="doubleInner"
-      result="doubleInner"
-      {...getMorphProps(innerRadius)}
-    />
-  );
-
-  filterPrimitives.push(
-    <feMorphology
       in={source}
-      key="doubleOuter"
-      result="doubleOuter"
-      {...getMorphProps(outerRadius)}
+      key="inDouble"
+      result="inDouble"
+      {...getMorphProps(inRadius)}
     />
   );
 
   filterPrimitives.push(
     <feComposite
-      in="doubleOuter"
-      in2="doubleInner"
+      in="inDouble"
+      in2="in2Double"
       operator={compositeOperator}
       key="doubleResult"
       result="doubleResult"
     />
   );
-  /*
-  filterPrimitives.push(
-    <feComposite
-      in="doubleResult"
-      in2="doubleInner"
-      operator={compositeOperator}
-      key="doubleFinal"
-    />
-  );
-	//*/
-  /*
-  filterPrimitives.push(
-    hasFill
-      ? <feComposite
-          in="doubleInner"
-          in2="doubleOuter"
-          operator="atop"
-          key="doubleResult"
-          result="doubleResult"
-        />
-      : <feComposite
-          in="doubleOuter"
-          in2="doubleInner"
-          operator="out"
-          key="doubleResult"
-          result="doubleResult"
-        />
-  );
-	//*/
 
   return {
     filterProperties: {
