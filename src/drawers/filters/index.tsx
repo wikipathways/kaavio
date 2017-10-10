@@ -2,18 +2,27 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { normalizeElementId } from "../../utils/normalizeElementId";
 
+export interface FilterProperties {
+  id: string;
+  filterUnits?: string;
+  width?: string;
+  height?: string;
+  x?: string;
+  y?: string;
+  filterRes?: number;
+}
+
 export type FilterResponse = {
-  filterProperties: {
-    id: string;
-    filterUnits?: string;
-    width?: string;
-    height?: string;
-    x?: string;
-    y?: string;
-    filterRes?: number;
-  };
+  filterProperties: FilterProperties;
   filterPrimitives: JSX.Element[];
 };
+
+function getMorphProps(radius: number) {
+  return {
+    operator: radius < 0 ? "erode" : "dilate",
+    radius: Math.abs(radius)
+  };
+}
 
 export function Double({
   backgroundColor,
@@ -25,15 +34,14 @@ export function Double({
   const hasFill = ["none", "transparent"].indexOf(backgroundColor) === -1;
 
   let filterPrimitives = [];
-
   let innerRadius;
-  if (borderWidth <= 1) {
-    innerRadius = hasFill ? 1 : 0.5;
-  } else {
-    innerRadius = hasFill ? -1 * borderWidth / 2 : 1 / 3;
-  }
+  let outerRadius;
+  let compositeOperator;
 
   if (!hasFill) {
+    compositeOperator = "out";
+
+    // darken
     filterPrimitives.push(
       <feComposite
         in={source}
@@ -43,61 +51,84 @@ export function Double({
         result="doubleDark"
       />
     );
+
+    innerRadius = Math.max(0.5, borderWidth / 6);
+    outerRadius = Math.max(1, borderWidth);
+  } else {
+    compositeOperator = "atop";
+
+    // it's almost impossible to see a double line
+    // for a filled shape if this radius is < 3.
+    innerRadius = Math.max(3, borderWidth);
+    //outerRadius = Math.min(1, -1 * borderWidth / 2);
+    outerRadius = borderWidth > 1 ? -1 * borderWidth / 2 : 1;
   }
 
   filterPrimitives.push(
     <feMorphology
-      operator={innerRadius < 0 ? "erode" : "dilate"}
-      radius={Math.abs(innerRadius)}
       key="doubleInner"
       result="doubleInner"
+      {...getMorphProps(innerRadius)}
     />
   );
-
-  const outerRadius = hasFill
-    ? Math.max(2, borderWidth)
-    : Math.max(1, borderWidth);
 
   filterPrimitives.push(
     <feMorphology
       in={source}
-      operator="dilate"
-      radius={outerRadius}
       key="doubleOuter"
       result="doubleOuter"
+      {...getMorphProps(outerRadius)}
     />
   );
 
-  const composited = hasFill
-    ? <feComposite
-        in="doubleInner"
-        in2="doubleOuter"
-        operator="atop"
-        key="doubleResult"
-        result="doubleResult"
-      />
-    : <feComposite
-        in="doubleOuter"
-        in2="doubleInner"
-        operator="out"
-        key="doubleResult"
-        result="doubleResult"
-      />;
-
-  filterPrimitives.push(composited);
+  filterPrimitives.push(
+    <feComposite
+      in="doubleOuter"
+      in2="doubleInner"
+      operator={compositeOperator}
+      key="doubleResult"
+      result="doubleResult"
+    />
+  );
+  /*
+  filterPrimitives.push(
+    <feComposite
+      in="doubleResult"
+      in2="doubleInner"
+      operator={compositeOperator}
+      key="doubleFinal"
+    />
+  );
+	//*/
+  /*
+  filterPrimitives.push(
+    hasFill
+      ? <feComposite
+          in="doubleInner"
+          in2="doubleOuter"
+          operator="atop"
+          key="doubleResult"
+          result="doubleResult"
+        />
+      : <feComposite
+          in="doubleOuter"
+          in2="doubleInner"
+          operator="out"
+          key="doubleResult"
+          result="doubleResult"
+        />
+  );
+	//*/
 
   return {
     filterProperties: {
       id: normalizeElementId(
         ["double", hasFill, borderWidth, "filter"].join("-")
-      )
-      /*
+      ),
       width: "200%",
       height: "200%",
       x: "-50%",
-      y: "-50%",
-      filterRes: 1000
-			//*/
+      y: "-50%"
     },
     filterPrimitives: filterPrimitives
   };
@@ -115,7 +146,7 @@ export function Highlight({ color }): FilterResponse {
       <feColorMatrix type="saturate" values="0" key="saturated" />,
       <feFlood floodColor={color} floodOpacity="1" key="flooded" />,
       <feComposite operator="atop" in2="SourceGraphic" key="flood-composite" />,
-      <feMorphology operator="dilate" radius="4" key="dilated" />,
+      <feMorphology key="dilated" {...getMorphProps(4)} />,
       <feGaussianBlur stdDeviation="3" key="blur" />,
       <feMerge key="merged">
         <feMergeNode />
