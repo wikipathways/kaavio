@@ -69,6 +69,7 @@ export class Entity extends React.Component<any, any> {
   }
 
   renderBurrs() {
+    const { props } = this;
     const {
       burrs,
       drawAs: parentDrawAs,
@@ -78,7 +79,7 @@ export class Entity extends React.Component<any, any> {
       kaavioType,
       points,
       width
-    } = this.props;
+    } = props;
     if (!burrs || burrs.length < 1) return;
 
     return burrs
@@ -116,27 +117,26 @@ export class Entity extends React.Component<any, any> {
       .map(burr => {
         // Even though burr.kaavioType = "Node", we render the Burr as a new Entity.
         // If we just render it a Node, we can't do things like individually highlighting the burr.
-        return (
-          <Entity key={burr.id} {...getPropsToPassDown(this.props, burr)} />
-        );
+        return <Entity key={burr.id} {...getPropsToPassDown(props, burr)} />;
       });
   }
 
   componentWillReceiveProps(nextProps) {
-    const { filters, setFilter } = this.props;
+    const { filters } = this.props;
+    const { filters: nextFilters, setFilter } = nextProps;
     // TODO use lodash/fp everywhere so this comparison is on immutable
     // data structures.
-    if (filters !== nextProps.filters) {
-      filters.forEach(function(filter) {
-        setFilter(filter);
+    if (filters !== nextFilters) {
+      nextFilters.forEach(function(nextFilter) {
+        setFilter(nextFilter, nextProps);
       });
     }
   }
 
   render() {
+    const { props } = this;
     const {
       getPropsToPassDown,
-      borderWidth,
       color,
       filters,
       getClassString,
@@ -144,14 +144,13 @@ export class Entity extends React.Component<any, any> {
       height,
       id,
       kaavioType,
-      parentBackgroundColor,
       rotation,
       textContent,
       type,
       width,
       x,
       y
-    } = this.props;
+    } = props;
     let entityTransform;
     if (x || y || rotation) {
       entityTransform = `translate(${x},${y})`;
@@ -165,16 +164,16 @@ export class Entity extends React.Component<any, any> {
     let child;
     switch (kaavioType) {
       case "SingleFreeNode":
-        child = <Node {...this.props} />;
+        child = <Node {...props} />;
         break;
       case "Burr":
-        child = <Node {...this.props} />;
+        child = <Node {...props} />;
         break;
       case "Edge":
-        child = <Edge {...this.props} />;
+        child = <Edge {...props} />;
         break;
       case "Group":
-        child = <Group {...this.props} />;
+        child = <Group {...props} />;
         break;
       default:
         throw new Error(
@@ -230,12 +229,7 @@ export class Entity extends React.Component<any, any> {
         {isEmpty(filters)
           ? child
           : filters.reduce(function(acc, filterName) {
-              const filterId = getFilterId({
-                filterName,
-                parentBackgroundColor,
-                color,
-                strokeWidth: borderWidth
-              });
+              const filterId = getFilterId(filterName, props);
               return (
                 <g filter={`url(#${filterId})`}>
                   {acc}

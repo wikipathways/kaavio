@@ -7,62 +7,107 @@ export type FilterResponse = {
   filterPrimitives: JSX.Element[];
 };
 
-export function Double({ strokeWidth = 1 }): FilterResponse {
+export function Double({
+  backgroundColor,
+  borderWidth = 1,
+  color,
+  parentBackgroundColor
+}): FilterResponse {
   const source = "SourceGraphic";
+  const hasFill = ["none", "transparent"].indexOf(backgroundColor) === -1;
+
   let filterPrimitives;
-  if (strokeWidth === 1) {
+
+  if (borderWidth === 1) {
     filterPrimitives = [
       <feComposite
         in={source}
         in2={source}
         operator="over"
-        key="doubleDarkened"
-        result="doubleDarkened"
+        key="doubleDark"
+        result="doubleDark"
+      />,
+      <feMorphology
+        in="doubleDark"
+        operator="dilate"
+        radius={hasFill ? 1 : 0.5}
+        key="doubleInner"
+        result="doubleInner"
       />,
       <feMorphology
         in={source}
         operator="dilate"
-        radius="1"
-        key="doubleDilated"
-        result="doubleDilated"
-      />,
+        radius={hasFill ? 2 : 1}
+        key="doubleOuter"
+        result="doubleOuter"
+      />
+      /*
       <feComposite
-        in="doubleDilated"
-        in2="doubleDarkened"
+        in="doubleOuter"
+        in2="doubleInner"
         operator="out"
         key="doubleResult"
         result="doubleResult"
       />
+			//*/
     ];
   } else {
     filterPrimitives = [
       <feMorphology
         in={source}
         operator="dilate"
-        radius={2 / 3 * strokeWidth}
-        key="doubleDilated"
-        result="doubleDilated"
+        radius={borderWidth}
+        key="doubleOuter"
+        result="doubleOuter"
       />,
       <feMorphology
         in={source}
-        operator="erode"
-        radius={strokeWidth / 2}
-        key="doubleEroded"
-        result="doubleEroded"
-      />,
+        operator={hasFill ? "erode" : "dilate"}
+        radius={hasFill ? borderWidth / 2 : 1 / 3}
+        key="doubleInner"
+        result="doubleInner"
+      />
+      /*
       <feComposite
-        in="doubleDilated"
-        in2="doubleEroded"
-        operator="xor"
+        in="doubleInner"
+        in2="doubleOuter"
+        operator="atop"
         key="doubleResult"
         result="doubleResult"
       />
+			//*/
+      /*
+      <feMerge key="merged">
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+			//*/
     ];
   }
 
+  const composited = hasFill
+    ? <feComposite
+        in="doubleInner"
+        in2="doubleOuter"
+        operator="atop"
+        key="doubleResult"
+        result="doubleResult"
+      />
+    : <feComposite
+        in="doubleOuter"
+        in2="doubleInner"
+        operator="out"
+        key="doubleResult"
+        result="doubleResult"
+      />;
+
+  filterPrimitives.push(composited);
+
   return {
     filterProperties: {
-      id: normalizeElementId(["double", strokeWidth, "filter"].join("-"))
+      id: normalizeElementId(
+        ["double", hasFill, borderWidth, "filter"].join("-")
+      )
     },
     filterPrimitives: filterPrimitives
   };
@@ -90,10 +135,15 @@ export function Highlight({ color }): FilterResponse {
   };
 }
 
-export function Round({ strokeWidth = 1 }): FilterResponse {
+export function Round({
+  backgroundColor,
+  borderWidth = 1,
+  color,
+  parentBackgroundColor
+}): FilterResponse {
   const source = "SourceGraphic";
-  // Can we handle a strokeWidth of 0.4?
-  //const roundedStrokeWidth = Math.max(1, Math.round(strokeWidth || 1));
+  // Can we handle a borderWidth of 0.4?
+  //const roundedStrokeWidth = Math.max(1, Math.round(borderWidth || 1));
 
   // C' = slope * C + intercept
   // where C is the initial component (e.g., ‘feFuncR’),
@@ -107,24 +157,24 @@ export function Round({ strokeWidth = 1 }): FilterResponse {
   const darkOutputIntercept = -0.7;
 
   const normalizedWidth = 3;
-  //const strokeWidthNormalizationOperator = (strokeWidth > 2) ? 'contract' : 'dilate';
-  const strokeWidthNormalizationOperator = strokeWidth > normalizedWidth
+  //const borderWidthNormalizationOperator = (borderWidth > 2) ? 'contract' : 'dilate';
+  const borderWidthNormalizationOperator = borderWidth > normalizedWidth
     ? "contract"
     : "dilate";
   // strangely, this is what appears needed to normalize stroke width to a value
   // large enough to be blurred without being destroyed:
-  const radius = strokeWidthNormalizationOperator === "dilate" ? 1 : 0;
+  const radius = borderWidthNormalizationOperator === "dilate" ? 1 : 0;
   // would have expected this, but it doesn't produce expected results:
-  //const radius = (strokeWidthNormalizationOperator === 'dilate') ? (normalizedWidth - strokeWidth) : strokeWidth - normalizedWidth;
-  //const radius = Math.abs((normalizedWidth - strokeWidth - 1) / 2 );
-  //const radius = Math.abs(normalizedWidth - strokeWidth);
+  //const radius = (borderWidthNormalizationOperator === 'dilate') ? (normalizedWidth - borderWidth) : borderWidth - normalizedWidth;
+  //const radius = Math.abs((normalizedWidth - borderWidth - 1) / 2 );
+  //const radius = Math.abs(normalizedWidth - borderWidth);
 
-  const strokeWidthRevertOperator = strokeWidthNormalizationOperator ===
+  const borderWidthRevertOperator = borderWidthNormalizationOperator ===
     "contract"
     ? "dilate"
     : "contract";
 
-  const normalizedDark = strokeWidth === 1
+  const normalizedDark = borderWidth === 1
     ? [
         <feBlend
           in="SourceGraphic"
@@ -140,7 +190,7 @@ export function Round({ strokeWidth = 1 }): FilterResponse {
         />,
         <feMorphology
           in="roundnormalizeddarkinput"
-          operator={strokeWidthNormalizationOperator}
+          operator={borderWidthNormalizationOperator}
           radius={radius}
           result="roundnormalized"
         />
@@ -154,7 +204,7 @@ export function Round({ strokeWidth = 1 }): FilterResponse {
         />,
         <feMorphology
           in="roundnormalizeddarkinput"
-          operator={strokeWidthNormalizationOperator}
+          operator={borderWidthNormalizationOperator}
           radius={radius}
           result="roundnormalized"
         />
@@ -162,7 +212,7 @@ export function Round({ strokeWidth = 1 }): FilterResponse {
 
   return {
     filterProperties: {
-      id: normalizeElementId(["round", strokeWidth, "filter"].join("-"))
+      id: normalizeElementId(["round", borderWidth, "filter"].join("-"))
     },
     filterPrimitives: normalizedDark.concat([
       <feGaussianBlur
@@ -193,7 +243,7 @@ export function Round({ strokeWidth = 1 }): FilterResponse {
       />,
       <feMorphology
         in="rounddarkeroutput"
-        operator={strokeWidthRevertOperator}
+        operator={borderWidthRevertOperator}
         radius={radius}
         result="roundResult"
       />

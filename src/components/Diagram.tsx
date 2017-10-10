@@ -67,11 +67,8 @@ export class Diagram extends React.Component<any, any> {
       .join(" ");
   };
 
-  getFilterId = latestFilterReferenced => {
-    const { filterName } = latestFilterReferenced;
-    const { filterProperties } = filterDrawers[filterName](
-      latestFilterReferenced
-    );
+  getFilterId = (filterName, props) => {
+    const { filterProperties } = filterDrawers[filterName](props);
     return filterProperties.id;
   };
 
@@ -142,8 +139,9 @@ export class Diagram extends React.Component<any, any> {
     return updatedProps;
   };
 
-  setFilter = latestFilterReferenced => {
-    this.setState({ latestFilterReferenced: latestFilterReferenced });
+  setFilter = (filterName, props) => {
+    const latestFilterReferenced = { filterName, ...props };
+    this.setState({ latestFilterReferenced });
   };
 
   setMarker = latestMarkerReferenced => {

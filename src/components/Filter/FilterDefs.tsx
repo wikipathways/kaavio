@@ -17,17 +17,14 @@ export class FilterDefs extends React.Component<any, any> {
       entityMap: Record<string, any>;
       highlightedEntities: Record<string, any>;
     } = props;
+
     const definedFromEntities = values(entityMap)
       .filter(entity => entity.hasOwnProperty("filters"))
       .reduce(function(acc, entity) {
         entity.filters.forEach(function(filterName) {
           const { filterProperties, filterPrimitives } = filterDrawers[
             filterName
-          ]({
-            parentBackgroundColor: entity.parentBackgroundColor,
-            color: entity.color,
-            strokeWidth: entity.borderWidth
-          });
+          ](entity);
           acc[filterProperties.id] = { filterProperties, filterPrimitives };
         });
         return acc;
@@ -62,23 +59,21 @@ export class FilterDefs extends React.Component<any, any> {
     const definedIds = keys(defined);
     if (!isEmpty(latestFilterReferenced)) {
       const {
-        filterName,
-        parentBackgroundColor,
+        backgroundColor,
+        borderWidth,
         color,
-        borderWidth
+        filterName,
+        parentBackgroundColor
       } = latestFilterReferenced;
 
-      console.log("filterDrawers");
-      console.log(filterDrawers);
-      console.log("latestFilterReferenced");
-      console.log(latestFilterReferenced);
       if (isEmpty(filterName)) {
         throw new Error(`Missing filterName`);
       }
       const { filterProperties, filterPrimitives } = filterDrawers[filterName]({
-        parentBackgroundColor: parentBackgroundColor,
-        color: color,
-        strokeWidth: borderWidth
+        backgroundColor,
+        borderWidth,
+        color,
+        parentBackgroundColor
       });
       const id = filterProperties.id;
 
