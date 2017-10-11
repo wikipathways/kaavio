@@ -15,9 +15,7 @@ import { formatSVGReference } from "../spinoffs/formatSVGReference";
  * Most components share many properties so we "lift state up" to the parent.
  */
 export class Entity extends React.Component<any, any> {
-  getNamespacedFilterId: (
-    latestFilterReferenced: LatestFilterReferenced
-  ) => string;
+  getNamespacedFilterId: GetNamespacedFilterId;
   constructor(props: EntityProps) {
     super(props);
     this.getNamespacedFilterId = props.getNamespacedFilterId;
@@ -143,7 +141,7 @@ export class Entity extends React.Component<any, any> {
     backgroundColor,
     borderWidth,
     parentBackgroundColor
-  }: FilterProps): string => {
+  }: FilterProps): StringReferenceValue | string => {
     const { getNamespacedFilterId } = this;
     const svgReferenceType = getSVGFilterReferenceType(filterName);
 

@@ -2,16 +2,14 @@ import { intersection, keys } from "lodash";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {
-  getSVGMarkeReferenceType,
+  getSVGMarkerReferenceType,
   MARKER_PROPERTIES
 } from "./Marker/MarkerDefs";
 import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
 
 export class Edge extends React.Component<any, any> {
-  getNamespacedMarkerId: (
-    latestMarkerReferenced: LatestMarkerReferenced
-  ) => string;
+  getNamespacedMarkerId: GetNamespacedMarkerId;
   constructor(props) {
     super(props);
     this.getNamespacedMarkerId = props.getNamespacedMarkerId;
@@ -19,12 +17,12 @@ export class Edge extends React.Component<any, any> {
 
   getMarkerPropertyValue = (
     markerProperty: MarkerProperty,
-    markerName: NonFunciriMarkerPropertyValue & string,
+    markerName: StringReferenceValue & string,
     color: string,
     parentBackgroundColor: string
-  ): NonFunciriMarkerPropertyValue | string => {
+  ): StringReferenceValue | string => {
     const { getNamespacedMarkerId } = this;
-    const svgReferenceType = getSVGMarkeReferenceType(markerName);
+    const svgReferenceType = getSVGMarkerReferenceType(markerName);
 
     if (svgReferenceType === "string") {
       // Don't make a FuncIRI out of a string value

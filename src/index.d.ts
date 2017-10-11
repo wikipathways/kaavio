@@ -61,9 +61,16 @@ interface FilterDefsProps {
   latestFilterReferenced: LatestFilterReferenced;
 }
 
+interface MarkerDefsProps {
+  entityMap: Record<string, any>;
+  getNamespacedMarkerId: GetNamespacedMarkerId;
+  latestMarkerReferenced: LatestMarkerReferenced;
+  pathway: Record<string, any>;
+}
+
 type MarkerProperty = "markerStart" | "markerEnd" | "markerMid" | "marker";
 
-type NonFunciriMarkerPropertyValue = "none" | "inherit";
+type StringReferenceValue = "none" | "inherit" | "currentColor";
 
 declare type GetNamespacedMarkerId = (
   latestMarkerReferenced: LatestMarkerReferenced
@@ -75,7 +82,7 @@ interface MarkerComponentProps {
   getNamespacedMarkerId: GetNamespacedMarkerId;
   markerDrawers: Function;
   markerLocationType: MarkerProperty;
-  markerName: NonFunciriMarkerPropertyValue & string;
+  markerName: StringReferenceValue & string;
 }
 
 interface HighlightedNode {

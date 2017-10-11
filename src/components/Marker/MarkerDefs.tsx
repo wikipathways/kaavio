@@ -3,20 +3,8 @@ import * as ReactDom from "react-dom";
 import { intersection, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { interpolate } from "../../spinoffs/interpolate";
 import { getSVGReferenceType } from "../../spinoffs/formatSVGReference";
-
-export const getSVGMarkeReferenceType = (markerName: string) => {
-  return getSVGReferenceType(markerName, ["string", "localIRI", "nonLocalIRI"]);
-};
-
 import { Marker } from "./Marker";
 import * as markerDrawers from "../../drawers/markers/__bundled_dont_edit__";
-
-export interface MarkerDefsProps {
-  entityMap: Record<string, any>;
-  getNamespacedMarkerId: GetNamespacedMarkerId;
-  latestMarkerReferenced: LatestMarkerReferenced;
-  pathway: Record<string, any>;
-}
 
 export const MARKER_PROPERTIES: ReadonlyArray<MarkerProperty> = [
   "markerStart",
@@ -24,6 +12,10 @@ export const MARKER_PROPERTIES: ReadonlyArray<MarkerProperty> = [
   "markerEnd",
   "marker"
 ];
+
+export const getSVGMarkerReferenceType = (markerName: string) => {
+  return getSVGReferenceType(markerName, ["string", "localIRI", "nonLocalIRI"]);
+};
 
 export class MarkerDefs extends React.Component<any, any> {
   getNamespacedMarkerId: GetNamespacedMarkerId;
@@ -72,7 +64,7 @@ export class MarkerDefs extends React.Component<any, any> {
           // See https://www.w3.org/TR/SVG11/painting.html#MarkerProperties
           .filter(
             (markerName: string) =>
-              getSVGMarkeReferenceType(markerName) === "localIRI"
+              getSVGMarkerReferenceType(markerName) === "localIRI"
           )
           .forEach(function(markerName) {
             if (markerDrawers.hasOwnProperty(markerName)) {
@@ -149,7 +141,7 @@ export class MarkerDefs extends React.Component<any, any> {
         parentBackgroundColor
       } = latestMarkerReferenced;
 
-      if (getSVGMarkeReferenceType(markerName) === "localIRI") {
+      if (getSVGMarkerReferenceType(markerName) === "localIRI") {
         const namespacedMarkerId = getNamespacedMarkerId(
           latestMarkerReferenced
         );

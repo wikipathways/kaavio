@@ -28,7 +28,7 @@ import { style, getStyles } from "typestyle";
 //import { Group } from "./Group";
 import { Entity } from "./Entity";
 import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
-import { MarkerDefs, getSVGMarkeReferenceType } from "./Marker/MarkerDefs";
+import { MarkerDefs, getSVGMarkerReferenceType } from "./Marker/MarkerDefs";
 import * as kaavioStyle from "../kaavio.style";
 import * as filterDrawers from "../drawers/filters/__bundled_dont_edit__";
 import * as markerDrawers from "../drawers/markers/__bundled_dont_edit__";
@@ -54,7 +54,7 @@ const TEXT_CONTENT_DEFAULTS = {
 };
 
 export class Diagram extends React.Component<any, any> {
-  getNamespacedId: (string) => string;
+  getNamespacedId: GetNamespacedId;
   constructor(props) {
     super(props);
     const { id } = props;
@@ -75,11 +75,11 @@ export class Diagram extends React.Component<any, any> {
       diagramNamespace
     );
     this.state = { ...props };
+    this.state.latestFilterReferenced = {} as LatestFilterReferenced;
     this.state.latestMarkerReferenced = {} as LatestMarkerReferenced;
-    this.state.latestFilterReferenced = {};
   }
 
-  getClassString = (types: string[] = []) => {
+  getClassString = (types: string[] = []): string => {
     return filter(function([key, value]) {
       return types.indexOf(key) > -1;
     }, toPairs(mergedStyle))
@@ -87,9 +87,11 @@ export class Diagram extends React.Component<any, any> {
       .join(" ");
   };
 
-  getNamespacedIdWithDiagramNamespace = curry((diagramNamespace, id) => {
-    return normalizeElementId(diagramNamespace + id);
-  });
+  getNamespacedIdWithDiagramNamespace = curry(
+    (diagramNamespace: string, id: string): string => {
+      return normalizeElementId(diagramNamespace + id);
+    }
+  );
 
   // NOTE: it's kind of annoying to have the marker and filter functions all the
   // way up here in the component hierarchy, but we need to have them here,
@@ -117,30 +119,17 @@ export class Diagram extends React.Component<any, any> {
   };
 	//*/
 
-  getNamespacedFilter: GetNamespacedFilter = (
-    latestFilterReferenced: LatestFilterReferenced
-  ) => {
+  getNamespacedFilter: GetNamespacedFilter = filterProps => {
     const { getNamespacedId } = this;
-    const {
-      backgroundColor,
-      borderWidth,
-      color,
-      filterName,
-      parentBackgroundColor
-    } = latestFilterReferenced;
+    const { filterName } = filterProps;
 
     return filterDrawers[filterName]({
-      backgroundColor,
-      borderWidth,
-      color,
       getNamespacedId,
-      parentBackgroundColor
+      ...filterProps
     });
   };
 
-  getNamespacedFilterId: GetNamespacedFilterId = (
-    latestFilterReferenced: LatestFilterReferenced
-  ) => {
+  getNamespacedFilterId: GetNamespacedFilterId = latestFilterReferenced => {
     const { getNamespacedFilter } = this;
     const { filterName } = latestFilterReferenced;
     const svgReferenceType = getSVGFilterReferenceType(filterName);
@@ -154,9 +143,7 @@ export class Diagram extends React.Component<any, any> {
     }
   };
 
-  getNamespacedMarkerId: GetNamespacedMarkerId = (
-    latestMarkerReferenced: LatestMarkerReferenced
-  ) => {
+  getNamespacedMarkerId: GetNamespacedMarkerId = latestMarkerReferenced => {
     const { getNamespacedId } = this;
     const {
       markerProperty,
@@ -165,7 +152,7 @@ export class Diagram extends React.Component<any, any> {
       parentBackgroundColor
     } = latestMarkerReferenced;
 
-    const svgReferenceType = getSVGMarkeReferenceType(markerName);
+    const svgReferenceType = getSVGMarkerReferenceType(markerName);
 
     if (svgReferenceType === "localIRI") {
       // We can only tweak the color, border width, etc. for markers that are
