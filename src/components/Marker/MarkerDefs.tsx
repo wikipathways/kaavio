@@ -2,23 +2,36 @@ import * as React from "react";
 import * as ReactDom from "react-dom";
 import { intersection, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { interpolate } from "../../spinoffs/interpolate";
+import { getSVGReferenceType } from "../../spinoffs/formatSVGReference";
 
-import {
-  getMarkerId,
-  Marker,
-  MARKER_PROPERTIES,
-  NON_FUNCIRI_MARKER_PROPERTY_VALUES
-} from "./Marker";
+export const getSVGMarkeReferenceType = (markerName: string) => {
+  return getSVGReferenceType(markerName, ["string", "localIRI", "nonLocalIRI"]);
+};
+
+import { Marker } from "./Marker";
 import * as markerDrawers from "../../drawers/markers/__bundled_dont_edit__";
 
-export class MarkerDefs extends React.Component<any, any> {
-  constructor(props) {
-    super(props);
+export interface MarkerDefsProps {
+  entityMap: Record<string, any>;
+  getNamespacedMarkerId: GetNamespacedMarkerId;
+  latestMarkerReferenced: LatestMarkerReferenced;
+  pathway: Record<string, any>;
+}
 
-    const {
-      pathway,
-      entityMap
-    }: { pathway: Record<string, any>; entityMap: Record<string, any> } = props;
+export const MARKER_PROPERTIES: ReadonlyArray<MarkerProperty> = [
+  "markerStart",
+  "markerMid",
+  "markerEnd",
+  "marker"
+];
+
+export class MarkerDefs extends React.Component<any, any> {
+  getNamespacedMarkerId: GetNamespacedMarkerId;
+  constructor(props: MarkerDefsProps) {
+    super(props);
+    const { entityMap, getNamespacedMarkerId, pathway } = props;
+    this.getNamespacedMarkerId = getNamespacedMarkerId;
+
     const parentBackgroundColor = pathway.backgroundColor;
 
     const edges = values(entityMap).filter(x => x.kaavioType === "Edge");
@@ -49,7 +62,7 @@ export class MarkerDefs extends React.Component<any, any> {
       parentBackgroundColors.push(groupColor);
     });
 
-    const markerNames = Array.from(
+    const localMarkerNames = Array.from(
       edges.reduce(function(acc, edge: any) {
         intersection(MARKER_PROPERTIES, keys(edge))
           .map((markerProperty: string): string => edge[markerProperty])
@@ -58,8 +71,8 @@ export class MarkerDefs extends React.Component<any, any> {
           // properties like "none" and "inherit" don't need defs.
           // See https://www.w3.org/TR/SVG11/painting.html#MarkerProperties
           .filter(
-            (markerName: string & NonFunciriMarkerPropertyValue) =>
-              NON_FUNCIRI_MARKER_PROPERTY_VALUES.indexOf(markerName) === -1
+            (markerName: string) =>
+              getSVGMarkeReferenceType(markerName) === "localIRI"
           )
           .forEach(function(markerName) {
             if (markerDrawers.hasOwnProperty(markerName)) {
@@ -104,7 +117,7 @@ export class MarkerDefs extends React.Component<any, any> {
       .reduce(function(acc: any[], partialInput) {
         const pairs = toPairs(partialInput);
         return acc.concat(
-          markerNames.map(function(markerName) {
+          localMarkerNames.map(function(markerName) {
             return pairs.reduce(function(subAcc: any, pair) {
               const key = pair[0];
               subAcc[key] = pair[1];
@@ -124,8 +137,8 @@ export class MarkerDefs extends React.Component<any, any> {
 	 * color that was not present initially and then dragged a marker on top of a
 	 * type of that group. This doesn't do anything on server-side rendering.
 	 */
-  componentWillReceiveProps(nextProps) {
-    const { state, props } = this;
+  componentWillReceiveProps(nextProps: MarkerDefsProps) {
+    const { getNamespacedMarkerId, state, props } = this;
     const { defined } = state;
     const { latestMarkerReferenced } = nextProps;
     if (!isEmpty(latestMarkerReferenced)) {
@@ -136,32 +149,32 @@ export class MarkerDefs extends React.Component<any, any> {
         parentBackgroundColor
       } = latestMarkerReferenced;
 
-      const markerId = getMarkerId(
-        markerProperty,
-        markerName,
-        color,
-        parentBackgroundColor
-      );
-      if (keys(defined).indexOf(markerId) === -1) {
-        defined[markerId] = {
-          markerProperty,
-          markerName,
-          color,
-          parentBackgroundColor
-        };
-        this.setState({
-          defined: defined
-        });
+      if (getSVGMarkeReferenceType(markerName) === "localIRI") {
+        const namespacedMarkerId = getNamespacedMarkerId(
+          latestMarkerReferenced
+        );
+        if (keys(defined).indexOf(namespacedMarkerId) === -1) {
+          defined[namespacedMarkerId] = {
+            markerProperty,
+            markerName,
+            color,
+            parentBackgroundColor
+          };
+          this.setState({
+            defined: defined
+          });
+        }
       }
     }
   }
 
   render() {
+    const { getNamespacedMarkerId } = this;
     const { defined } = this.state;
 
     return (
       <g id="marker-defs">
-        {toPairs(defined).map(([markerId, details]) => {
+        {toPairs(defined).map(([namespacedMarkerId, details]) => {
           const {
             markerProperty,
             markerName,
@@ -170,12 +183,14 @@ export class MarkerDefs extends React.Component<any, any> {
           } = details;
           return (
             <Marker
-              key={markerId}
+              id={namespacedMarkerId}
+              key={namespacedMarkerId}
               color={color}
-              parentBackgroundColor={parentBackgroundColor}
+              getNamespacedMarkerId={getNamespacedMarkerId}
+              markerDrawer={markerDrawers[markerName]}
               markerName={markerName}
               markerProperty={markerProperty}
-              markerDrawer={markerDrawers[markerName]}
+              parentBackgroundColor={parentBackgroundColor}
             />
           );
         })}

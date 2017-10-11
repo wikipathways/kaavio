@@ -1,50 +1,11 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { normalizeElementId } from "../../utils/normalizeElementId";
-
-export const MARKER_PROPERTIES: ReadonlyArray<MarkerProperty> = [
-  "markerStart",
-  "markerMid",
-  "markerEnd",
-  "marker"
-];
-export const NON_FUNCIRI_MARKER_PROPERTY_VALUES: ReadonlyArray<
-  NonFunciriMarkerPropertyValue
-> = ["none", "inherit"];
-
-export function getMarkerId(
-  markerProperty: MarkerProperty,
-  markerName: NonFunciriMarkerPropertyValue & string,
-  color: string,
-  parentBackgroundColor: string
-): string {
-  return normalizeElementId(
-    [markerProperty, markerName, color, parentBackgroundColor].join("")
-  );
-}
-
-export function getMarkerPropertyValue(
-  markerProperty: MarkerProperty,
-  markerName: NonFunciriMarkerPropertyValue & string,
-  color: string,
-  parentBackgroundColor: string
-): NonFunciriMarkerPropertyValue | string {
-  // Don't make a funciri out of any of the names in NON_FUNCIRI_MARKER_PROPERTY_VALUES
-  if (NON_FUNCIRI_MARKER_PROPERTY_VALUES.indexOf(markerName) > -1) {
-    return markerName;
-  }
-  const markerId = getMarkerId(
-    markerProperty,
-    markerName,
-    color,
-    parentBackgroundColor
-  );
-  return `url(#${markerId})`;
-}
 
 export class Marker extends React.Component<any, any> {
+  getNamespacedMarkerId: GetNamespacedMarkerId;
   constructor(props: MarkerComponentProps) {
     super(props);
+    this.getNamespacedMarkerId = props.getNamespacedMarkerId;
   }
 
   render() {
@@ -54,6 +15,7 @@ export class Marker extends React.Component<any, any> {
       markerProperty,
       markerName,
       color,
+      getNamespacedMarkerId,
       parentBackgroundColor
     } = this.props;
 
@@ -63,17 +25,17 @@ export class Marker extends React.Component<any, any> {
     );
     const { markerWidth, markerHeight } = markerAttributes;
 
-    const markerId = getMarkerId(
+    const namespacedMarkerId = getNamespacedMarkerId({
       markerProperty,
       markerName,
       color,
       parentBackgroundColor
-    );
+    });
 
     return (
       <marker
-        id={markerId}
-        key={markerId}
+        id={namespacedMarkerId}
+        key={namespacedMarkerId}
         markerUnits="strokeWidth"
         orient="auto"
         preserveAspectRatio="none"
@@ -83,8 +45,8 @@ export class Marker extends React.Component<any, any> {
         {...markerAttributes}
       >
         <g
-          id={`g-${markerId}`}
-          key={`g-${markerId}`}
+          id={`g-${namespacedMarkerId}`}
+          key={`g-${namespacedMarkerId}`}
           transform={
             markerProperty === "markerEnd"
               ? ""

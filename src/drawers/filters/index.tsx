@@ -1,21 +1,5 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { normalizeElementId } from "../../utils/normalizeElementId";
-
-export interface FilterProperties {
-  id: string;
-  filterUnits?: string;
-  width?: string;
-  height?: string;
-  x?: string;
-  y?: string;
-  filterRes?: number;
-}
-
-export type FilterResponse = {
-  filterProperties: FilterProperties;
-  filterPrimitives: JSX.Element[];
-};
 
 function getMorphProps(radius: number) {
   return {
@@ -28,12 +12,15 @@ export function Double({
   backgroundColor,
   borderWidth = 1,
   color,
+  getNamespacedId,
   parentBackgroundColor
-}): FilterResponse {
+}: FilterRequestProps): FilterResponse {
   const source = "SourceGraphic";
   const hasFill = ["none", "transparent"].indexOf(backgroundColor) === -1;
 
   let filterPrimitives;
+  const inPrimitiveName = "inDouble";
+  const in2PrimitiveName = "in2Double";
   let inRadius;
   let compositeOperator;
 
@@ -43,16 +30,14 @@ export function Double({
   if (!hasFill) {
     compositeOperator = "out";
 
-    // total width = inRadius
-    // stripe width = in2Radius
-
-    // the fat line
-    //inRadius = Math.max(1, borderWidth);
+    // Sets the width of the thick line.
     inRadius = minBorderWidth;
 
-    // the eraser to create the inner stripe
-    //const in2Radius = Math.max(0.5, borderWidth / 6);
-    const in2Radius = 0.5 / minBorderWidth;
+    // Related to setting the width of the inner stripe that splits the thick
+    // line, although visual inspection shows it's setting something else,
+    // because the stripe width doesn't equal inRadius2 or 2 * inRadius2.
+    // NOTE: FF seems to need this, but Chrome does not.
+    const in2Radius = 1 / minBorderWidth / 2;
 
     filterPrimitives = [
       // darken
@@ -65,27 +50,25 @@ export function Double({
       />,
       <feMorphology
         in="doubleDark"
-        key="in2Double"
-        result="in2Double"
+        key={in2PrimitiveName}
+        result={in2PrimitiveName}
         {...getMorphProps(in2Radius)}
       />
     ];
   } else {
     compositeOperator = "atop";
 
-    // sets the outside line in units away from center
-    //in2Radius = Math.max(3, borderWidth);
+    // Appears to be related to setting the outside line.
     const in2Radius = minBorderWidth;
 
-    // sets the inside line
-    //inRadius = -1 * Math.max(1, borderWidth / 2);
+    // Appears to be related to setting the inside line.
     inRadius = -1 * minBorderWidth;
 
     filterPrimitives = [
       <feMorphology
         in={source}
-        key="in2Double"
-        result="in2Double"
+        key={in2PrimitiveName}
+        result={in2PrimitiveName}
         {...getMorphProps(in2Radius)}
       />
     ];
@@ -94,16 +77,16 @@ export function Double({
   filterPrimitives.push(
     <feMorphology
       in={source}
-      key="inDouble"
-      result="inDouble"
+      key={inPrimitiveName}
+      result={inPrimitiveName}
       {...getMorphProps(inRadius)}
     />
   );
 
   filterPrimitives.push(
     <feComposite
-      in="inDouble"
-      in2="in2Double"
+      in={inPrimitiveName}
+      in2={in2PrimitiveName}
       operator={compositeOperator}
       key="doubleResult"
       result="doubleResult"
@@ -112,9 +95,7 @@ export function Double({
 
   return {
     filterProperties: {
-      id: normalizeElementId(
-        ["double", hasFill, borderWidth, "filter"].join("-")
-      ),
+      id: getNamespacedId(["double", hasFill, borderWidth, "filter"].join("-")),
       width: "200%",
       height: "200%",
       x: "-50%",
@@ -124,11 +105,14 @@ export function Double({
   };
 }
 
-export function Highlight({ color }): FilterResponse {
+export function Highlight({
+  color,
+  getNamespacedId
+}: FilterRequestProps): FilterResponse {
   const source = "SourceGraphic";
   return {
     filterProperties: {
-      id: normalizeElementId(["highlight", color, "filter"].join("-")),
+      id: getNamespacedId(["highlight", color, "filter"].join("-")),
       filterUnits: "userSpaceOnUse"
     },
     filterPrimitives: [
@@ -150,8 +134,9 @@ export function Round({
   backgroundColor,
   borderWidth = 1,
   color,
+  getNamespacedId,
   parentBackgroundColor
-}): FilterResponse {
+}: FilterRequestProps): FilterResponse {
   const source = "SourceGraphic";
   // Can we handle a borderWidth of 0.4?
   //const roundedStrokeWidth = Math.max(1, Math.round(borderWidth || 1));
@@ -223,7 +208,7 @@ export function Round({
 
   return {
     filterProperties: {
-      id: normalizeElementId(["round", borderWidth, "filter"].join("-"))
+      id: getNamespacedId(["round", borderWidth, "filter"].join("-"))
     },
     filterPrimitives: normalizedDark.concat([
       <feGaussianBlur

@@ -1,11 +1,7 @@
-//import "source-map-support/register";
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { getHighlighted } from "../utils/getHighlighted";
 import { Entity } from "./Entity";
 import { Node } from "./Node";
-import { getHidden } from "../utils/getHidden";
-import { normalizeElementId } from "../utils/normalizeElementId";
 
 // Must also export this class for type definitions to work
 export class nodeWithGroup extends React.Component<any, any> {

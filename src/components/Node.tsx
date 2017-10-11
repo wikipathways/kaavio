@@ -1,9 +1,7 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Observable, AjaxRequest, Subject } from "rxjs";
-import * as _ from "lodash";
+//import { Observable, AjaxRequest, Subject } from "rxjs";
 import * as validDataUrl from "valid-data-url";
-import { NodeProps } from "../typings";
 
 /**
  * Node is a rectangle within a Kaavio diagram.
@@ -45,8 +43,8 @@ export class Node extends React.Component<any, any> {
     return (
       <g ref={containerRef => (this.containerRef = containerRef)}>
         <use
-          id={`icon-for-${id}`}
-          key={`icon-for-${id}`}
+          id={`${id}-icon`}
+          key={`${id}-icon`}
           x="0"
           y="0"
           width={width + "px"}

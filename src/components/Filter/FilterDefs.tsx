@@ -1,42 +1,50 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { defaults, isEmpty, keys, toPairs, values } from "lodash/fp";
-import { interpolate } from "../../spinoffs/interpolate";
-import * as filterDrawers from "../../drawers/filters/__bundled_dont_edit__";
+import { getSVGReferenceType } from "../../spinoffs/formatSVGReference";
+
+export const getSVGFilterReferenceType = (filterName: string) => {
+  return getSVGReferenceType(filterName, ["string", "localIRI", "nonLocalIRI"]);
+};
 
 export class FilterDefs extends React.Component<any, any> {
-  constructor(props) {
+  getNamespacedFilter: GetNamespacedFilter;
+  constructor(props: FilterDefsProps) {
     super(props);
-
     const {
       pathway,
       entityMap,
+      getNamespacedFilter,
       highlightedEntities
-    }: {
-      pathway: Record<string, any>;
-      entityMap: Record<string, any>;
-      highlightedEntities: Record<string, any>;
     } = props;
+    this.getNamespacedFilter = getNamespacedFilter;
 
     const definedFromEntities = values(entityMap)
       .filter(entity => entity.hasOwnProperty("filters"))
       .reduce(function(acc, entity) {
-        entity.filters.forEach(function(filterName) {
-          const { filterProperties, filterPrimitives } = filterDrawers[
-            filterName
-          ](entity);
-          acc[filterProperties.id] = { filterProperties, filterPrimitives };
-        });
+        entity.filters
+          // NOTE: yes, this is funny, but SVG filter is different from JS filter
+          .filter(
+            filterName => getSVGFilterReferenceType(filterName) === "localIRI"
+          )
+          .forEach(function(filterName) {
+            const { filterProperties, filterPrimitives } = getNamespacedFilter({
+              filterName,
+              ...entity
+            });
+            acc[filterProperties.id] = { filterProperties, filterPrimitives };
+          });
         return acc;
       }, {});
 
     const definedFromHighlights = (highlightedEntities || [])
       .reduce(function(acc, highlightedEntity) {
-        const { filterProperties, filterPrimitives } = filterDrawers[
-          "Highlight"
-        ]({
-          color: highlightedEntity.color
+        const filterName = "Highlight";
+        const { filterProperties, filterPrimitives } = getNamespacedFilter({
+          color: highlightedEntity.color,
+          filterName
         });
+
         acc[filterProperties.id] = { filterProperties, filterPrimitives };
         return acc;
       }, {});
@@ -52,8 +60,8 @@ export class FilterDefs extends React.Component<any, any> {
 	 * color that was not present initially and then dragged a filter on top of a
 	 * type of that group. This doesn't do anything on server-side rendering.
 	 */
-  componentWillReceiveProps(nextProps) {
-    const { state, props } = this;
+  componentWillReceiveProps(nextProps: FilterDefsProps) {
+    const { getNamespacedFilter, state, props } = this;
     const { defined } = state;
     const { latestFilterReferenced } = nextProps;
     const definedIds = keys(defined);
@@ -69,19 +77,29 @@ export class FilterDefs extends React.Component<any, any> {
       if (isEmpty(filterName)) {
         throw new Error(`Missing filterName`);
       }
-      const { filterProperties, filterPrimitives } = filterDrawers[filterName]({
-        backgroundColor,
-        borderWidth,
-        color,
-        parentBackgroundColor
-      });
-      const id = filterProperties.id;
 
-      if (definedIds.indexOf(id) === -1) {
-        defined[id] = { filterProperties, filterPrimitives };
-        this.setState({
-          defined
+      const svgReferenceType = getSVGFilterReferenceType(filterName);
+
+      if (svgReferenceType === "localIRI") {
+        // We can only tweak the color, border width, etc. for filters that are
+        // located in this SVG (referenced via local IRIs)
+
+        const { filterProperties, filterPrimitives } = getNamespacedFilter({
+          backgroundColor,
+          borderWidth,
+          color,
+          filterName,
+          parentBackgroundColor
         });
+
+        const id = filterProperties.id;
+
+        if (definedIds.indexOf(id) === -1) {
+          defined[id] = { filterProperties, filterPrimitives };
+          this.setState({
+            defined
+          });
+        }
       }
     }
   }

@@ -412,8 +412,12 @@ function bundleIcons(inputs, { preserveAspectRatio }) {
         })
         .collect()
         .map(function(svgStrings) {
-          const suggestedFillOnlyCSS = keys(iconMap)
-            .map((key, i) => `.Icon.${key} {fill: currentColor; stroke: none;}`)
+          const iconNames = keys(iconMap);
+          const suggestedFillOnlyCSS = iconNames
+            .map(
+              (iconName, i) =>
+                `.Icon.${iconName} {fill: currentColor; stroke: none;}`
+            )
             .join("\n\t");
 
           console.log(`
@@ -426,6 +430,7 @@ To disable stroke for your icon(s) and enable fill, you can use this in your cus
 	]]>
 </style>
 `);
+          const joinedIconNamesString = iconNames.join("");
           const joinedSvgString = svgStrings.join("").replace(/[\r\n]/g, "");
           // TODO look at using an SVG to JSX converter instead of using dangerouslySetInnerHTML
           return (
@@ -438,7 +443,7 @@ To disable stroke for your icon(s) and enable fill, you can use this in your cus
 								}
 
 								render() {
-									return <g dangerouslySetInnerHTML={{
+									return <g id="icon-defs-${joinedIconNamesString}" dangerouslySetInnerHTML={{
 											__html: '${joinedSvgString}'
 										}}/>
 								}

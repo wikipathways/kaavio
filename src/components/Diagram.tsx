@@ -3,6 +3,7 @@ import * as ReactDom from "react-dom";
 import {
   assign,
   assignAll,
+  curry,
   defaults,
   defaultsAll,
   filter,
@@ -26,14 +27,15 @@ import "rxjs/add/operator/mergeMap";
 import { style, getStyles } from "typestyle";
 //import { Group } from "./Group";
 import { Entity } from "./Entity";
-import { FilterDefs } from "./Filter/FilterDefs";
-import { MarkerDefs } from "./Marker/MarkerDefs";
+import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
+import { MarkerDefs, getSVGMarkeReferenceType } from "./Marker/MarkerDefs";
 import * as kaavioStyle from "../kaavio.style";
 import * as filterDrawers from "../drawers/filters/__bundled_dont_edit__";
 import * as markerDrawers from "../drawers/markers/__bundled_dont_edit__";
 import * as customStyle from "../drawers/styles/__bundled_dont_edit__";
 import { Icons } from "../drawers/icons/__bundled_dont_edit__";
 import { interpolate } from "../spinoffs/interpolate";
+import { normalizeElementId } from "../utils/normalizeElementId";
 
 const mergedStyle: Record<string, any> = assign(kaavioStyle, customStyle);
 style(mergedStyle);
@@ -52,10 +54,28 @@ const TEXT_CONTENT_DEFAULTS = {
 };
 
 export class Diagram extends React.Component<any, any> {
+  getNamespacedId: (string) => string;
   constructor(props) {
     super(props);
+    const { id } = props;
+    let diagramNamespace;
+    if ("@context" in props && "@base" in props["@context"]) {
+      diagramNamespace = props["@context"]["@base"];
+    } else if (id) {
+      const lastCharacter = id.slice(-1);
+      if (["#", "/"].indexOf(lastCharacter) > -1) {
+        diagramNamespace = id;
+      } else {
+        diagramNamespace = id + "#";
+      }
+    } else {
+      diagramNamespace = new Date().toISOString().replace(/\W/g, "");
+    }
+    this.getNamespacedId = this.getNamespacedIdWithDiagramNamespace(
+      diagramNamespace
+    );
     this.state = { ...props };
-    this.state.latestMarkerReferenced = {};
+    this.state.latestMarkerReferenced = {} as LatestMarkerReferenced;
     this.state.latestFilterReferenced = {};
   }
 
@@ -67,15 +87,95 @@ export class Diagram extends React.Component<any, any> {
       .join(" ");
   };
 
-  getFilterId = (filterName, props) => {
-    const { filterProperties } = filterDrawers[filterName](props);
-    return filterProperties.id;
+  getNamespacedIdWithDiagramNamespace = curry((diagramNamespace, id) => {
+    return normalizeElementId(diagramNamespace + id);
+  });
+
+  // NOTE: it's kind of annoying to have the marker and filter functions all the
+  // way up here in the component hierarchy, but we need to have them here,
+  // because our SVGs use marker and filter functionality in two different places:
+  // the defs and the usage of the defs. Since this is the lowest common ancestor
+  // for those two places, we need to define them way up here.
+  /*
+  getNamespacedFilterId: GetNamespacedFilterId = filterProps => {
+    const { getNamespacedId, getNamespacedFilterId } = this;
+    const {
+      backgroundColor,
+      borderWidth,
+      color,
+      filterName,
+      parentBackgroundColor
+    } = filterProps;
+    const { filterProperties } = filterDrawers[filterName]({
+      backgroundColor,
+      borderWidth,
+      color,
+      getNamespacedFilterId,
+      parentBackgroundColor
+    });
+    return getNamespacedId(filterProperties.id);
+  };
+	//*/
+
+  getNamespacedFilter: GetNamespacedFilter = (
+    latestFilterReferenced: LatestFilterReferenced
+  ) => {
+    const { getNamespacedId } = this;
+    const {
+      backgroundColor,
+      borderWidth,
+      color,
+      filterName,
+      parentBackgroundColor
+    } = latestFilterReferenced;
+
+    return filterDrawers[filterName]({
+      backgroundColor,
+      borderWidth,
+      color,
+      getNamespacedId,
+      parentBackgroundColor
+    });
   };
 
-  getMarkerId = latestMarkerReferenced => {
-    const { markerName } = latestMarkerReferenced;
-    const { id } = markerDrawers[markerName](latestMarkerReferenced);
-    return id;
+  getNamespacedFilterId: GetNamespacedFilterId = (
+    latestFilterReferenced: LatestFilterReferenced
+  ) => {
+    const { getNamespacedFilter } = this;
+    const { filterName } = latestFilterReferenced;
+    const svgReferenceType = getSVGFilterReferenceType(filterName);
+
+    if (svgReferenceType === "localIRI") {
+      // We can only tweak the color, border width, etc. for filters that are
+      // located in this SVG (referenced via local IRIs)
+      return getNamespacedFilter(latestFilterReferenced).filterProperties.id;
+    } else {
+      return filterName;
+    }
+  };
+
+  getNamespacedMarkerId: GetNamespacedMarkerId = (
+    latestMarkerReferenced: LatestMarkerReferenced
+  ) => {
+    const { getNamespacedId } = this;
+    const {
+      markerProperty,
+      markerName,
+      color,
+      parentBackgroundColor
+    } = latestMarkerReferenced;
+
+    const svgReferenceType = getSVGMarkeReferenceType(markerName);
+
+    if (svgReferenceType === "localIRI") {
+      // We can only tweak the color, border width, etc. for markers that are
+      // located in this SVG (referenced via local IRIs)
+      return getNamespacedId(
+        [markerProperty, markerName, color, parentBackgroundColor].join("")
+      );
+    } else {
+      return markerName;
+    }
   };
 
   getPropsToPassDown = (
@@ -88,8 +188,9 @@ export class Diagram extends React.Component<any, any> {
       [
         "entityMap",
         "getClassString",
-        "getFilterId",
-        "getMarkerId",
+        "getNamespacedFilterId",
+        "getNamespacedId",
+        "getNamespacedMarkerId",
         "getPropsToPassDown",
         "setFilter",
         "setMarker"
@@ -139,13 +240,12 @@ export class Diagram extends React.Component<any, any> {
     return updatedProps;
   };
 
-  setFilter = (filterName, props) => {
-    const latestFilterReferenced = { filterName, ...props };
+  setFilter = (latestFilterReferenced: LatestFilterReferenced) => {
     this.setState({ latestFilterReferenced });
   };
 
-  setMarker = latestMarkerReferenced => {
-    this.setState({ latestMarkerReferenced: latestMarkerReferenced });
+  setMarker = (latestMarkerReferenced: LatestMarkerReferenced) => {
+    this.setState({ latestMarkerReferenced });
   };
 
   handleClick = e => {
@@ -179,6 +279,10 @@ export class Diagram extends React.Component<any, any> {
   render() {
     const {
       getClassString,
+      getNamespacedFilter,
+      getNamespacedFilterId,
+      getNamespacedId,
+      getNamespacedMarkerId,
       getPropsToPassDown,
       handleClick,
       props,
@@ -227,10 +331,10 @@ export class Diagram extends React.Component<any, any> {
 
     const highlightedStyle = (highlightedEntities || [])
       .map(function({ target, color }) {
-        const { filterProperties } = filterDrawers.Highlight({
-          color
+        const namespaceFilterId = getNamespacedFilterId({
+          color,
+          filterName: "Highlight"
         });
-        const filterId = filterProperties.id;
         let selectorPrefix;
         let nodeSelector;
         let edgeSelector;
@@ -252,27 +356,24 @@ export class Diagram extends React.Component<any, any> {
 
         const fill = interpolate("white", color, 0.5);
 
-        return `${nodeSelector},${edgeSelector} {filter: url(#${filterId});}
+        return `${nodeSelector},${edgeSelector} {filter: url(#${namespaceFilterId});}
 				${nodeSelector} {fill: ${fill};}
 				`;
       })
       .filter(s => !!s)
       .join("\n");
 
-    const pseudoParent = defaultsAll([
-      {
-        diagramNamespace:
-          pathway.id || new Date().toISOString().replace(/\W/g, "")
-      },
-      state,
-      this
-    ]);
+    const pseudoParent = defaultsAll([state, this]);
+
+    // TODO add any prefixes, vocab and base if there is a provided @context
+    const prefix = ["schema:http://schema.org/"].join(" ");
 
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
-        id={`kaavio-diagram-for-${id}`}
+        prefix={prefix}
+        id={`${normalizeElementId(id)}-diagram`}
         version="1.1"
         baseProfile="full"
         preserveAspectRatio="xMidYMid"
@@ -280,7 +381,6 @@ export class Diagram extends React.Component<any, any> {
         className={`kaavio-diagram ${getClassString(["Diagram"])}`}
         viewBox={`0 0 ${width} ${height}`}
       >
-
         <style
           type="text/css"
           dangerouslySetInnerHTML={{
@@ -308,11 +408,13 @@ export class Diagram extends React.Component<any, any> {
               </clipPath>
             }
             <FilterDefs
+              getNamespacedFilter={getNamespacedFilter}
               latestFilterReferenced={state.latestFilterReferenced}
               {...props}
             />
             <Icons />
             <MarkerDefs
+              getNamespacedMarkerId={getNamespacedMarkerId}
               latestMarkerReferenced={state.latestMarkerReferenced}
               {...props}
             />

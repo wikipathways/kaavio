@@ -1,22 +1,26 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import { isEmpty, pick, reduce, upperFirst } from "lodash/fp";
-//import { Text } from "./Text";
 import { Text } from "../spinoffs/Text";
 import { Node } from "./Node";
-import { EntityProps } from "../typings";
 import { Group } from "./Group";
 import { Edge } from "./Edge";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
 import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
+import { getSVGFilterReferenceType } from "./Filter/FilterDefs";
+import { formatSVGReference } from "../spinoffs/formatSVGReference";
 
 /**
  * Parent Entity component.
  * Most components share many properties so we "lift state up" to the parent.
  */
 export class Entity extends React.Component<any, any> {
+  getNamespacedFilterId: (
+    latestFilterReferenced: LatestFilterReferenced
+  ) => string;
   constructor(props: EntityProps) {
     super(props);
+    this.getNamespacedFilterId = props.getNamespacedFilterId;
   }
 
   renderText() {
@@ -59,8 +63,8 @@ export class Entity extends React.Component<any, any> {
 
     return (
       <Text
-        id={`text-for-${id}`}
-        key={`text-for-${id}`}
+        id={`${id}-text`}
+        key={`${id}-text`}
         className="textlabel"
         rotation={textRotation}
         {...propsToPassDown}
@@ -127,23 +131,53 @@ export class Entity extends React.Component<any, any> {
     // TODO use lodash/fp everywhere so this comparison is on immutable
     // data structures.
     if (filters !== nextFilters) {
-      nextFilters.forEach(function(nextFilter) {
-        setFilter(nextFilter, nextProps);
+      nextFilters.forEach(function(nextFilterName) {
+        setFilter({ filterName: nextFilterName, ...nextProps });
       });
     }
   }
 
+  getFilterPropertyValue = ({
+    color,
+    filterName,
+    backgroundColor,
+    borderWidth,
+    parentBackgroundColor
+  }: FilterProps): string => {
+    const { getNamespacedFilterId } = this;
+    const svgReferenceType = getSVGFilterReferenceType(filterName);
+
+    if (svgReferenceType === "string") {
+      // Don't make a FuncIRI out of a string value
+      return filterName;
+    } else if (svgReferenceType === "nonLocalIRI") {
+      // We can't set the color, etc. for a non-local IRI
+      return formatSVGReference(filterName, [svgReferenceType]);
+    }
+
+    const namespacedFilterId = getNamespacedFilterId({
+      color,
+      filterName,
+      backgroundColor,
+      borderWidth,
+      parentBackgroundColor
+    });
+    return formatSVGReference(namespacedFilterId, [svgReferenceType]);
+  };
+
   render() {
-    const { props } = this;
+    const { getFilterPropertyValue, props } = this;
     const {
       getPropsToPassDown,
+      backgroundColor,
+      borderWidth,
       color,
       filters,
       getClassString,
-      getFilterId,
       height,
       id,
       kaavioType,
+      parentBackgroundColor,
       rotation,
       textContent,
       type,
@@ -151,6 +185,7 @@ export class Entity extends React.Component<any, any> {
       x,
       y
     } = props;
+
     let entityTransform;
     if (x || y || rotation) {
       entityTransform = `translate(${x},${y})`;
@@ -186,11 +221,12 @@ export class Entity extends React.Component<any, any> {
 
     return (
       <g
+        about={id}
         id={id}
         key={id}
-        name={textContent}
-        className={`kaavio-diagram ${getClassString(type)}`}
+        className={`${getClassString(type)}`}
         color={color}
+        name={textContent}
         transform={entityTransform}
         typeof={type.join(" ")}
       >
@@ -229,9 +265,15 @@ export class Entity extends React.Component<any, any> {
         {isEmpty(filters)
           ? child
           : filters.reduce(function(acc, filterName) {
-              const filterId = getFilterId(filterName, props);
+              const filterPropertyValue = getFilterPropertyValue({
+                color,
+                filterName,
+                backgroundColor,
+                borderWidth,
+                parentBackgroundColor
+              });
               return (
-                <g filter={`url(#${filterId})`}>
+                <g filter={filterPropertyValue}>
                   {acc}
                 </g>
               );
