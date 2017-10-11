@@ -1,4 +1,4 @@
-import { intersection, keys } from "lodash";
+import { intersection, keys } from "lodash/fp";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {

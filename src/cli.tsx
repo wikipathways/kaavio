@@ -8,58 +8,37 @@ import { DOMParser } from "xmldom";
 import * as JSONStream from "JSONStream";
 import { Base64 } from "js-base64";
 
-/* TODO use lodash/fp instead of regular lodash
-import {
-  assign
-} from "lodash/fp";
-//*/
-
 import {
   assign,
   camelCase,
+  //compact,
   curry,
-  compact,
   defaults,
-  filter,
-  intersection,
   isArray,
   isEmpty,
   isFinite,
   isString,
   keys,
-  flow,
+  //flow,
   fromPairs,
-  forOwn,
-  omitBy,
   partition,
   toPairs,
   union,
   uniq,
   upperFirst,
   values
-} from "lodash";
+} from "lodash/fp";
+
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Observable } from "rxjs/Observable";
-import { AjaxRequest } from "rxjs/observable/dom/AjaxObservable";
-import "rxjs/add/observable/dom/ajax";
-import "rxjs/add/observable/from";
-import "rxjs/add/observable/fromPromise";
-import "rxjs/add/observable/pairs";
-import "rxjs/add/observable/of";
-import "rxjs/add/operator/toArray";
-import "rxjs/add/operator/toPromise";
-import "rxjs/add/operator/do";
-import "rxjs/add/operator/map";
-import "rxjs/add/operator/mergeMap";
 
 // TODO why doesn't "import * as name" work with Webpack for the following packages?
 const hl = require("highland");
 const isVarName = require("is-valid-var-name");
 const getit = require("getit");
 const parent = require("parent-package-json");
+import { Parser, Validator } from "collit";
 const program = require("commander");
-const RGBColor = require("rgbcolor");
 const urlRegex = require("url-regex");
 const validDataUrl = require("valid-data-url");
 const VError = require("verror");
@@ -272,11 +251,9 @@ function bundleStyles(inputs: string[]) {
   const strippedInputs = inputs.map((input: string) =>
     input.replace("file://", "")
   );
-  const [
-    typeStyleFileInputs,
-    nonTypeStyleFileInputs
-  ] = partition(strippedInputs, strippedInput =>
-    strippedInput.match(/\.style.tsx$/)
+  const [typeStyleFileInputs, nonTypeStyleFileInputs] = partition(
+    strippedInput => strippedInput.match(/\.style.tsx$/),
+    strippedInputs
   );
   const cssStream = hl(nonTypeStyleFileInputs)
     .flatMap(get)
@@ -685,27 +662,37 @@ program
     []
   )
   .action(function(inputPath, outputPath, optionsRaw) {
-    const options = defaults(optionsRaw, {
-      static: true,
-      hide: [],
-      highlight: []
-    });
+    const options = defaults(
+      {
+        static: true,
+        hide: [],
+        highlight: []
+      },
+      optionsRaw
+    );
     const { static: staticMarkup, hide, highlight } = options;
     const hiddenEntities = arrayify(hide);
     const highlightedEntities = arrayify(highlight).reduce(function(
       acc,
       { color: rawColor, targets }
     ) {
-      let color = new RGBColor(rawColor);
-      if (!color.ok) {
-        throw new Error(
-          `
-					Could not parse provided highlight color ${rawColor}
-					`
-        );
+      let color;
+      if (Validator.isColor(rawColor)) {
+        color = Parser.parseColor(rawColor);
+      } else {
+        const colorSecondTry = "#" + rawColor;
+        if (Validator.isColor(colorSecondTry)) {
+          color = Parser.parseColor(colorSecondTry);
+        } else {
+          throw new Error(
+            `
+						Could not parse provided highlight color ${rawColor}
+						`
+          );
+        }
       }
       targets.forEach(function(target) {
-        acc.push({ target, color: color.toHex() });
+        acc.push({ target, color: color.hex });
       });
       return acc;
     }, []);

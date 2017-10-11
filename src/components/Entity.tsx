@@ -126,8 +126,6 @@ export class Entity extends React.Component<any, any> {
   componentWillReceiveProps(nextProps) {
     const { filters } = this.props;
     const { filters: nextFilters, setFilter } = nextProps;
-    // TODO use lodash/fp everywhere so this comparison is on immutable
-    // data structures.
     if (filters !== nextFilters) {
       nextFilters.forEach(function(nextFilterName) {
         setFilter({ filterName: nextFilterName, ...nextProps });

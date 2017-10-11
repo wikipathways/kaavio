@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-//import { Observable, AjaxRequest, Subject } from "rxjs";
 import * as validDataUrl from "valid-data-url";
 
 /**
@@ -28,18 +27,6 @@ export class Node extends React.Component<any, any> {
       backgroundColor
     } = this.props;
 
-    /*
-    // Add the style too. Fixes firefox bug where fill, stroke etc. isn't inherited
-    const style = {
-      fill: backgroundColor,
-      color: color,
-      stroke: color,
-      strokeWidth: borderWidth,
-      strokeDasharray: strokeDasharray,
-      fillOpacity: fillOpacity || 1
-    };
-		style={style}
-		//*/
     return (
       <g ref={containerRef => (this.containerRef = containerRef)}>
         <use

@@ -17,6 +17,7 @@ import {
   toPairs,
   values
 } from "lodash/fp";
+/*
 import { Observable } from "rxjs/Observable";
 import "rxjs/add/observable/dom/ajax";
 import "rxjs/add/observable/from";
@@ -24,6 +25,7 @@ import "rxjs/add/observable/of";
 import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
+//*/
 import { style, getStyles } from "typestyle";
 //import { Group } from "./Group";
 import { Entity } from "./Entity";

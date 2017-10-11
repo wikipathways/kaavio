@@ -27,7 +27,7 @@
 
 import { find, map, reduce } from "lodash/fp";
 const urlRegex = require("url-regex");
-import Validator from "collit";
+import { Validator } from "collit";
 
 export type StringReferenceValue = "none" | "inherit" | "currentColor";
 

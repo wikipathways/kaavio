@@ -1,6 +1,6 @@
 import { filter, isEmpty, partition, reduce, toPairs } from "lodash/fp";
 import * as React from "react";
-const RGBColor = require("rgbcolor");
+import { Validator } from "collit";
 import { style, getStyles } from "typestyle";
 
 import { Diagram } from "./components/Diagram";
@@ -51,7 +51,7 @@ export class Kaavio extends React.Component<any, any> {
     const [highlightParams, nonHighlightParams] = partition(function(
       [key, value]
     ) {
-      return new RGBColor(key).ok;
+      return Validator.isColor(key);
     }, Array.from(searchParams));
 
     if (!isEmpty(highlightedEntities)) {

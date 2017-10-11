@@ -19,3 +19,4 @@ logs/
 typings
 lib/
 src/**/__bundled_dont_edit__.tsx
+old/
