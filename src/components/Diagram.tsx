@@ -59,7 +59,7 @@ export class Diagram extends React.Component<any, any> {
   getNamespacedId: GetNamespacedId;
   constructor(props) {
     super(props);
-    const { id } = props;
+    const { id } = props.pathway;
     let diagramNamespace;
     if ("@context" in props && "@base" in props["@context"]) {
       diagramNamespace = props["@context"]["@base"];
