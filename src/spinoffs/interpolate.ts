@@ -6,5 +6,6 @@ export function interpolate(parentBackgroundColor, backgroundColor, opacity) {
     return parentBackgroundColor;
   }
   const colormap = colorInterpolate([parentBackgroundColor, backgroundColor]);
-  return Parser.parseRgba(colormap(opacity)).hex;
+  // NOTE: colormap appears to usually return an RGB color but sometimes an RGBA color.
+  return Parser.parseColor(colormap(opacity)).hex;
 }
