@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "3.7.5-beta33",
+  "version": "3.7.5-beta.34",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "dist/index.js",
   "module": "lib/index.js",
@@ -89,7 +89,6 @@
     "is-valid-var-name": "^1.0.2",
     "js-base64": "^2.3.2",
     "json-stringify-safe": "^5.0.1",
-    "leven": "^2.1.0",
     "lodash": "^4.14.36",
     "ndjson": "^1.5.0",
     "npm-run-all": "^4.1.1",
