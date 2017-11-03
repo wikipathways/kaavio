@@ -2,6 +2,7 @@ import { filter, isEmpty, partition, reduce, toPairs } from "lodash/fp";
 import * as React from "react";
 import { Validator } from "collit";
 import { style, getStyles } from "typestyle";
+window['ReactPublic'] = React;
 
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
