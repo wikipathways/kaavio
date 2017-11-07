@@ -1,4 +1,8 @@
 // NOTE other possibly relevant libraries:
+//
+// http://drawsvg.org/drawsvg.html#showcase:text-editor
+//   SVG-Edit
+//
 // https://www.npmjs.com/package/jsyg-texteditor
 //
 // https://www.npmjs.com/package/svg-text-wrap:

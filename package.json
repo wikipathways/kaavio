@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "4.0.0-0",
+  "version": "4.0.0-1",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "dist/index.js",
   "module": "lib/index.js",
@@ -37,8 +37,8 @@
     "prepare": "npm run placeholders && npm run build:cli && ./bin/kaavio bundle --build false edges && ./bin/kaavio bundle --build false filters && ./bin/kaavio bundle icons --build false && ./bin/kaavio bundle markers --build false && npm run build && npm run test",
     "serve": "webpack-dev-server --config webpack.lib.dev.config.js --open --progress --inline",
     "start": "npm run serve",
-    "expected": "echo 'Setting expected values for tests' && npm-run-all expected:* && echo ok || echo not ok",
-    "expected:checksums": "for f in ./test/inputs/*.json; do base_path=`echo \"$f\" | sed s/.json//`; echo \"Converting $f to SVG and generating checksum...\"; cat \"$f\" | bin/kaavio json2svg -s false | shasum -p -a 1 > \"$base_path.svg.sha1sum\"; done && echo ok || echo not ok",
+    "setExpected": "echo 'Setting expected values for tests' && npm-run-all setExpected:* && echo ok || echo not ok",
+    "setExpected:checksums": "for f in ./test/inputs/*.json; do base_path=`echo \"$f\" | sed s/.json//`; echo \"Converting $f to SVG and generating checksum...\"; cat \"$f\" | bin/kaavio json2svg -s false | shasum -p -a 1 > \"$base_path.svg.sha1sum\"; done && echo ok || echo not ok",
     "delete-me:convert-gpml": "for f in ./test/inputs/*.gpml.xml; do base_path=`echo \"$f\" | sed s/.xml// | sed s/.gpml//`; cat \"$f\" | ../gpml2pvjson-js/bin/gpml2pvjson > \"$base_path.json\"; done && echo ok || echo not ok",
     "test": "echo 'get in-browser tests working' && npm run test:checksums",
     "test:e2e": "npm run serve && npm run serve:bundle",
