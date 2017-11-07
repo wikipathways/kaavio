@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { defaults, isEmpty, keys, toPairs, values } from "lodash/fp";
+import { defaults, find, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { getSVGReferenceType } from "../../spinoffs/formatSVGReference";
 
 export const getSVGFilterReferenceType = (filterName: string) => {
@@ -19,7 +19,23 @@ export class FilterDefs extends React.Component<any, any> {
     } = props;
     this.getNamespacedFilter = getNamespacedFilter;
 
-    const definedFromEntities = values(entityMap)
+    const entityValues = values(entityMap);
+
+		//const definedFromBorderStyleDouble = find((entity) => !!entity.borderStyle && entity.borderStyle === 'double', entityValues) ?  : {};
+
+    const definedFromBorderStyleDouble = entityValues
+      .filter(entity => entity.hasOwnProperty("borderStyle") && entity.borderStyle === 'double')
+      .reduce(function(acc, entity) {
+				const { filterProperties, filterPrimitives } = getNamespacedFilter({
+					filterName: "Double",
+					...entity
+				});
+
+				acc[filterProperties.id] = { filterProperties, filterPrimitives };
+				return acc;
+      }, {});
+
+    const definedFromEntityFilterProperties = entityValues
       .filter(entity => entity.hasOwnProperty("filters"))
       .reduce(function(acc, entity) {
         entity.filters
@@ -50,7 +66,7 @@ export class FilterDefs extends React.Component<any, any> {
       }, {});
 
     this.state = {
-      defined: defaults(definedFromEntities, definedFromHighlights)
+      defined: defaults(definedFromEntityFilterProperties, definedFromBorderStyleDouble, definedFromHighlights)
     };
   }
 

@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { isEmpty, pick, reduce, upperFirst } from "lodash/fp";
+import { isArray, isEmpty, pick, reduce, upperFirst } from "lodash/fp";
 import { Text } from "../spinoffs/Text";
 import { Node } from "./Node";
 import { Group } from "./Group";
@@ -91,21 +91,21 @@ export class Entity extends React.Component<any, any> {
         burr.width += 0;
         burr.height += 0;
         const attachmentDisplay = burr.attachmentDisplay;
-        const [xFactor, yFactor] = attachmentDisplay.position;
+        const [xPositionScalar, yPositionScalar] = attachmentDisplay.position;
         const [xOffset, yOffset] = "offset" in attachmentDisplay
           ? attachmentDisplay.offset
           : [0, 0];
 
         // kaavioType is referring to the entity the burr is attached to
         if (["SingleFreeNode", "Group"].indexOf(kaavioType) > -1) {
-          burr.x = width * xFactor - burr.width / 2 + xOffset;
-          burr.y = height * yFactor - burr.height / 2 + yOffset;
+          burr.x = width * xPositionScalar - burr.width / 2 + xOffset;
+          burr.y = height * yPositionScalar - burr.height / 2 + yOffset;
         } else if (kaavioType === "Edge") {
           // TODO get edge logic working so we can position this better
           // TODO look at current production pvjs to see how this is done
           const positionXY = new edgeDrawers[parentDrawAs](
             points
-          ).getPointAtPosition(xFactor);
+          ).getPointAtPosition(xPositionScalar);
           burr.x = positionXY.x - burr.width / 2 + xOffset;
           burr.y = positionXY.y - burr.height / 2 + yOffset;
         } else {
@@ -166,9 +166,9 @@ export class Entity extends React.Component<any, any> {
     const {
       getPropsToPassDown,
       backgroundColor,
+      borderStyle,
       borderWidth,
       color,
-      filters,
       getClassString,
       height,
       id,
@@ -180,6 +180,10 @@ export class Entity extends React.Component<any, any> {
       width,
       x,
       y
+    } = props;
+
+    let {
+      filters
     } = props;
 
     let entityTransform;
@@ -214,6 +218,16 @@ export class Entity extends React.Component<any, any> {
             "SingleFreeNode, Edge, or Group."
         );
     }
+
+		//*
+    if (borderStyle === "double") {
+			if (isArray(filters) && filters.indexOf("Double") === -1) {
+				filters.push("Double");
+			} else {
+				filters = ["Double"];
+			}
+    }
+		//*/
 
     return (
       <g
