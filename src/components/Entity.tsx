@@ -32,21 +32,21 @@ export class Entity extends React.Component<any, any> {
       "fontSize",
       "fontStyle",
       "fontWeight",
+      "height",
       "lineHeight",
       "overflow",
+      "padding",
       "textAlign",
       "textContent",
       // Note: not including "textRotation", because we want to
       // pass it down as just "rotation"
       "textOverflow",
-      "whiteSpace"
+      "verticalAlign",
+      "whiteSpace",
+      "width"
     ];
     const containerPropsToPassDown = [
-      "height",
       "id",
-      "padding",
-      "verticalAlign",
-      "width"
     ];
     const seed = pick(textPropsToPassDown, props);
     const propsToPassDown = reduce(

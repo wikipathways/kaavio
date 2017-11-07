@@ -29,44 +29,54 @@
 // http://www.w3.org/TR/CSS2/text.html#alignment-prop
 // left | right | center | justify | inherit
 
+/* NOTE: this will display text as if the following CSS were in effect:
+
+.text {
+  box-sizing: border-box;
+  display: table-cell;
+  margin: 0px;
+}
+
+//*/
+
 const direction = require("direction");
 import * as React from "react";
 
 const LTR_CENTRIC_TEXT_ALIGNS = ["left", "right"];
 
 const shiftXCalculatorsByTextAlign = {
-  left: function(textDirection, containerPadding, containerWidth) {
-    return containerPadding;
+  left: function(textDirection, padding, width) {
+    return padding;
   },
-  start: function(textDirection, containerPadding, containerWidth) {
+  start: function(textDirection, padding, width) {
     if (textDirection === "rtl") {
-      return containerWidth - containerPadding;
+      return width - padding;
     } else {
-      return containerPadding;
+      return padding;
     }
   },
-  center: function(textDirection, containerPadding, containerWidth) {
-    return containerWidth / 2;
+  center: function(textDirection, padding, width) {
+    return width / 2;
   },
-  end: function(textDirection, containerPadding, containerWidth) {
+  end: function(textDirection, padding, width) {
     if (textDirection === "rtl") {
-      return containerPadding;
+      return padding;
     } else {
-      return containerWidth - containerPadding;
+      return width - padding;
     }
   },
-  right: function(textDirection, containerPadding, containerWidth) {
-    return containerWidth - containerPadding;
+  right: function(textDirection, padding, width) {
+    return width - padding;
   }
 };
 
 const shiftYCalculatorsByContainerVerticalAlign = {
-  top: (totalTextHeight, lineHeightPx, containerPadding, containerHeight) =>
-    containerPadding + totalTextHeight / 2 + lineHeightPx / 2,
-  middle: (totalTextHeight, lineHeightPx, containerPadding, containerHeight) =>
-    containerHeight / 2,
-  bottom: (totalTextHeight, lineHeightPx, containerPadding, containerHeight) =>
-    containerHeight - containerPadding - totalTextHeight / 2 - lineHeightPx / 2
+  top: (totalTextHeight, lineHeightPx, padding, height) =>
+    padding + totalTextHeight / 2 + lineHeightPx / 2,
+  middle: (totalTextHeight, lineHeightPx, padding, height) =>
+    height / 2,
+  bottom: (totalTextHeight, lineHeightPx, padding, height) =>
+    height - padding - totalTextHeight / 2 - lineHeightPx / 2
 };
 
 const textAnchorCalculatorsByTextAlign = {
@@ -99,11 +109,11 @@ const textAnchorCalculatorsByTextAlign = {
 
 export interface TextProps {
   color: string;
-  containerHeight: number; // px
+  height: number; // px
   containerId: string;
-  containerPadding: number; // px
-  containerWidth: number; // px
-  containerVerticalAlign: string;
+  padding: number; // px
+  width: number; // px
+  verticalAlign: string;
   fontFamily: string;
   fontSize: number; // px
   fontStyle: string;
@@ -125,11 +135,11 @@ export class Text extends React.Component<any, any> {
   render() {
     const {
       color,
-      containerHeight,
+      height,
       containerId,
-      containerPadding = 0,
-      containerWidth,
-      containerVerticalAlign,
+      padding = 0,
+      width,
+      verticalAlign,
       fontFamily,
       fontSize,
       fontStyle = "normal",
@@ -224,29 +234,29 @@ export class Text extends React.Component<any, any> {
 
     const shiftX: number = shiftXCalculatorsByTextAlign[textAlign](
       textDirection,
-      containerPadding,
-      containerWidth
+      padding,
+      width
     );
 
     const totalTextHeight = (lineCount - 1) * lineHeightPx;
     const shiftY: number = shiftYCalculatorsByContainerVerticalAlign[
-      containerVerticalAlign
-    ](totalTextHeight, lineHeightPx, containerPadding, containerHeight);
+      verticalAlign
+    ](totalTextHeight, lineHeightPx, padding, height);
 
     const transforms = [];
     transforms.push(`translate(${shiftX},${shiftY})`);
     if (rotation) {
       transforms.push(
         `rotate(${rotation},
-					${containerWidth / 2 - shiftX},
-					${containerHeight / 2 - shiftY})`
+					${width / 2 - shiftX},
+					${height / 2 - shiftY})`
       );
     }
 
     const clipPathId = `${containerId}-text-clipPath`;
     /*
           x={-1 * shiftX}
-    y={-1 * containerHeight / 2}
+    y={-1 * height / 2}
               y={-1 * shiftY + lineHeightPx / 2}
 		//*/
     return (
@@ -256,8 +266,8 @@ export class Text extends React.Component<any, any> {
             <rect
               x={-1 * shiftX}
               y={-1 * shiftY}
-              width={containerWidth}
-              height={containerHeight}
+              width={width}
+              height={height}
             />
           </clipPath>
         </defs>
@@ -391,22 +401,22 @@ export class Text extends React.Component<any, any> {
 //    );
 
 /*
-function getTextPathXValues(containerPadding, textDirection, containerWidth) {
+function getTextPathXValues(padding, textDirection, width) {
   if (textDirection === "rtl") {
-    return [containerWidth - containerPadding, containerPadding];
+    return [width - padding, padding];
   } else {
-    return [containerPadding, containerWidth - containerPadding];
+    return [padding, width - padding];
   }
 }
 //*/
 
 /* In case I ever want to render text on edges, here's a start
 			const [x0, x1] = getTextPathXValues(
-				containerPadding,
+				padding,
 				textDirection,
-				containerWidth
+				width
 			);
-      const length = Math.floor(containerHeight / (lineHeightPx));
+      const length = Math.floor(height / (lineHeightPx));
       const d = fill("", 0, length, Array(length))
         .map(function(p, i) {
           const y = (lineHeightPx) * (i + 1);
