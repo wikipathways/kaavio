@@ -49,6 +49,15 @@ export class Node extends React.Component<any, any> {
 
 		if (tagName === "use") {
 			attributes.href = "#" + drawAs;
+			// TODO href is now preferred. Does it work in enough browsers?
+			// href={icon ? "#" + icon.id : null}
+			// xlinkHref={loadedIcon ? "#" + loadedIcon.id : null}
+			if (drawAs === "none") {
+				return {
+					tagName: tagName,
+					attributes: attributes
+				}
+			}
 		}
 
 		if (attributes.hasOwnProperty("x")) {
@@ -123,6 +132,3 @@ export class Node extends React.Component<any, any> {
     );
   }
 }
-// TODO href is now preferred. Does it work in enough browsers?
-// href={icon ? "#" + icon.id : null}
-// xlinkHref={loadedIcon ? "#" + loadedIcon.id : null}
