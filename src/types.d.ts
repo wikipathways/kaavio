@@ -1,4 +1,4 @@
-/// <reference path="../node_modules/svg-pan-zoom/dist/svg-pan-zoom.d.ts" />
+//// <reference path="../node_modules/svg-pan-zoom/dist/svg-pan-zoom.d.ts" />
 
 // Type definitions for Kaavio
 // Project: Kaavio
