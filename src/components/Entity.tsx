@@ -6,7 +6,6 @@ import { Node } from "./Node";
 import { Group } from "./Group";
 import { Edge } from "./Edge";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
-import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
 import { getSVGFilterReferenceType } from "./Filter/FilterDefs";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
 
@@ -45,9 +44,7 @@ export class Entity extends React.Component<any, any> {
       "whiteSpace",
       "width"
     ];
-    const containerPropsToPassDown = [
-      "id",
-    ];
+    const containerPropsToPassDown = ["id"];
     const seed = pick(textPropsToPassDown, props);
     const propsToPassDown = reduce(
       function(acc, containerPropName) {
@@ -75,6 +72,7 @@ export class Entity extends React.Component<any, any> {
     const {
       burrs,
       drawAs: parentDrawAs,
+      edgeDrawerMap,
       entityMap,
       getPropsToPassDown,
       height,
@@ -103,7 +101,7 @@ export class Entity extends React.Component<any, any> {
         } else if (kaavioType === "Edge") {
           // TODO get edge logic working so we can position this better
           // TODO look at current production pvjs to see how this is done
-          const positionXY = new edgeDrawers[parentDrawAs](
+          const positionXY = new edgeDrawerMap[parentDrawAs](
             points
           ).getPointAtPosition(xPositionScalar);
           burr.x = positionXY.x - burr.width / 2 + xOffset;
@@ -164,12 +162,12 @@ export class Entity extends React.Component<any, any> {
   render() {
     const { getFilterPropertyValue, props } = this;
     const {
-      getPropsToPassDown,
       backgroundColor,
       borderStyle,
       borderWidth,
       color,
       getClassString,
+      getPropsToPassDown,
       height,
       id,
       kaavioType,
@@ -182,9 +180,7 @@ export class Entity extends React.Component<any, any> {
       y
     } = props;
 
-    let {
-      filters
-    } = props;
+    let { filters } = props;
 
     let entityTransform;
     if (x || y || rotation) {
@@ -219,15 +215,15 @@ export class Entity extends React.Component<any, any> {
         );
     }
 
-		//*
+    //*
     if (borderStyle === "double") {
-			if (isArray(filters) && filters.indexOf("Double") === -1) {
-				filters.push("Double");
-			} else {
-				filters = ["Double"];
-			}
+      if (isArray(filters) && filters.indexOf("Double") === -1) {
+        filters.push("Double");
+      } else {
+        filters = ["Double"];
+      }
     }
-		//*/
+    //*/
 
     return (
       <g

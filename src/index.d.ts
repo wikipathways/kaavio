@@ -67,6 +67,7 @@ interface MarkerDefsProps {
   entityMap: Record<string, any>;
   getNamespacedMarkerId: GetNamespacedMarkerId;
   latestMarkerReferenced: LatestMarkerReferenced;
+  markerDrawerMap: Record<string, Function>;
   pathway: Record<string, any>;
 }
 
@@ -82,7 +83,7 @@ interface MarkerComponentProps {
   backgroundColor: string;
   color: string;
   getNamespacedMarkerId: GetNamespacedMarkerId;
-  markerDrawers: Function;
+  markerDrawerMap: Record<string, Function>;
   markerLocationType: MarkerProperty;
   markerName: StringReferenceValue & string;
 }
@@ -93,6 +94,7 @@ interface HighlightedNode {
 }
 
 interface EntityProps extends NodeProps {
+  edgeDrawerMap: Record<string, Function>;
   kaavioType: string; // The type of Kaavio component the Entity is mapped to
   x: number;
   y: number;

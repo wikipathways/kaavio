@@ -4,24 +4,19 @@ import { intersection, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { interpolate } from "../../spinoffs/interpolate";
 import { getSVGReferenceType } from "../../spinoffs/formatSVGReference";
 import { Marker } from "./Marker";
-import * as markerDrawers from "../../drawers/markers/__bundled_dont_edit__";
 
-export const MARKER_PROPERTIES: ReadonlyArray<MarkerProperty> = [
-  "markerStart",
-  "markerMid",
-  "markerEnd",
-  "marker"
-];
-
-export const getSVGMarkerReferenceType = (markerName: string) => {
-  return getSVGReferenceType(markerName, ["string", "localIRI", "nonLocalIRI"]);
-};
+import { getSVGMarkerReferenceType, MARKER_PROPERTIES } from "./helpers";
 
 export class MarkerDefs extends React.Component<any, any> {
   getNamespacedMarkerId: GetNamespacedMarkerId;
   constructor(props: MarkerDefsProps) {
     super(props);
-    const { entityMap, getNamespacedMarkerId, pathway } = props;
+    const {
+      entityMap,
+      getNamespacedMarkerId,
+      markerDrawerMap,
+      pathway
+    } = props;
     this.getNamespacedMarkerId = getNamespacedMarkerId;
 
     const parentBackgroundColor = pathway.backgroundColor;
@@ -67,7 +62,7 @@ export class MarkerDefs extends React.Component<any, any> {
               getSVGMarkerReferenceType(markerName) === "localIRI"
           )
           .forEach(function(markerName) {
-            if (markerDrawers.hasOwnProperty(markerName)) {
+            if (markerDrawerMap.hasOwnProperty(markerName)) {
               acc.add(markerName);
             } else {
               // Can't draw it if we don't have a markerDrawer for it.
@@ -120,7 +115,7 @@ export class MarkerDefs extends React.Component<any, any> {
         );
       }, []) as any[];
 
-    this.state = { defined: defined };
+    this.state = { defined, markerDrawerMap };
   }
 
   /* If the diagram is updated after the initial render, this step will handle
@@ -132,7 +127,7 @@ export class MarkerDefs extends React.Component<any, any> {
   componentWillReceiveProps(nextProps: MarkerDefsProps) {
     const { getNamespacedMarkerId, state, props } = this;
     const { defined } = state;
-    const { latestMarkerReferenced } = nextProps;
+    const { latestMarkerReferenced, markerDrawerMap } = nextProps;
     if (!isEmpty(latestMarkerReferenced)) {
       const {
         markerProperty,
@@ -152,8 +147,10 @@ export class MarkerDefs extends React.Component<any, any> {
             color,
             parentBackgroundColor
           };
+          // TODO should we ever update markerDrawerMap?
           this.setState({
-            defined: defined
+            defined: defined,
+            markerDrawerMap: markerDrawerMap
           });
         }
       }
@@ -162,7 +159,7 @@ export class MarkerDefs extends React.Component<any, any> {
 
   render() {
     const { getNamespacedMarkerId } = this;
-    const { defined } = this.state;
+    const { defined, markerDrawerMap } = this.state;
 
     return (
       <g id="marker-defs">
@@ -179,7 +176,7 @@ export class MarkerDefs extends React.Component<any, any> {
               key={namespacedMarkerId}
               color={color}
               getNamespacedMarkerId={getNamespacedMarkerId}
-              markerDrawer={markerDrawers[markerName]}
+              markerDrawer={markerDrawerMap[markerName]}
               markerName={markerName}
               markerProperty={markerProperty}
               parentBackgroundColor={parentBackgroundColor}

@@ -2,7 +2,14 @@ import { filter, isEmpty, partition, reduce, toPairs } from "lodash/fp";
 import * as React from "react";
 import { Validator } from "collit";
 import { style, getStyles } from "typestyle";
-window['ReactPublic'] = React;
+// TODO fix this kludge
+window["ReactPublic"] = React;
+
+import * as customStyle from "./drawers/styles/__bundled_dont_edit__";
+import * as edgeDrawerMap from "./drawers/edges/__bundled_dont_edit__";
+import * as filterDrawerMap from "./drawers/filters/__bundled_dont_edit__";
+import { Icons } from "./drawers/icons/__bundled_dont_edit__";
+import * as markerDrawerMap from "./drawers/markers/__bundled_dont_edit__";
 
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
@@ -171,6 +178,11 @@ export class Kaavio extends React.Component<any, any> {
           highlightedEntities={highlightedEntities}
           pathway={pathway}
           handleClick={this.handleClick}
+          customStyle={customStyle}
+          edgeDrawerMap={edgeDrawerMap}
+          filterDrawerMap={filterDrawerMap}
+          Icons={Icons}
+          markerDrawerMap={markerDrawerMap}
         />
         <PanZoom
           diagram={this.state.diagramRef}

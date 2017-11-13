@@ -30,17 +30,11 @@ import { style, getStyles } from "typestyle";
 //import { Group } from "./Group";
 import { Entity } from "./Entity";
 import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
-import { MarkerDefs, getSVGMarkerReferenceType } from "./Marker/MarkerDefs";
+import { MarkerDefs } from "./Marker/MarkerDefs";
+import { getSVGMarkerReferenceType } from "./Marker/helpers";
 import * as kaavioStyle from "../kaavio.style";
-import * as filterDrawers from "../drawers/filters/__bundled_dont_edit__";
-import * as markerDrawers from "../drawers/markers/__bundled_dont_edit__";
-import * as customStyle from "../drawers/styles/__bundled_dont_edit__";
-import { Icons } from "../drawers/icons/__bundled_dont_edit__";
 import { interpolate } from "../spinoffs/interpolate";
 import { normalizeElementId } from "../utils/normalizeElementId";
-
-const mergedStyle: Record<string, any> = assign(kaavioStyle, customStyle);
-style(mergedStyle);
 
 const BOX_MODEL_DEFAULTS = {
   padding: 0, // px
@@ -56,10 +50,19 @@ const TEXT_CONTENT_DEFAULTS = {
 };
 
 export class Diagram extends React.Component<any, any> {
+  filterDrawerMap: Record<string, Function>;
   getNamespacedId: GetNamespacedId;
+  mergedStyle: any;
   constructor(props) {
     super(props);
-    const { id } = props.pathway;
+    const { customStyle, filterDrawerMap, pathway } = props;
+    this.filterDrawerMap = filterDrawerMap;
+
+    const mergedStyle: Record<string, any> = assign(kaavioStyle, customStyle);
+    style(mergedStyle);
+    this.mergedStyle = mergedStyle;
+
+    const { id } = pathway;
     let diagramNamespace;
     if ("@context" in props && "@base" in props["@context"]) {
       diagramNamespace = props["@context"]["@base"];
@@ -82,6 +85,7 @@ export class Diagram extends React.Component<any, any> {
   }
 
   getClassString = (types: string[] = []): string => {
+    const { mergedStyle } = this;
     return filter(function([key, value]) {
       return types.indexOf(key) > -1;
     }, toPairs(mergedStyle))
@@ -102,7 +106,7 @@ export class Diagram extends React.Component<any, any> {
   // for those two places, we need to define them way up here.
   /*
   getNamespacedFilterId: GetNamespacedFilterId = filterProps => {
-    const { getNamespacedId, getNamespacedFilterId } = this;
+    const { filterDrawerMap, getNamespacedId, getNamespacedFilterId } = this;
     const {
       backgroundColor,
       borderWidth,
@@ -110,7 +114,7 @@ export class Diagram extends React.Component<any, any> {
       filterName,
       parentBackgroundColor
     } = filterProps;
-    const { filterProperties } = filterDrawers[filterName]({
+    const { filterProperties } = filterDrawerMap[filterName]({
       backgroundColor,
       borderWidth,
       color,
@@ -122,10 +126,10 @@ export class Diagram extends React.Component<any, any> {
 	//*/
 
   getNamespacedFilter: GetNamespacedFilter = filterProps => {
-    const { getNamespacedId } = this;
+    const { getNamespacedId, filterDrawerMap } = this;
     const { filterName } = filterProps;
 
-    return filterDrawers[filterName]({
+    return filterDrawerMap[filterName]({
       getNamespacedId,
       ...filterProps
     });
@@ -175,6 +179,7 @@ export class Diagram extends React.Component<any, any> {
 
     const propsToPassDown = pick(
       [
+        "edgeDrawerMap",
         "entityMap",
         "getClassString",
         "getNamespacedFilterId",
@@ -278,7 +283,14 @@ export class Diagram extends React.Component<any, any> {
       state
     } = this;
 
-    const { entityMap, hiddenEntities, highlightedEntities, pathway } = props;
+    const {
+      Icons,
+      markerDrawerMap,
+      entityMap,
+      hiddenEntities,
+      highlightedEntities,
+      pathway
+    } = props;
 
     const {
       backgroundColor,
@@ -405,6 +417,7 @@ export class Diagram extends React.Component<any, any> {
             <MarkerDefs
               getNamespacedMarkerId={getNamespacedMarkerId}
               latestMarkerReferenced={state.latestMarkerReferenced}
+              markerDrawerMap={markerDrawerMap}
               {...props}
             />
           </defs>

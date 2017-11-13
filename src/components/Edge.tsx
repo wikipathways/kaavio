@@ -1,11 +1,7 @@
 import { intersection, keys } from "lodash/fp";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import {
-  getSVGMarkerReferenceType,
-  MARKER_PROPERTIES
-} from "./Marker/MarkerDefs";
-import * as edgeDrawers from "../drawers/edges/__bundled_dont_edit__";
+import { getSVGMarkerReferenceType, MARKER_PROPERTIES } from "./Marker/helpers";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
 
 export class Edge extends React.Component<any, any> {
@@ -67,6 +63,7 @@ export class Edge extends React.Component<any, any> {
     const {
       id,
       drawAs,
+      edgeDrawerMap,
       color,
       parentBackgroundColor,
       strokeDasharray,
@@ -75,7 +72,7 @@ export class Edge extends React.Component<any, any> {
       type
     } = this.props;
 
-    const { d } = new edgeDrawers[drawAs](points);
+    const { d } = new edgeDrawerMap[drawAs](points);
 
     const markerProperties = intersection(
       MARKER_PROPERTIES,
