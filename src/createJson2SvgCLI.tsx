@@ -24,7 +24,7 @@ import * as markerDrawerMapDefault from "./drawers/markers/__bundled_dont_edit__
 import * as customStyleDefault from "./drawers/styles/__bundled_dont_edit__";
 import { Icons as IconsDefault } from "./drawers/icons/__bundled_dont_edit__";
 
-import { arrayify } from "../src/spinoffs/jsonld-utils";
+import { arrayify } from "./spinoffs/jsonld-utils";
 
 const npmPackage = require("../package.json");
 //const exec = hl.wrapCallback(require("child_process").exec);
@@ -84,14 +84,24 @@ function pipeToFilepath(inputStream, destPath) {
     });
 }
 
-export function createJson2SvgCLI(
-  name,
-  edgeDrawerMap = edgeDrawerMapDefault,
-  filterDrawerMap = filterDrawerMapDefault,
-  markerDrawerMap = markerDrawerMapDefault,
-  customStyle = customStyleDefault,
-  Icons = IconsDefault
-) {
+export function createJson2SvgCLI(name, drawers: Record<string, any> = {}) {
+  const {
+    edgeDrawerMap,
+    filterDrawerMap,
+    markerDrawerMap,
+    customStyle,
+    Icons
+  } = defaults(
+    {
+      edgeDrawerMap: edgeDrawerMapDefault,
+      filterDrawerMap: filterDrawerMapDefault,
+      markerDrawerMap: markerDrawerMapDefault,
+      customStyle: customStyleDefault,
+      Icons: IconsDefault
+    },
+    drawers
+  );
+
   program
     .version(npmPackage.version)
     .description(`Run ${name} from the command line.`);
@@ -253,29 +263,56 @@ export function createJson2SvgCLI(
         //        });
         //      })
         .map(function(input) {
+          //return render(<div id="wow" />);
+          /*
           return render(
-            React.createElement(
-              Diagram,
-              {
-                customStyle,
-                edgeDrawerMap,
-                filterDrawerMap,
-                Icons,
-                markerDrawerMap,
-                pathway: input.pathway,
-                entityMap: input.entityMap,
-                /*
-								id: input.pathway.id,
-								backgroundColor: input.pathway.backgroundColor,
-								height: input.pathway.height,
-								name: input.pathway.height,
-								width: input.pathway.width,
-								//*/
-                highlightedEntities,
-                hiddenEntities
-              },
-              null
-            )
+            <Diagram
+              customStyle={customStyle}
+              edgeDrawerMap={edgeDrawerMap}
+              filterDrawerMap={filterDrawerMap}
+              Icons={Icons}
+              markerDrawerMap={markerDrawerMap}
+              pathway={input.pathway}
+              entityMap={input.entityMap}
+              highlightedEntities={highlightedEntities}
+              hiddenEntities={hiddenEntities}
+            />
+          );
+				  //*/
+
+          //            React.createElement(
+          //              Diagram,
+          //              {
+          //                customStyle,
+          //                edgeDrawerMap,
+          //                filterDrawerMap,
+          //                Icons,
+          //                markerDrawerMap,
+          //                pathway: input.pathway,
+          //                entityMap: input.entityMap,
+          //                /*
+          //								id: input.pathway.id,
+          //								backgroundColor: input.pathway.backgroundColor,
+          //								height: input.pathway.height,
+          //								name: input.pathway.height,
+          //								width: input.pathway.width,
+          //								//*/
+          //                highlightedEntities,
+          //                hiddenEntities
+          //              },
+          //              null
+          //            )
+
+          return render(
+            <Diagram
+              customStyle={customStyle}
+              edgeDrawerMap={edgeDrawerMap}
+              filterDrawerMap={filterDrawerMap}
+              Icons={Icons}
+              markerDrawerMap={markerDrawerMap}
+              pathway={input.pathway}
+              entityMap={input.entityMap}
+            />
           );
         })
         .errors(function(err) {

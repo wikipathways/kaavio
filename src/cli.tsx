@@ -50,7 +50,7 @@ const validDataUrl = require("valid-data-url");
 const VError = require("verror");
 
 import { Diagram } from "./components/Diagram";
-import { arrayify } from "../src/spinoffs/jsonld-utils";
+import { arrayify } from "./spinoffs/jsonld-utils";
 
 const npmPackage = require("../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
@@ -818,7 +818,7 @@ program
 			$ cat WP100.json | kaavio json2svg > WP100.svg
 
 			Convert streaming w/ pretty output:
-      $ cat ../bulk-gpml2pvjson/unified/WP100.json | ./bin/kaavio json2svg | xmllint --pretty 2 - | pygmentize -O encoding=UTF-8 -l xml
+      $ ../bulk-gpml2pvjson/wikipathways-20170910-json-Homo_sapiens-unified/WP554.json | ./bin/kaavio json2svg | xmllint --pretty 2 - | pygmentize -O encoding=UTF-8 -l xml
 			`);
   });
 

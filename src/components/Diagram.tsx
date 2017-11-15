@@ -59,7 +59,7 @@ export class Diagram extends React.Component<any, any> {
     this.filterDrawerMap = filterDrawerMap;
 
     const mergedStyle: Record<string, any> = assign(kaavioStyle, customStyle);
-    style(mergedStyle);
+    //style(mergedStyle);
     this.mergedStyle = mergedStyle;
 
     const { id } = pathway;

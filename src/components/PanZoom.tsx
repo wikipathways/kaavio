@@ -2,7 +2,8 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { isEqual, minBy, maxBy } from "lodash";
 // NOTE: webpack didn't seem to like the import * as SVGPanZoom syntax
-const SVGPanZoom = require("svg-pan-zoom");
+//const SVGPanZoom = require("svg-pan-zoom");
+import * as SVGPanZoom from "svg-pan-zoom";
 
 export class PanZoom extends React.Component<any, any> {
   constructor(props) {
