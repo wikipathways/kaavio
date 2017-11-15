@@ -10,7 +10,7 @@
     "pretty": true
   },
   "files": [
-    "src/index.d.ts",
+    "src/types.d.ts",
     "src/index.ts",
     "src/createJson2SvgCLI.tsx",
     "src/cli.tsx"

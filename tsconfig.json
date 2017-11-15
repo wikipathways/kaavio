@@ -11,6 +11,6 @@
     ],
     "module": "es2015",
     "target": "es2015",
-    "outDir": "./lib/"
+    "outDir": "./"
   }
 }
