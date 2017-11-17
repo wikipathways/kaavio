@@ -3,7 +3,7 @@ const path = require("path");
 const webpack = require("webpack");
 const UglifyJsPlugin = require("uglifyjs-webpack-plugin");
 
-const webpackConfig = require("./webpack.base-babel.config");
+const webpackConfig = require("./webpack.base.config");
 
 webpackConfig.entry = {
   cli: "./src/cli.tsx",

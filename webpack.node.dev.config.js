@@ -2,7 +2,7 @@ const _ = require("lodash");
 const path = require("path");
 const webpack = require("webpack");
 
-const webpackConfig = require("./webpack.base-babel.config");
+const webpackConfig = require("./webpack.base.config");
 
 webpackConfig.entry = {
   cli: "./src/cli.tsx",

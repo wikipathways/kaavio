@@ -365,6 +365,7 @@ export class Diagram extends React.Component<any, any> {
       .join("\n");
 
     const pseudoParent = defaultsAll([state, this]);
+    // TODO apply custom style to InfoBox.
 
     // TODO add any prefixes, vocab and base if there is a provided @context
     const prefix = ["schema:http://schema.org/"].join(" ");

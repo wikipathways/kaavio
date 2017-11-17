@@ -8,9 +8,14 @@ import { flatten, intersection, isArray, isEmpty, union } from "lodash";
 //
 // Since I don't know how to do this for now, I'll just use a modification of Map.
 // Maybe one of the commented out options is more appropriate?
+/*
 export type JsonldNodeObject = {
   //[key: string]: JsonPrimitive | JsonPrimitive[];
   //[key: string]: JsonldNodeObject;
+  [key: string]: JsonldListSetPrimitive;
+};
+//*/
+export type JsonldNodeObject = {
   [key: string]: JsonldListSetPrimitive;
 };
 export type JsonPrimitive = string | number | boolean | null | JsonldNodeObject;

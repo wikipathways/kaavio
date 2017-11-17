@@ -18,9 +18,9 @@ const VError = require("verror");
 
 import { Diagram } from "./components/Diagram";
 
-import * as edgeDrawerMapDefault from "./drawers/edges/__bundled_dont_edit__";
-import * as filterDrawerMapDefault from "./drawers/filters/__bundled_dont_edit__";
-import * as markerDrawerMapDefault from "./drawers/markers/__bundled_dont_edit__";
+import * as edgeDrawerMapDefault from "./drawers/edges/index";
+import * as filterDrawerMapDefault from "./drawers/filters/index";
+import * as markerDrawerMapDefault from "./drawers/markers/index";
 import * as customStyleDefault from "./drawers/styles/__bundled_dont_edit__";
 import { Icons as IconsDefault } from "./drawers/icons/__bundled_dont_edit__";
 

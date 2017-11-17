@@ -5,12 +5,6 @@ import { style, getStyles } from "typestyle";
 // TODO fix this kludge
 window["ReactPublic"] = React;
 
-import * as customStyle from "./drawers/styles/__bundled_dont_edit__";
-import * as edgeDrawerMap from "./drawers/edges/__bundled_dont_edit__";
-import * as filterDrawerMap from "./drawers/filters/__bundled_dont_edit__";
-import { Icons } from "./drawers/icons/__bundled_dont_edit__";
-import * as markerDrawerMap from "./drawers/markers/__bundled_dont_edit__";
-
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
 import * as kaavioStyle from "./kaavio.style";
@@ -145,6 +139,11 @@ export class Kaavio extends React.Component<any, any> {
       zoomLevel,
       panCoordinates,
       onPanZoomChange,
+      edgeDrawerMap,
+      filterDrawerMap,
+      markerDrawerMap,
+      customStyle,
+      Icons,
       showPanZoomControls = true,
       panZoomLocked = false
     } = this.props;

@@ -1,7 +1,7 @@
 const path = require("path");
 const webpack = require("webpack");
 
-const webpackConfig = require("./webpack.base-babel.config");
+const webpackConfig = require("./webpack.base.config");
 
 webpackConfig.entry = path.resolve(__dirname, "src/index.ts");
 webpackConfig.output = {

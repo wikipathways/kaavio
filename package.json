@@ -28,9 +28,6 @@
     "build:lib": "rm -rf ./lib && npm-run-all -p build:lib:*",
     "build:lib:assets": "rsync -a --include='*.json' --include='*.svg' --include='*/' --exclude='*' src/ lib/",
     "build:lib:ts": "tsc --project tsconfig.esnext.json",
-    "build1:lib": "rm -rf ./lib && npm-run-all -p build:lib:*",
-    "build1:lib:browser": "webpack --config webpack.browser.lib.config.js",
-    "build1:lib:node": "webpack --config webpack.node.lib.config.js",
     "placeholders": "npm-run-all placeholders:*",
     "placeholders:dirs": "mkdir -p src/drawers/edges src/drawers/filters src/drawers/icons src/drawers/markers src/drawers/styles",
     "placeholders:edges": "echo \"export const a = 1;\" > src/drawers/edges/__bundled_dont_edit__.tsx",
@@ -49,12 +46,12 @@
     "test:e2e": "npm run serve && npm run serve:bundle",
     "test:checksums": "for f in ./test/inputs/*.json; do base_path=`echo \"$f\" | sed s/.json//`; echo \"Verifying checksum for $base_path.svg...\"; cat \"$f\" | bin/kaavio json2svg -s false | shasum -p -a 1 -c \"$base_path.svg.sha1sum\"; done && echo ok || echo not ok",
     "watch": "rm -rf ./dist && npm-run-all -p watch:*",
-    "watch:lib": "rm -rf ./lib && npm-run-all -p build:lib:*",
+    "watch:lib": "rm -rf ./lib && npm-run-all -p watch:lib:*",
     "watch:lib:assets": "onchange 'src/**' -- rsync -a --delete --include='*.json' --include='*.svg' --include='*/' --exclude='*' src/ lib/",
     "watch:lib:ts": "tsc --project tsconfig.esnext.json --watch",
     "watch:browser": "webpack --config webpack.browser.dev.config.js --watch",
     "watch:node": "webpack --config webpack.node.dev.config.js --watch",
-    "watch:test": "onchange 'dist/**' -- npm test"
+    "watch1:test": "onchange 'dist/**' -- npm test"
   },
   "browser": {
     "commander": false

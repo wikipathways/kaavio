@@ -80,6 +80,7 @@ export class Entity extends React.Component<any, any> {
       points,
       width
     } = props;
+
     if (!burrs || burrs.length < 1) return;
 
     return burrs
@@ -101,6 +102,7 @@ export class Entity extends React.Component<any, any> {
         } else if (kaavioType === "Edge") {
           // TODO get edge logic working so we can position this better
           // TODO look at current production pvjs to see how this is done
+          const edgeDrawer = new edgeDrawerMap[parentDrawAs](points);
           const positionXY = new edgeDrawerMap[parentDrawAs](
             points
           ).getPointAtPosition(xPositionScalar);

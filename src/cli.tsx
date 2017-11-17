@@ -8,9 +8,9 @@ import { DOMParser } from "xmldom";
 import * as JSONStream from "JSONStream";
 import { Base64 } from "js-base64";
 
-import * as edgeDrawerMap from "./drawers/edges/__bundled_dont_edit__";
-import * as filterDrawerMap from "./drawers/filters/__bundled_dont_edit__";
-import * as markerDrawerMap from "./drawers/markers/__bundled_dont_edit__";
+import * as edgeDrawerMap from "./drawers/edges/index";
+import * as filterDrawerMap from "./drawers/filters/index";
+import * as markerDrawerMap from "./drawers/markers/index";
 import * as customStyle from "./drawers/styles/__bundled_dont_edit__";
 import { Icons } from "./drawers/icons/__bundled_dont_edit__";
 
