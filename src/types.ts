@@ -17,9 +17,19 @@
  * TODO: the logic for icons and highlightedNodes is duplicated in Diagram and Group. Fix this.
  */
 
-declare type GetNamespacedId = (input: string) => string;
+/*
+declare module "*.css" {
+  interface IClassNames {
+    [className: string]: string;
+  }
+  const classNames: IClassNames;
+  export = classNames;
+}
+//*/
 
-interface FilterProps {
+export type GetNamespacedId = (input: string) => string;
+
+export interface FilterProps {
   color: string;
   filterName: string;
   backgroundColor?: string;
@@ -27,17 +37,17 @@ interface FilterProps {
   parentBackgroundColor?: string;
 }
 
-interface FilterRequestProps extends FilterProps {
+export interface FilterRequestProps extends FilterProps {
   getNamespacedId: GetNamespacedId;
 }
 
-interface LatestFilterReferenced extends FilterProps {
+export interface LatestFilterReferenced extends FilterProps {
   backgroundColor: string;
   borderWidth: number;
   parentBackgroundColor: string;
 }
 
-interface FilterResponseProps {
+export interface FilterResponseProps {
   id: string;
   filterUnits?: string;
   width?: string;
@@ -47,15 +57,15 @@ interface FilterResponseProps {
   filterRes?: number;
 }
 
-type FilterResponse = {
+export type FilterResponse = {
   filterProperties: FilterResponseProps;
   filterPrimitives: JSX.Element[];
 };
 
-declare type GetNamespacedFilter = (filterProps: FilterProps) => FilterResponse;
-declare type GetNamespacedFilterId = (filterProps: FilterProps) => string;
+export type GetNamespacedFilter = (filterProps: FilterProps) => FilterResponse;
+export type GetNamespacedFilterId = (filterProps: FilterProps) => string;
 
-interface FilterDefsProps {
+export interface FilterDefsProps {
   pathway: Record<string, any>;
   entityMap: Record<string, any>;
   getNamespacedFilter: GetNamespacedFilter;
@@ -63,7 +73,7 @@ interface FilterDefsProps {
   latestFilterReferenced: LatestFilterReferenced;
 }
 
-interface MarkerDefsProps {
+export interface MarkerDefsProps {
   entityMap: Record<string, any>;
   getNamespacedMarkerId: GetNamespacedMarkerId;
   latestMarkerReferenced: LatestMarkerReferenced;
@@ -71,15 +81,19 @@ interface MarkerDefsProps {
   pathway: Record<string, any>;
 }
 
-type MarkerProperty = "markerStart" | "markerEnd" | "markerMid" | "marker";
+export type MarkerProperty =
+  | "markerStart"
+  | "markerEnd"
+  | "markerMid"
+  | "marker";
 
-type StringReferenceValue = "none" | "inherit" | "currentColor";
+export type StringReferenceValue = "none" | "inherit" | "currentColor";
 
-declare type GetNamespacedMarkerId = (
+export type GetNamespacedMarkerId = (
   latestMarkerReferenced: LatestMarkerReferenced
 ) => string;
 
-interface MarkerComponentProps {
+export interface MarkerComponentProps {
   backgroundColor: string;
   color: string;
   getNamespacedMarkerId: GetNamespacedMarkerId;
@@ -88,12 +102,12 @@ interface MarkerComponentProps {
   markerName: StringReferenceValue & string;
 }
 
-interface HighlightedNode {
+export interface HighlightedNode {
   target: string;
   color: string; // CSS color. E.g. 'red' or '#ffff'
 }
 
-interface EntityProps extends NodeProps {
+export interface EntityProps extends NodeProps {
   edgeDrawerMap: Record<string, Function>;
   kaavioType: string; // The type of Kaavio component the Entity is mapped to
   x: number;
@@ -115,7 +129,7 @@ interface EntityProps extends NodeProps {
   width: number;
 }
 
-interface NodeProps {
+export interface NodeProps {
   borderWidth: number;
   color: string; // Used for borders
   height: number;
@@ -123,7 +137,7 @@ interface NodeProps {
   width: number;
 }
 
-interface LatestMarkerReferenced {
+export interface LatestMarkerReferenced {
   markerProperty: string;
   markerName: string;
   color: string;
@@ -132,10 +146,10 @@ interface LatestMarkerReferenced {
 
 /* Declare the Kaavio function with overloads */
 // TODO: Add the callback type
-declare function Kaavio(selector: string, about: string): void
 /*
-declare function Kaavio(selector: string, about: string, opts: Opts): void
-declare function Kaavio(
+export function Kaavio(selector: string, about: string): void
+export function Kaavio(selector: string, about: string, opts: Opts): void
+export function Kaavio(
   selector: string,
   about: string,
   opts: Opts,

@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ReactDom from "react-dom";
 import { defaults, find, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { getSVGReferenceType } from "../../spinoffs/formatSVGReference";
+import { FilterDefsProps, GetNamespacedFilter } from "../../types";
 
 export const getSVGFilterReferenceType = (filterName: string) => {
   return getSVGReferenceType(filterName, ["string", "localIRI", "nonLocalIRI"]);
@@ -21,18 +22,22 @@ export class FilterDefs extends React.Component<any, any> {
 
     const entityValues = values(entityMap);
 
-		//const definedFromBorderStyleDouble = find((entity) => !!entity.borderStyle && entity.borderStyle === 'double', entityValues) ?  : {};
+    //const definedFromBorderStyleDouble = find((entity) => !!entity.borderStyle && entity.borderStyle === 'double', entityValues) ?  : {};
 
     const definedFromBorderStyleDouble = entityValues
-      .filter(entity => entity.hasOwnProperty("borderStyle") && entity.borderStyle === 'double')
+      .filter(
+        entity =>
+          entity.hasOwnProperty("borderStyle") &&
+          entity.borderStyle === "double"
+      )
       .reduce(function(acc, entity) {
-				const { filterProperties, filterPrimitives } = getNamespacedFilter({
-					filterName: "Double",
-					...entity
-				});
+        const { filterProperties, filterPrimitives } = getNamespacedFilter({
+          filterName: "Double",
+          ...entity
+        });
 
-				acc[filterProperties.id] = { filterProperties, filterPrimitives };
-				return acc;
+        acc[filterProperties.id] = { filterProperties, filterPrimitives };
+        return acc;
       }, {});
 
     const definedFromEntityFilterProperties = entityValues
@@ -66,7 +71,11 @@ export class FilterDefs extends React.Component<any, any> {
       }, {});
 
     this.state = {
-      defined: defaults(definedFromEntityFilterProperties, definedFromBorderStyleDouble, definedFromHighlights)
+      defined: defaults(
+        definedFromEntityFilterProperties,
+        definedFromBorderStyleDouble,
+        definedFromHighlights
+      )
     };
   }
 

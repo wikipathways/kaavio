@@ -1,0 +1,4 @@
+.kaavioViewport .kaavioTextContent {
+  pointer-events: none;
+  stroke-width: 0px;
+}

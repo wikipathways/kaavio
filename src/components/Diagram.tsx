@@ -3,20 +3,36 @@ import * as ReactDom from "react-dom";
 import {
   assign,
   assignAll,
+  //compact,
   curry,
   defaults,
+  defaultsDeep,
   defaultsAll,
   filter,
+  //flatten,
   forOwn,
+  isArray,
   isBoolean,
   isNumber,
   isString,
+  kebabCase,
   omitBy,
+  map,
   pick,
+  reduce,
   set,
   toPairs,
   values
 } from "lodash/fp";
+import { formatClassNames } from "../utils/formatClassNames";
+import {
+  GetNamespacedId,
+  LatestFilterReferenced,
+  LatestMarkerReferenced,
+  GetNamespacedFilter,
+  GetNamespacedFilterId,
+  GetNamespacedMarkerId
+} from "../types";
 /*
 import { Observable } from "rxjs/Observable";
 import "rxjs/add/observable/dom/ajax";
@@ -26,13 +42,12 @@ import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/mergeMap";
 //*/
-import { style, getStyles } from "typestyle";
 //import { Group } from "./Group";
 import { Entity } from "./Entity";
 import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import { getSVGMarkerReferenceType } from "./Marker/helpers";
-import * as kaavioStyle from "../kaavio.style";
+import * as kaavioStyleSVG from "../kaavioStyleSVG.css";
 import { interpolate } from "../spinoffs/interpolate";
 import { normalizeElementId } from "../utils/normalizeElementId";
 
@@ -52,15 +67,10 @@ const TEXT_CONTENT_DEFAULTS = {
 export class Diagram extends React.Component<any, any> {
   filterDrawerMap: Record<string, Function>;
   getNamespacedId: GetNamespacedId;
-  mergedStyle: any;
   constructor(props) {
     super(props);
-    const { customStyle, filterDrawerMap, pathway } = props;
+    const { customStyleSVG, filterDrawerMap, pathway } = props;
     this.filterDrawerMap = filterDrawerMap;
-
-    const mergedStyle: Record<string, any> = assign(kaavioStyle, customStyle);
-    //style(mergedStyle);
-    this.mergedStyle = mergedStyle;
 
     const { id } = pathway;
     let diagramNamespace;
@@ -84,20 +94,36 @@ export class Diagram extends React.Component<any, any> {
     this.state.latestMarkerReferenced = {} as LatestMarkerReferenced;
   }
 
-  getClassString = (types: string[] = []): string => {
-    const { mergedStyle } = this;
-    return filter(function([key, value]) {
-      return types.indexOf(key) > -1;
-    }, toPairs(mergedStyle))
-      .map(([key, value]) => value)
-      .join(" ");
-  };
+  /*
+	classNames = (
+		...classNames: (string | string[])[]
+	): string => {
+		const classString = [
+			...map(
+				(className: string) => className,
+				compact(flatten(classNames))
+			)
+		].join(" ");
+
+		return classString;
+	};
+	//*/
 
   getNamespacedIdWithDiagramNamespace = curry(
     (diagramNamespace: string, id: string): string => {
       return normalizeElementId(diagramNamespace + id);
     }
   );
+
+  getNamespacedFilter: GetNamespacedFilter = filterProps => {
+    const { getNamespacedId, filterDrawerMap } = this;
+    const { filterName } = filterProps;
+
+    return filterDrawerMap[filterName]({
+      getNamespacedId,
+      ...filterProps
+    });
+  };
 
   // NOTE: it's kind of annoying to have the marker and filter functions all the
   // way up here in the component hierarchy, but we need to have them here,
@@ -125,16 +151,7 @@ export class Diagram extends React.Component<any, any> {
   };
 	//*/
 
-  getNamespacedFilter: GetNamespacedFilter = filterProps => {
-    const { getNamespacedId, filterDrawerMap } = this;
-    const { filterName } = filterProps;
-
-    return filterDrawerMap[filterName]({
-      getNamespacedId,
-      ...filterProps
-    });
-  };
-
+  // TODO: delete the commented out function above if possible
   getNamespacedFilterId: GetNamespacedFilterId = latestFilterReferenced => {
     const { getNamespacedFilter } = this;
     const { filterName } = latestFilterReferenced;
@@ -181,13 +198,13 @@ export class Diagram extends React.Component<any, any> {
       [
         "edgeDrawerMap",
         "entityMap",
-        "getClassString",
         "getNamespacedFilterId",
         "getNamespacedId",
         "getNamespacedMarkerId",
         "getPropsToPassDown",
         "setFilter",
-        "setMarker"
+        "setMarker",
+        "type"
       ],
       parentProps
     );
@@ -272,7 +289,6 @@ export class Diagram extends React.Component<any, any> {
 
   render() {
     const {
-      getClassString,
       getNamespacedFilter,
       getNamespacedFilterId,
       getNamespacedId,
@@ -284,6 +300,7 @@ export class Diagram extends React.Component<any, any> {
     } = this;
 
     const {
+      customStyleSVG,
       Icons,
       markerDrawerMap,
       entityMap,
@@ -365,7 +382,6 @@ export class Diagram extends React.Component<any, any> {
       .join("\n");
 
     const pseudoParent = defaultsAll([state, this]);
-    // TODO apply custom style to InfoBox.
 
     // TODO add any prefixes, vocab and base if there is a provided @context
     const prefix = ["schema:http://schema.org/"].join(" ");
@@ -375,12 +391,13 @@ export class Diagram extends React.Component<any, any> {
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
         prefix={prefix}
-        id={`${normalizeElementId(id)}-diagram`}
+        id={`${normalizeElementId(id)}-svg`}
         version="1.1"
         baseProfile="full"
         preserveAspectRatio="xMidYMid"
         onClick={handleClick}
-        className={`kaavio-diagram ${getClassString(["Diagram"])}`}
+        className={formatClassNames("diagram")}
+        typeof="Diagram"
         viewBox={`0 0 ${width} ${height}`}
       >
         <style
@@ -388,46 +405,32 @@ export class Diagram extends React.Component<any, any> {
           dangerouslySetInnerHTML={{
             __html: `
 				<![CDATA[
-					${getStyles()}
-					${highlightedStyle}
+					${kaavioStyleSVG}
+					${customStyleSVG}
 				]]>
 			`
           }}
         />
 
-        <g
-          className={`viewport ${getClassString([
-            "Viewport"
-          ])} svg-pan-zoom_viewport`}
-        >
-          <defs>
-            {
-              <clipPath
-                id="rounded-rectangle-clip-path"
-                clipPathUnits="objectBoundingBox"
-              >
-                <rect x="0" y="0" rx="0.125" ry="0.25" width="1" height="1" />
-              </clipPath>
-            }
-            <FilterDefs
-              getNamespacedFilter={getNamespacedFilter}
-              latestFilterReferenced={state.latestFilterReferenced}
-              {...props}
-            />
-            <Icons />
-            <MarkerDefs
-              getNamespacedMarkerId={getNamespacedMarkerId}
-              latestMarkerReferenced={state.latestMarkerReferenced}
-              markerDrawerMap={markerDrawerMap}
-              {...props}
-            />
-          </defs>
-
-          <Entity
-            {...getPropsToPassDown(pseudoParent, pathway)}
-            className={`kaavio-viewport-background`}
+        <defs>
+          <FilterDefs
+            getNamespacedFilter={getNamespacedFilter}
+            latestFilterReferenced={state.latestFilterReferenced}
+            {...props}
           />
-        </g>
+          <Icons />
+          <MarkerDefs
+            getNamespacedMarkerId={getNamespacedMarkerId}
+            latestMarkerReferenced={state.latestMarkerReferenced}
+            markerDrawerMap={markerDrawerMap}
+            {...props}
+          />
+        </defs>
+
+        <Entity
+          className="viewport"
+          {...getPropsToPassDown(pseudoParent, pathway)}
+        />
       </svg>
     );
   }

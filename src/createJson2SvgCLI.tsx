@@ -21,7 +21,6 @@ import { Diagram } from "./components/Diagram";
 import * as edgeDrawerMapDefault from "./drawers/edges/index";
 import * as filterDrawerMapDefault from "./drawers/filters/index";
 import * as markerDrawerMapDefault from "./drawers/markers/index";
-import * as customStyleDefault from "./drawers/styles/__bundled_dont_edit__";
 import { Icons as IconsDefault } from "./drawers/icons/__bundled_dont_edit__";
 
 import { arrayify } from "./spinoffs/jsonld-utils";
@@ -89,14 +88,13 @@ export function createJson2SvgCLI(name, drawers: Record<string, any> = {}) {
     edgeDrawerMap,
     filterDrawerMap,
     markerDrawerMap,
-    customStyle,
+    customStyleSVG,
     Icons
   } = defaults(
     {
       edgeDrawerMap: edgeDrawerMapDefault,
       filterDrawerMap: filterDrawerMapDefault,
       markerDrawerMap: markerDrawerMapDefault,
-      customStyle: customStyleDefault,
       Icons: IconsDefault
     },
     drawers
@@ -305,7 +303,7 @@ export function createJson2SvgCLI(name, drawers: Record<string, any> = {}) {
 
           return render(
             <Diagram
-              customStyle={customStyle}
+              customStyleSVG={customStyleSVG}
               edgeDrawerMap={edgeDrawerMap}
               filterDrawerMap={filterDrawerMap}
               Icons={Icons}

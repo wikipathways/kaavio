@@ -12,7 +12,7 @@ import * as edgeDrawerMap from "./drawers/edges/index";
 import * as filterDrawerMap from "./drawers/filters/index";
 import * as markerDrawerMap from "./drawers/markers/index";
 import * as customStyle from "./drawers/styles/__bundled_dont_edit__";
-import { Icons } from "./drawers/icons/__bundled_dont_edit__";
+//import { Icons } from "./drawers/icons/__bundled_dont_edit__";
 
 import {
   assign,
@@ -782,7 +782,7 @@ program
               customStyle,
               edgeDrawerMap,
               filterDrawerMap,
-              Icons,
+              Icons: input.Icons,
               markerDrawerMap,
               pathway: input.pathway,
               entityMap: input.entityMap,

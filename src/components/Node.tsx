@@ -2,6 +2,8 @@ import * as React from "react";
 import { assign, isFinite, pick } from "lodash/fp";
 import * as ReactDOM from "react-dom";
 import * as validDataUrl from "valid-data-url";
+import { formatClassNames } from "../utils/formatClassNames";
+import { NodeProps } from "../types";
 
 // These are the white-listed SVG tag names that kaavio can render
 // TODO either let symbols override these, or else check in CLI to notify user of clobbering.
@@ -60,56 +62,70 @@ export class Node extends React.Component<any, any> {
     this.state = this.getStateFromProps(props);
   }
 
-  getStateFromProps(props) {
+  getStateFromProps(
+    props
+  ): {
+    iconTagName: any;
+    iconAttributes: Record<string, any>;
+    className: string;
+    children: any[];
+    type: string[];
+  } {
     const {
       backgroundColor,
       borderRadius,
       borderStyle,
       borderWidth,
+      children,
+      className,
       color,
       fillOpacity,
       drawAs,
       height,
       id,
       stroke,
+      type,
       width
     } = props;
 
+    const state = { className, children, type };
+
     // If drawAs specifies an SVG element, render icon as the SVG element.
     // Otherwise, render as a symbol via a use tag.
-    const tagName = SVG_TAG_NAMES.indexOf(drawAs) > -1 ? drawAs : "use";
-    const attributes: any = pick(SVG_ATTRIBUTES, props);
+    const iconTagName = SVG_TAG_NAMES.indexOf(drawAs) > -1 ? drawAs : "use";
+    const iconAttributes: any = pick(SVG_ATTRIBUTES, props);
 
     if (!!id) {
-      attributes.id = `${id}-icon`;
-      attributes.key = `${id}-icon`;
+      iconAttributes.id = `${id}-icon`;
+      iconAttributes.key = `${id}-icon`;
     }
 
-    if (tagName === "use") {
-      attributes.href = "#" + drawAs;
+    if (iconTagName === "use") {
+      iconAttributes.href = "#" + drawAs;
       // TODO href is now preferred. Does it work in enough browsers?
       // href={icon ? "#" + icon.id : null}
       // xlinkHref={loadedIcon ? "#" + loadedIcon.id : null}
       if (drawAs === "none") {
         return {
-          tagName: tagName,
-          attributes: attributes
+          ...state,
+          iconTagName,
+          iconAttributes
         };
       }
     }
 
-    if (attributes.hasOwnProperty("x")) {
+    if (iconAttributes.hasOwnProperty("x")) {
       // correcting for translation of container.
-      attributes.x = "0";
-      attributes.y = "0";
+      iconAttributes.x = "0";
+      iconAttributes.y = "0";
     }
 
     // TODO do we need to specify these as px?
     if (!!width && isFinite(parseFloat(width))) {
-      attributes.width = width + "px";
+      iconAttributes.width = width + "px";
     }
     if (!!height && isFinite(parseFloat(height))) {
-      attributes.height = height + "px";
+      iconAttributes.height = height + "px";
     }
 
     // TODO: for icons with borderStyle of double, it appears the actual border
@@ -124,31 +140,32 @@ export class Node extends React.Component<any, any> {
     const scaleY = height / (height + actualBorderWidth);
     const translateX = width / 2;
     const translateY = height / 2;
-    attributes.transform = `matrix(${scaleX}, 0, 0, ${scaleY}, ${translateX -
+    iconAttributes.transform = `matrix(${scaleX}, 0, 0, ${scaleY}, ${translateX -
       scaleX * translateX}, ${translateY - scaleY * translateY})`;
 
     if (!!backgroundColor) {
-      attributes.fill = backgroundColor;
-      attributes.fillOpacity = fillOpacity || 1;
+      iconAttributes.fill = backgroundColor;
+      iconAttributes.fillOpacity = fillOpacity || 1;
     }
 
     if (!!borderWidth) {
-      attributes.stroke = stroke || color;
-      attributes.strokeWidth = borderWidth;
+      iconAttributes.stroke = stroke || color;
+      iconAttributes.strokeWidth = borderWidth;
     }
 
     if (borderStyle === "dashed") {
-      attributes.strokeDasharray = "5,3";
+      iconAttributes.strokeDasharray = "5,3";
     }
 
     if (borderRadius) {
-      attributes.rx = borderRadius;
-      attributes.ry = borderRadius;
+      iconAttributes.rx = borderRadius;
+      iconAttributes.ry = borderRadius;
     }
 
     return {
-      tagName: tagName,
-      attributes: attributes
+      ...state,
+      iconTagName,
+      iconAttributes
     };
   }
 
@@ -159,12 +176,18 @@ export class Node extends React.Component<any, any> {
   }
 
   render() {
-    const { props, state } = this;
-    const { children } = props;
+    const { state } = this;
+    const { children, className, iconAttributes, type } = state;
 
     return (
-      <g ref={containerRef => (this.containerRef = containerRef)}>
-        <this.state.tagName className="Icon" {...state.attributes} />
+      <g
+        className={formatClassNames(type, className, "node")}
+        ref={containerRef => (this.containerRef = containerRef)}
+      >
+        <state.iconTagName
+          className={formatClassNames(type, className, "node", "icon")}
+          {...iconAttributes}
+        />
         {children}
       </g>
     );

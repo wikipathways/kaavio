@@ -1,6 +1,6 @@
-/// <reference path="../../types.d.ts" />
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { FilterResponse, FilterRequestProps } from "../../types";
 
 function getMorphProps(radius: number) {
   return {

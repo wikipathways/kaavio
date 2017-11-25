@@ -36,6 +36,7 @@ module.exports = {
   },
   module: {
     rules: [
+      /*
       // Create an external stylesheet rather than inlined to support Angular CLI users
       // In Angular CLI, all styles must be specified in the styles property of a component
       // See: https://github.com/angular/angular-cli/issues/1459
@@ -48,6 +49,32 @@ module.exports = {
         use: ExtractTextPlugin.extract({
           use: ["css-loader", "postcss-loader"]
         })
+      },
+      //*/
+      /*
+      {
+        test: /\.css$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: "style-loader"
+          },
+          {
+            loader: "css-loader",
+            options: {
+              importLoaders: 1
+            }
+          },
+          {
+            loader: "postcss-loader"
+          }
+        ]
+      },
+      //*/
+      {
+        test: /\.css$/,
+        exclude: /node_modules/,
+        use: [{ loader: "to-string-loader" }, { loader: "css-loader" }]
       },
       {
         test: /\.json$/,

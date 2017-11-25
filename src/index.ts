@@ -1,1 +1,1 @@
-export {Kaavio} from './Kaavio';
+export { Kaavio } from "./Kaavio";

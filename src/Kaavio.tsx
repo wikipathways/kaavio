@@ -1,13 +1,12 @@
 import { filter, isEmpty, partition, reduce, toPairs } from "lodash/fp";
 import * as React from "react";
 import { Validator } from "collit";
-import { style, getStyles } from "typestyle";
 // TODO fix this kludge
-window["ReactPublic"] = React;
+//window["ReactPublic"] = React;
 
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
-import * as kaavioStyle from "./kaavio.style";
+const kaavioStyleHTML = require("./kaavioStyleHTML.css");
 
 /**
  * Kaavio component.
@@ -142,7 +141,7 @@ export class Kaavio extends React.Component<any, any> {
       edgeDrawerMap,
       filterDrawerMap,
       markerDrawerMap,
-      customStyle,
+      customStyleSVG,
       Icons,
       showPanZoomControls = true,
       panZoomLocked = false
@@ -161,13 +160,16 @@ export class Kaavio extends React.Component<any, any> {
 			//*/
     } = this.state;
 
+    // TODO will kaavioStyle.KaavioContainer have the CSS it needs?
+    // We're currently only using getStyles INSIDE the SVG.
+
     // TODO: Don't use refs!
     // Accessing the diagram ref from the state is a little bit of a hack to get panZoom working.
     // Consider refactoring the panZoom to be truly Reactive and not use refs
     return (
       <div
         id={`kaavio-container-for-${pathway.id}`}
-        className={`kaavio-container ${kaavioStyle.Container}`}
+        className="kaavio-container"
       >
         <Diagram
           ref={diagram =>
@@ -177,7 +179,7 @@ export class Kaavio extends React.Component<any, any> {
           highlightedEntities={highlightedEntities}
           pathway={pathway}
           handleClick={this.handleClick}
-          customStyle={customStyle}
+          customStyleSVG={customStyleSVG}
           edgeDrawerMap={edgeDrawerMap}
           filterDrawerMap={filterDrawerMap}
           Icons={Icons}

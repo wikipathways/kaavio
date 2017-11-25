@@ -1,6 +1,14 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { isArray, isEmpty, pick, reduce, upperFirst } from "lodash/fp";
+import {
+  filter,
+  isArray,
+  isEmpty,
+  omit,
+  pick,
+  reduce,
+  upperFirst
+} from "lodash/fp";
 import { Text } from "../spinoffs/Text";
 import { Node } from "./Node";
 import { Group } from "./Group";
@@ -8,6 +16,13 @@ import { Edge } from "./Edge";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
 import { getSVGFilterReferenceType } from "./Filter/FilterDefs";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
+import { formatClassNames } from "../utils/formatClassNames";
+import {
+  EntityProps,
+  FilterProps,
+  GetNamespacedFilterId,
+  StringReferenceValue
+} from "../types";
 
 /**
  * Parent Entity component.
@@ -22,7 +37,7 @@ export class Entity extends React.Component<any, any> {
 
   renderText() {
     const { props } = this;
-    const { id, textContent, textRotation } = props;
+    const { className, id, textContent, textRotation, type } = props;
     if (!textContent) return;
 
     const textPropsToPassDown = [
@@ -60,7 +75,7 @@ export class Entity extends React.Component<any, any> {
       <Text
         id={`${id}-text`}
         key={`${id}-text`}
-        className="textlabel"
+        className={formatClassNames(type, className, "text-content")}
         rotation={textRotation}
         {...propsToPassDown}
       />
@@ -168,7 +183,7 @@ export class Entity extends React.Component<any, any> {
       borderStyle,
       borderWidth,
       color,
-      getClassString,
+      className,
       getPropsToPassDown,
       height,
       id,
@@ -182,31 +197,24 @@ export class Entity extends React.Component<any, any> {
       y
     } = props;
 
-    let { filters } = props;
-
-    let entityTransform;
-    if (x || y || rotation) {
-      entityTransform = `translate(${x},${y})`;
-      if (rotation) {
-        entityTransform += ` rotate(${rotation},${width / 2},${height / 2})`;
-      }
-    }
+    //const childProps = omit("className", props);
+    const childProps = props;
 
     // Anders: I think it's best to be explicit. Instead of using components[kaavioType] do this.
     // I know it's a bit redundant but in this case I think it aids comprehension
     let child;
     switch (kaavioType) {
       case "SingleFreeNode":
-        child = <Node {...props} />;
+        child = <Node {...childProps} />;
         break;
       case "Burr":
-        child = <Node {...props} />;
+        child = <Node {...childProps} />;
         break;
       case "Edge":
-        child = <Edge {...props} />;
+        child = <Edge {...childProps} />;
         break;
       case "Group":
-        child = <Group {...props} />;
+        child = <Group {...childProps} />;
         break;
       default:
         throw new Error(
@@ -215,6 +223,16 @@ export class Entity extends React.Component<any, any> {
             " does not exist. Please use one of " +
             "SingleFreeNode, Edge, or Group."
         );
+    }
+
+    let { filters } = props;
+
+    let entityTransform;
+    if (x || y || rotation) {
+      entityTransform = `translate(${x},${y})`;
+      if (rotation) {
+        entityTransform += ` rotate(${rotation},${width / 2},${height / 2})`;
+      }
     }
 
     //*
@@ -229,10 +247,10 @@ export class Entity extends React.Component<any, any> {
 
     return (
       <g
-        about={id}
         id={id}
         key={id}
-        className={`${getClassString(type)}`}
+        className={formatClassNames(type, className)}
+        about={id}
         color={color}
         name={textContent}
         transform={entityTransform}
@@ -281,7 +299,10 @@ export class Entity extends React.Component<any, any> {
                 parentBackgroundColor
               });
               return (
-                <g filter={filterPropertyValue}>
+                <g
+                  className={formatClassNames(type, className)}
+                  filter={filterPropertyValue}
+                >
                   {acc}
                 </g>
               );

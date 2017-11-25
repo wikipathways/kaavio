@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { GetNamespacedMarkerId, MarkerComponentProps } from "../../types";
 
 export class Marker extends React.Component<any, any> {
   getNamespacedMarkerId: GetNamespacedMarkerId;

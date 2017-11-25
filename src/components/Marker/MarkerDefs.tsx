@@ -3,6 +3,7 @@ import * as ReactDom from "react-dom";
 import { intersection, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { interpolate } from "../../spinoffs/interpolate";
 import { getSVGReferenceType } from "../../spinoffs/formatSVGReference";
+import { MarkerDefsProps, GetNamespacedMarkerId } from "../../types";
 import { Marker } from "./Marker";
 
 import { getSVGMarkerReferenceType, MARKER_PROPERTIES } from "./helpers";

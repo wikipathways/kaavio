@@ -3,6 +3,11 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { getSVGMarkerReferenceType, MARKER_PROPERTIES } from "./Marker/helpers";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
+import {
+  GetNamespacedMarkerId,
+  MarkerProperty,
+  StringReferenceValue
+} from "../types";
 
 export class Edge extends React.Component<any, any> {
   getNamespacedMarkerId: GetNamespacedMarkerId;

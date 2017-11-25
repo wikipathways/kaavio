@@ -77,8 +77,7 @@ const shiftXCalculatorsByTextAlign = {
 const shiftYCalculatorsByContainerVerticalAlign = {
   top: (totalTextHeight, lineHeightPx, padding, height) =>
     padding + totalTextHeight / 2 + lineHeightPx / 2,
-  middle: (totalTextHeight, lineHeightPx, padding, height) =>
-    height / 2,
+  middle: (totalTextHeight, lineHeightPx, padding, height) => height / 2,
   bottom: (totalTextHeight, lineHeightPx, padding, height) =>
     height - padding - totalTextHeight / 2 - lineHeightPx / 2
 };
@@ -114,7 +113,8 @@ const textAnchorCalculatorsByTextAlign = {
 export interface TextProps {
   color: string;
   height: number; // px
-  containerId: string;
+  id: string;
+  className: string;
   padding: number; // px
   width: number; // px
   verticalAlign: string;
@@ -140,7 +140,8 @@ export class Text extends React.Component<any, any> {
     const {
       color,
       height,
-      containerId,
+      id,
+      className,
       padding = 0,
       width,
       verticalAlign,
@@ -257,14 +258,14 @@ export class Text extends React.Component<any, any> {
       );
     }
 
-    const clipPathId = `${containerId}-text-clipPath`;
+    const clipPathId = `${id}-text-clipPath`;
     /*
           x={-1 * shiftX}
     y={-1 * height / 2}
               y={-1 * shiftY + lineHeightPx / 2}
 		//*/
     return (
-      <g>
+      <g id={id} className={className}>
         <defs>
           <clipPath id={clipPathId}>
             <rect
@@ -276,6 +277,7 @@ export class Text extends React.Component<any, any> {
           </clipPath>
         </defs>
         <text
+          className={className}
           clipPath={overflow === "hidden" ? `url(#${clipPathId})` : null}
           dominantBaseline="central"
           fill={color}
@@ -300,6 +302,7 @@ export class Text extends React.Component<any, any> {
             return (
               <tspan
                 key={`text-line-${i}-${line}`}
+                className={className}
                 direction={ltrCentric ? "ltr" : textDirection}
                 fontSize={`${fontSize}px`}
                 x="0"
@@ -427,7 +430,7 @@ function getTextPathXValues(padding, textDirection, width) {
           return `M ${x0} ${y} L ${x1} ${y}`;
         })
         .join("\n");
-      const pathId = `mypath-for-${containerId}`;
+      const pathId = `mypath-for-${id}`;
       return (
         <g>
           <path id={pathId} d={d} />
