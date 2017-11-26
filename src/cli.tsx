@@ -776,28 +776,17 @@ program
       //      })
       .map(function(input) {
         return render(
-          React.createElement(
-            Diagram,
-            {
-              customStyle,
-              edgeDrawerMap,
-              filterDrawerMap,
-              Icons: input.Icons,
-              markerDrawerMap,
-              pathway: input.pathway,
-              entityMap: input.entityMap,
-              /*
-              id: input.pathway.id,
-              backgroundColor: input.pathway.backgroundColor,
-              height: input.pathway.height,
-              name: input.pathway.height,
-              width: input.pathway.width,
-							//*/
-              highlightedEntities,
-              hiddenEntities
-            },
-            null
-          )
+          <Diagram
+            customStyle={customStyle}
+            edgeDrawerMap={edgeDrawerMap}
+            filterDrawerMap={filterDrawerMap}
+            markerDrawerMap={markerDrawerMap}
+            highlightedEntities={highlightedEntities}
+            hiddenEntities={hiddenEntities}
+            Icons={input.Icons}
+            pathway={input.pathway}
+            entityMap={input.entityMap}
+          />
         );
       })
       .errors(function(err) {
