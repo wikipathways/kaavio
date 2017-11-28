@@ -6,9 +6,6 @@ import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
 const kaavioStyleHTML = require("./kaavioStyleHTML.css");
 
-console.warn("kaavioStyleHTML");
-console.warn(kaavioStyleHTML);
-
 /**
  * Kaavio component.
  * This is the highest component in Kaavio. All states are handled here and passed down as props to other components.
@@ -130,8 +127,7 @@ export class Kaavio extends React.Component<any, any> {
   onPanZoomReady = panZoom => {
     // Fire the onReady function with a reference to Kaavio
     const { onReady } = this.props;
-    //!!onReady && onReady(this);
-    onReady(this);
+    !!onReady && onReady(this);
   };
 
   handleClick = e => {

@@ -65,9 +65,6 @@ const TEXT_CONTENT_DEFAULTS = {
   whiteSpace: "pre"
 };
 
-console.warn("kaavioStyleSVG");
-console.warn(kaavioStyleSVG);
-
 export class Diagram extends React.Component<any, any> {
   filterDrawerMap: Record<string, Function>;
   getNamespacedId: GetNamespacedId;
