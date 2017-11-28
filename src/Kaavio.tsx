@@ -1,12 +1,13 @@
 import { filter, isEmpty, partition, reduce, toPairs } from "lodash/fp";
 import * as React from "react";
 import { Validator } from "collit";
-// TODO fix this kludge
-//window["ReactPublic"] = React;
 
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
 const kaavioStyleHTML = require("./kaavioStyleHTML.css");
+
+console.warn("kaavioStyleHTML");
+console.warn(kaavioStyleHTML);
 
 /**
  * Kaavio component.
@@ -19,7 +20,7 @@ export class Kaavio extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
-    const { hiddenEntities, highlightedEntities } = this.props;
+    const { customStyleHTML, hiddenEntities, highlightedEntities } = this.props;
     const searchParams = new URLSearchParams(location.search);
 
     // TODO reconcile query params and class props for pan/zoom settings
@@ -110,6 +111,8 @@ export class Kaavio extends React.Component<any, any> {
       });
     }
 
+    this.addStyle([kaavioStyleHTML, customStyleHTML]);
+
     this.state = {
       diagramRef: null,
       hiddenEntities: reconciledHiddenEntities,
@@ -117,9 +120,17 @@ export class Kaavio extends React.Component<any, any> {
     };
   }
 
+  addStyle = (styles: string[]) => {
+    var styleEl = document.createElement("style");
+    styleEl.innerHTML = styles.join("\n");
+    // Append style element to head
+    document.head.appendChild(styleEl);
+  };
+
   onPanZoomReady = panZoom => {
     // Fire the onReady function with a reference to Kaavio
     const { onReady } = this.props;
+    //!!onReady && onReady(this);
     onReady(this);
   };
 
@@ -169,7 +180,7 @@ export class Kaavio extends React.Component<any, any> {
     return (
       <div
         id={`kaavio-container-for-${pathway.id}`}
-        className="kaavio-container"
+        className="kaavioContainer"
       >
         <Diagram
           ref={diagram =>

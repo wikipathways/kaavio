@@ -47,7 +47,8 @@ import { Entity } from "./Entity";
 import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import { getSVGMarkerReferenceType } from "./Marker/helpers";
-import * as kaavioStyleSVG from "../kaavioStyleSVG.css";
+//import * as kaavioStyleSVG from "../kaavioStyleSVG.css";
+const kaavioStyleSVG = require("../kaavioStyleSVG.css");
 import { interpolate } from "../spinoffs/interpolate";
 import { normalizeElementId } from "../utils/normalizeElementId";
 
@@ -63,6 +64,9 @@ const TEXT_CONTENT_DEFAULTS = {
   textAlign: "start",
   whiteSpace: "pre"
 };
+
+console.warn("kaavioStyleSVG");
+console.warn(kaavioStyleSVG);
 
 export class Diagram extends React.Component<any, any> {
   filterDrawerMap: Record<string, Function>;
@@ -396,7 +400,7 @@ export class Diagram extends React.Component<any, any> {
         baseProfile="full"
         preserveAspectRatio="xMidYMid"
         onClick={handleClick}
-        className={formatClassNames("diagram")}
+        className={formatClassNames("Diagram")}
         typeof="Diagram"
         viewBox={`0 0 ${width} ${height}`}
       >
@@ -428,7 +432,7 @@ export class Diagram extends React.Component<any, any> {
         </defs>
 
         <Entity
-          className="viewport"
+          className="Viewport"
           {...getPropsToPassDown(pseudoParent, pathway)}
         />
       </svg>

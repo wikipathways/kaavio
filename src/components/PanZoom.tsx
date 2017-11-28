@@ -1,9 +1,11 @@
 import * as React from "react";
+
 import * as ReactDOM from "react-dom";
 import { isEqual, minBy, maxBy } from "lodash";
 // NOTE: webpack didn't seem to like the import * as SVGPanZoom syntax
-//const SVGPanZoom = require("svg-pan-zoom");
-import * as SVGPanZoom from "svg-pan-zoom";
+const svgPanZoom = require("svg-pan-zoom");
+//import * as SVGPanZoom from "svg-pan-zoom";
+//import svgPanZoom from "svg-pan-zoom";
 
 export class PanZoom extends React.Component<any, any> {
   constructor(props) {
@@ -144,52 +146,49 @@ export class PanZoom extends React.Component<any, any> {
     const { showPanZoomControls } = this.props;
     this.destroy(); // Destroy the diagram first in case there is one
     let node: SVGElement = ReactDOM.findDOMNode(diagram) as SVGElement;
-    const pan = SVGPanZoom(
-      node,
-      {
-        viewportSelector: ".svg-pan-zoom_viewport",
-        controlIconsEnabled: showPanZoomControls,
-        fit: true,
-        center: true,
-        minZoom: 0.1,
-        maxZoom: 20.0,
-        zoomEnabled: false,
-        customEventsHandler: {
-          init: options => {
-            this.onInit(options.instance);
-            const { onReady } = this.props;
-            onReady();
-          },
-          haltEventListeners: [],
-          destroy: () => {}
+    const pan = svgPanZoom(node, {
+      viewportSelector: ".kaavioViewport",
+      controlIconsEnabled: showPanZoomControls,
+      fit: true,
+      center: true,
+      minZoom: 0.1,
+      maxZoom: 20.0,
+      zoomEnabled: false,
+      customEventsHandler: {
+        init: options => {
+          this.onInit(options.instance);
+          const { onReady } = this.props;
+          onReady();
         },
-        beforeZoom: () => {
-          const { locked } = this.props;
-          const { ready, shouldZoom } = this.state;
-          // Don't allow if not ready or locked
-          // shouldZoom is only true if a programmatic zoom is set in props, still allow this
-          if (!ready || (locked && !shouldZoom)) return false;
-          // Don't allow any more zooming until done
-          // Reset the zoomedEntities since the diagram has moved and we can't be sure they are still zoomed on
-          this.setState({ ready: false, zoomedEntities: [] });
-          return true;
-        },
-        onZoom: this.handleChange,
-        beforePan: () => {
-          const { locked } = this.props;
-          const { ready, shouldPan } = this.state;
-          // Don't allow if not ready or locked
-          // shouldPan is only true if a programmatic pan is set in props, still allow this
-          if (!ready || (locked && !shouldPan)) return false;
-          // Don't allow any more panning until done
-          // Reset pannedEntities since the diagram has moved and we can't be sure they are still panned on
-          this.setState({ ready: false, pannedEntities: [] });
-          return true;
-        },
-        onPan: this.handleChange,
-        onUpdatedCTM: () => this.setState({ ready: true })
-      } as SvgPanZoom.Options
-    );
+        haltEventListeners: [],
+        destroy: () => {}
+      },
+      beforeZoom: () => {
+        const { locked } = this.props;
+        const { ready, shouldZoom } = this.state;
+        // Don't allow if not ready or locked
+        // shouldZoom is only true if a programmatic zoom is set in props, still allow this
+        if (!ready || (locked && !shouldZoom)) return false;
+        // Don't allow any more zooming until done
+        // Reset the zoomedEntities since the diagram has moved and we can't be sure they are still zoomed on
+        this.setState({ ready: false, zoomedEntities: [] });
+        return true;
+      },
+      onZoom: this.handleChange,
+      beforePan: () => {
+        const { locked } = this.props;
+        const { ready, shouldPan } = this.state;
+        // Don't allow if not ready or locked
+        // shouldPan is only true if a programmatic pan is set in props, still allow this
+        if (!ready || (locked && !shouldPan)) return false;
+        // Don't allow any more panning until done
+        // Reset pannedEntities since the diagram has moved and we can't be sure they are still panned on
+        this.setState({ ready: false, pannedEntities: [] });
+        return true;
+      },
+      onPan: this.handleChange,
+      onUpdatedCTM: () => this.setState({ ready: true })
+    });
   };
 
   handleChange = () => {
