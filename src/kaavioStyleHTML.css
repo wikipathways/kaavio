@@ -1,4 +1,4 @@
-.kaavioUserSpecifiedContainer {
+.UserSpecifiedContainer {
   font-family: "Roboto";
   position: "relative";
   width: "100%";
@@ -6,12 +6,12 @@
   overflow: "hidden"
 }
 
-.kaavioContainer {
+.Container {
   width: inherit;
   height: inherit;
 }
 
-.kaavioDiagram {
+.Diagram {
   width: inherit;
   height: inherit;
 }

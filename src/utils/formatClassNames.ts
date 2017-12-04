@@ -6,7 +6,8 @@ export const formatClassNames = function(
   ...inputs: (string | string[])[]
 ): string {
   const classString = [
-    ...map((input: string) => NS + input, compact(flatten(inputs)))
+    //...map((input: string) => NS + input, compact(flatten(inputs)))
+    ...map((input: string) => input, compact(flatten(inputs)))
   ].join(" ");
 
   return classString;

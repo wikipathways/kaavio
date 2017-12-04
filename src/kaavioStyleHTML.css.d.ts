@@ -1,3 +1,3 @@
-export const kaavioUserSpecifiedContainer: string;
-export const kaavioContainer: string;
-export const kaavioDiagram: string;
+export const UserSpecifiedContainer: string;
+export const Container: string;
+export const Diagram: string;

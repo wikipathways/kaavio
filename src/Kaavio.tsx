@@ -167,17 +167,14 @@ export class Kaavio extends React.Component<any, any> {
 			//*/
     } = this.state;
 
-    // TODO will kaavioStyle.KaavioContainer have the CSS it needs?
+    // TODO will kaavioStyle.Container have the CSS it needs?
     // We're currently only using getStyles INSIDE the SVG.
 
     // TODO: Don't use refs!
     // Accessing the diagram ref from the state is a little bit of a hack to get panZoom working.
     // Consider refactoring the panZoom to be truly Reactive and not use refs
     return (
-      <div
-        id={`kaavio-container-for-${pathway.id}`}
-        className="kaavioContainer"
-      >
+      <div id={`kaavio-container-for-${pathway.id}`} className="Container">
         <Diagram
           ref={diagram =>
             !this.state.diagramRef && this.setState({ diagramRef: diagram })}

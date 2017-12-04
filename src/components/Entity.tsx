@@ -75,7 +75,7 @@ export class Entity extends React.Component<any, any> {
       <Text
         id={`${id}-text`}
         key={`${id}-text`}
-        className={formatClassNames(type, className, "text-content")}
+        className={formatClassNames(type, className, "textContent")}
         rotation={textRotation}
         {...propsToPassDown}
       />

@@ -1,2 +1,2 @@
-export const kaavioViewport: string;
-export const kaavioTextContent: string;
+export const Viewport: string;
+export const textContent: string;

@@ -147,7 +147,7 @@ export class PanZoom extends React.Component<any, any> {
     this.destroy(); // Destroy the diagram first in case there is one
     let node: SVGElement = ReactDOM.findDOMNode(diagram) as SVGElement;
     const pan = svgPanZoom(node, {
-      viewportSelector: ".kaavioViewport",
+      viewportSelector: ".svg-pan-zoom_viewport",
       controlIconsEnabled: showPanZoomControls,
       fit: true,
       center: true,
