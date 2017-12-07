@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "4.0.0-12",
+  "version": "4.0.0-13",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "dist/index.js",
   "module": "lib/index.js",
