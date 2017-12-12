@@ -254,7 +254,7 @@ export class Entity extends React.Component<any, any> {
         color={color}
         name={textContent}
         transform={entityTransform}
-        typeof={type.join(" ")}
+        typeof={type.map(encodeURI).join(" ")}
       >
         {/*
         // NOTE: recommendation is to only use one metadata child per element,

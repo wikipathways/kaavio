@@ -95,21 +95,6 @@ export class Diagram extends React.Component<any, any> {
     this.state.latestMarkerReferenced = {} as LatestMarkerReferenced;
   }
 
-  /*
-	classNames = (
-		...classNames: (string | string[])[]
-	): string => {
-		const classString = [
-			...map(
-				(className: string) => className,
-				compact(flatten(classNames))
-			)
-		].join(" ");
-
-		return classString;
-	};
-	//*/
-
   getNamespacedIdWithDiagramNamespace = curry(
     (diagramNamespace: string, id: string): string => {
       return normalizeElementId(diagramNamespace + id);
@@ -360,7 +345,8 @@ export class Diagram extends React.Component<any, any> {
         if (target in entityMap && "drawAs" in entityMap[target]) {
           selectorPrefix = `#${target}`;
         } else if (types.indexOf(target) > -1) {
-          selectorPrefix = `[typeof~="${target}"]`;
+          const formattedTarget = formatClassNames(target);
+          selectorPrefix = `.${formattedTarget}`;
         } else if (textContentValues.indexOf(target) > -1) {
           selectorPrefix = `[name="${target}"]`;
         } else {
@@ -375,9 +361,13 @@ export class Diagram extends React.Component<any, any> {
 
         const fill = interpolate("white", color, 0.5);
 
-        return `${nodeSelector},${edgeSelector} {filter: url(#${namespaceFilterId});}
-				${nodeSelector} {fill: ${fill};}
-				`;
+        return `
+${nodeSelector},${edgeSelector} {
+	filter: "url(#${namespaceFilterId})";
+}
+${nodeSelector} {
+	fill: ${fill};
+}`;
       })
       .filter(s => !!s)
       .join("\n");
@@ -406,8 +396,9 @@ export class Diagram extends React.Component<any, any> {
           dangerouslySetInnerHTML={{
             __html: `
 				<![CDATA[
-					${kaavioStyleSVG}
-					${customStyleSVG}
+					${kaavioStyleSVG || ""}
+					${customStyleSVG || ""}
+					${highlightedStyle || ""}
 				]]>
 			`
           }}

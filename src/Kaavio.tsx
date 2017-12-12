@@ -34,6 +34,7 @@ export class Kaavio extends React.Component<any, any> {
 			hide=${hideParam}
 		Setting URL query params to match prop passed to Kaavio class.`);
 
+        const searchParams = new URLSearchParams(location.search);
         searchParams.set("hide", hiddenEntities.join());
 
         history.replaceState(

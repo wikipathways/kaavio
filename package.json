@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "4.0.0-13",
+  "version": "4.0.0-15",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "dist/index.js",
   "module": "lib/index.js",
@@ -39,7 +39,7 @@
     "postinstall-TODO-should-we-keep-this": "npm run placeholders && npm dedupe",
     "prepare-broken": "npm run placeholders && npm run build:dist:node && ./bin/kaavio bundle --build false edges && ./bin/kaavio bundle --build false filters && ./bin/kaavio bundle icons --build false && ./bin/kaavio bundle markers --build false && npm run build && npm run test && npm run expected",
     "prepare": "npm run placeholders && npm run build:dist:node && ./bin/kaavio bundle --build false edges && ./bin/kaavio bundle --build false filters && ./bin/kaavio bundle icons --build false && ./bin/kaavio bundle markers --build false && npm run build",
-    "serve": "webpack-dev-server --config webpack.lib.dev.config.js --open --progress --inline",
+    "serve": "webpack-dev-server --config webpack.browser.dev.config.js --open --progress --inline",
     "start": "npm run serve",
     "expected-broken": "echo 'Setting expected values for tests' && npm-run-all expected:* && echo ok || echo not ok",
     "expected-broken:gpml": "echo \"Converting JSON (from GPML test files) to SVG and generating checksums:\"; source_dirname=./node_modules/\\@wikipathways/gpml/test/2013a; for source_file in $source_dirname/edge-elbow-top2-to-top2.json; do output_file=`echo $source_file | sed s#node_modules/\\@wikipathways/gpml/test/2013a#test/expected/json-from-gpml# | sed 's/\\.json//'`\".svg\"; echo \"$source_file -> $output_file\"; cat \"$source_file\" | bin/kaavio json2svg -s false | tee \"$output_file\" | shasum -p -a 1 > \"$output_file.sha1sum\"; done && echo ok || echo not ok",

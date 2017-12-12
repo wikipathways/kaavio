@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
 
-    <title>Pathvisiojs Simple Built Production Example</title>
+    <title>Pvjs Simple Built Production Example</title>
 
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" media="screen">
 
@@ -50,10 +50,9 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.10.2/typeahead.bundle.min.js"></script>
 
-    <script src="../../lib/kaavio/kaavio-polyfills-dev.bundle.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script src="../../lib/kaavio/kaavio-dev.bundle.js"></script>
+    <script src="../../Kaavio.vanilla.js"></script>
 
     <script src="./js/load.js"></script>
 
@@ -67,6 +66,8 @@
           /* Load pvjs
           /* *******************/
           $(function(){
+
+            /*
             $('#production-container').pvjs({
               fitToContainer: true
               , manualRender: true
@@ -87,47 +88,78 @@
                 'wikipathways-link'
               ]
             })
+            //*/
+            
 
-            // Get first element from array of instances
-            var pathInstance = $('#production-container').pvjs('get').pop()
-
-            // Load plugins
-            pathvisiojsNotifications(pathInstance, {displayErrors: true, displayWarnings: true})
-
-            // Call after render
-            pathInstance.on('rendered', function(){
-              // Initialize Highlighter plugin
-              var hi = pathvisiojsHighlighter(pathInstance)
-
+            //d3.json("http://dev.wikipathways.org/wpi/extensions/GPMLConverter/pvjson.php?identifier=WP710", function(pvjson) {});
+            d3.json("http://localhost:8080/test/playground.json", function(pvjson) {
+              console.log("pvjson");
+              console.log(pvjson);
+              new Kaavio.Kaavio('#production-container', pvjson);
               /*
-              // Highlight by Label
-              hi.highlight('Cholic acid', null, {fill: 'green', stroke: 'green'})
+              $('#production-container').pvjs({
+                fitToContainer: true
+                , manualRender: true
+                , sourceData: parsedInputData.sourceData
+                //, cssUri: srcDirectoryUri + 'css/pathway-diagram.css'
+                //, cssUri: '../src/css/pathway-diagram.css'
+                //, customMarkers: customMarkers
+                //, customSymbols: customSymbols
+                , bridgedbLinkOutsUriStub: 'http://pointer.ucsf.edu/d3/r/data-sources/bridgedb/bridgedb.php/' // optional
+                , bridgedbDatasources: 'http://pointer.ucsf.edu/d3/r/data-sources/bridgedb-datasources.php' // optional
+                , diagramLoadingIconUri: 'http://www.wikipathways.org/wpi/extensions/PathwayViewer/img/loading.gif' // optional
+                , diagramNotAvailableIconUri: 'http://www.wikipathways.org/wpi/extensions/PathwayViewer/img/imageNotAvailable.jpg' // optional
+                , imgDiagramUriStub: 'http://www.wikipathways.org/wpi.php?action=downloadFile&type=png&pwTitle=Pathway:' // optional
+                , pathwaySearchUriStub: 'http://wikipathways.org//index.php?title=Special:SearchPathways&doSearch=1&query=' // optional
+                , highlights: parsedInputData.highlights //optional
+                , hiddenElements: [
+                  'find',
+                  'wikipathways-link'
+                ]
+              })
 
-              // Highlight by xref
-              hi.highlight('xref:HMDB00193', null, {fill: 'blue', stroke: 'blue'})
+              // Get first element from array of instances
+              var pathInstance = $('#production-container').pvjs('get').pop()
+
+              // Load plugins
+              pathvisiojsNotifications(pathInstance, {displayErrors: true, displayWarnings: true})
               //*/
-            })
 
-            // Call renderer
-            pathInstance.render()
+//              // Call after render
+//              pathInstance.on('rendered', function(){
+//                // Initialize Highlighter plugin
+//                var hi = pathvisiojsHighlighter(pathInstance)
+//
+//                /*
+//                // Highlight by Label
+//                hi.highlight('Cholic acid', null, {fill: 'green', stroke: 'green'})
+//
+//                // Highlight by xref
+//                hi.highlight('xref:HMDB00193', null, {fill: 'blue', stroke: 'blue'})
+//                //*/
+//              })
+//
+//              // Call renderer
+//              pathInstance.render()
 
-            // pathInstance.highlight([
-            //   {
-            //     "label": "APC"
-            //   , "style": {
-            //       "fill": "green"
-            //     , "stroke": "green"
-            //     }
-            //   }
-            // , {
-            //     "xref": "HMDB00193,HMDB"
-            //   , "style": {
-            //       "fill": "blue"
-            //     , "stroke": "blue"
-            //     }
-            //   }
-            // ])
-          })
+              // pathInstance.highlight([
+              //   {
+              //     "label": "APC"
+              //   , "style": {
+              //       "fill": "green"
+              //     , "stroke": "green"
+              //     }
+              //   }
+              // , {
+              //     "xref": "HMDB00193,HMDB"
+              //   , "style": {
+              //       "fill": "blue"
+              //     , "stroke": "blue"
+              //     }
+              //   }
+              // ])
+            });
+          });
         });
       });
     </script>

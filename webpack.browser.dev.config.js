@@ -3,10 +3,10 @@ const webpack = require("webpack");
 
 const webpackConfig = require("./webpack.base.config");
 
-webpackConfig.entry = path.resolve(__dirname, "src/index.ts");
+webpackConfig.entry = path.resolve(__dirname, "src/browser.tsx");
 webpackConfig.output = {
   path: path.resolve(__dirname, "dist"),
-  filename: "index.js",
+  filename: "Kaavio.vanilla.js",
   library: "Kaavio",
   libraryTarget: "umd"
 };
