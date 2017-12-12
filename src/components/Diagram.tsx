@@ -3,13 +3,11 @@ import * as ReactDom from "react-dom";
 import {
   assign,
   assignAll,
-  //compact,
   curry,
   defaults,
   defaultsDeep,
   defaultsAll,
   filter,
-  //flatten,
   forOwn,
   isArray,
   isBoolean,
@@ -33,21 +31,10 @@ import {
   GetNamespacedFilterId,
   GetNamespacedMarkerId
 } from "../types";
-/*
-import { Observable } from "rxjs/Observable";
-import "rxjs/add/observable/dom/ajax";
-import "rxjs/add/observable/from";
-import "rxjs/add/observable/of";
-import "rxjs/add/operator/do";
-import "rxjs/add/operator/map";
-import "rxjs/add/operator/mergeMap";
-//*/
-//import { Group } from "./Group";
 import { Entity } from "./Entity";
 import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import { getSVGMarkerReferenceType } from "./Marker/helpers";
-//import * as kaavioStyleSVG from "../kaavioStyleSVG.css";
 const kaavioStyleSVG = require("../kaavioStyleSVG.css");
 import { interpolate } from "../spinoffs/interpolate";
 import { normalizeElementId } from "../utils/normalizeElementId";

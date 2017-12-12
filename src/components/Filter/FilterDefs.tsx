@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { defaults, find, isEmpty, keys, toPairs, values } from "lodash/fp";
+import { defaultsAll, find, isEmpty, keys, toPairs, values } from "lodash/fp";
 import { getSVGReferenceType } from "../../spinoffs/formatSVGReference";
 import { FilterDefsProps, GetNamespacedFilter } from "../../types";
 
@@ -71,11 +71,11 @@ export class FilterDefs extends React.Component<any, any> {
       }, {});
 
     this.state = {
-      defined: defaults(
+      defined: defaultsAll([
         definedFromEntityFilterProperties,
         definedFromBorderStyleDouble,
         definedFromHighlights
-      )
+      ])
     };
   }
 
