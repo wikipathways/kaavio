@@ -1,4 +1,12 @@
+.Viewport {
+  fill: none;
+}
+
 .Viewport .textContent {
   pointer-events: none;
   stroke-width: 0px;
+}
+
+path.Edge {
+  fill: none;
 }

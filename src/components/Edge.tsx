@@ -2,6 +2,7 @@ import { intersection, keys } from "lodash/fp";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { getSVGMarkerReferenceType, MARKER_PROPERTIES } from "./Marker/helpers";
+import { formatClassNames } from "../utils/formatClassNames";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
 import {
   GetNamespacedMarkerId,
@@ -99,7 +100,7 @@ export class Edge extends React.Component<any, any> {
       <path
         id={id}
         key={`${id}-path`}
-        className={type}
+        className={formatClassNames(type)}
         d={d}
         fill={"transparent"}
         stroke={color}
