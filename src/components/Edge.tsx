@@ -103,6 +103,7 @@ export class Edge extends React.Component<any, any> {
         className={formatClassNames(type)}
         d={d}
         fill={"transparent"}
+        fillOpacity="0"
         stroke={color}
         strokeDasharray={strokeDasharray}
         strokeWidth={borderWidth}
