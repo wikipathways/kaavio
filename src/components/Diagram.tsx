@@ -77,10 +77,51 @@ export class Diagram extends React.Component<any, any> {
     this.getNamespacedId = this.getNamespacedIdWithDiagramNamespace(
       diagramNamespace
     );
-    this.state = { ...props };
+    //props.fillOpacity = this.getFillOpacity(props);
+    /*
+    const fillOpacity = this.getFillOpacity(props);
+    if (isNumber(fillOpacity)) {
+      props.fillOpacity = fillOpacity;
+    }
+    //*/
+    this.state = { ...this.setFillOpacity(props) };
     this.state.latestFilterReferenced = {} as LatestFilterReferenced;
     this.state.latestMarkerReferenced = {} as LatestMarkerReferenced;
   }
+
+  public setFillOpacity = props => {
+    const { backgroundColor, fill, fillOpacity } = props;
+    if (isNumber(fillOpacity)) {
+      props.fillOpacity = fillOpacity;
+    } else if (backgroundColor === "transparent" || fill === "transparent") {
+      props.fillOpacity = 0;
+    }
+    return props;
+  };
+
+  /*
+  public getFillOpacity = (props): number | undefined => {
+    const { fill, fillOpacity } = props;
+    if (isNumber(fillOpacity)) {
+      return fillOpacity;
+    } else if (fill === "transparent") {
+      return 0;
+    }
+  };
+	//*/
+
+  /*
+  getPropsWithFillOpacityHandled = (props) => {
+    const { fill } = props;
+	  let fillOpacity;
+    if (props.hasOwnProperty("fillOpacity")) {
+      fillOpacity = props.fillOpacity;
+    } else if (fill === "transparent") {
+      fillOpacity =  0;
+    }
+	  if (isNumber) 
+  };
+	//*/
 
   getNamespacedIdWithDiagramNamespace = curry(
     (diagramNamespace: string, id: string): string => {
@@ -175,6 +216,7 @@ export class Diagram extends React.Component<any, any> {
         "getNamespacedId",
         "getNamespacedMarkerId",
         "getPropsToPassDown",
+        "setFillOpacity",
         "setFilter",
         "setMarker",
         "type"
@@ -201,6 +243,8 @@ export class Diagram extends React.Component<any, any> {
       props,
       inheritedProps
     ]);
+
+    updatedProps = propsToPassDown.setFillOpacity(updatedProps);
 
     if ("height" in props) {
       updatedProps = defaults(BOX_MODEL_DEFAULTS, updatedProps);
@@ -241,9 +285,12 @@ export class Diagram extends React.Component<any, any> {
     );
   };
 
-  componentWillReceiveProps(nextProps) {
+  componentWillReceiveProps(nextPropsRaw) {
     let that = this;
     const prevProps = that.props;
+
+    const nextProps = this.setFillOpacity(nextPropsRaw);
+
     forOwn(function(prop, key) {
       if (key === "filters") {
         that.setState({
@@ -268,7 +315,6 @@ export class Diagram extends React.Component<any, any> {
       getNamespacedMarkerId,
       getPropsToPassDown,
       handleClick,
-      props,
       state
     } = this;
 
@@ -280,7 +326,7 @@ export class Diagram extends React.Component<any, any> {
       hiddenEntities,
       highlightedEntities,
       pathway
-    } = props;
+    } = state;
 
     const {
       backgroundColor,
@@ -395,14 +441,14 @@ ${nodeSelector} {
           <FilterDefs
             getNamespacedFilter={getNamespacedFilter}
             latestFilterReferenced={state.latestFilterReferenced}
-            {...props}
+            {...state}
           />
           <Icons />
           <MarkerDefs
             getNamespacedMarkerId={getNamespacedMarkerId}
             latestMarkerReferenced={state.latestMarkerReferenced}
             markerDrawerMap={markerDrawerMap}
-            {...props}
+            {...state}
           />
         </defs>
 
