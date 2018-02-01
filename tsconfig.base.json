@@ -13,6 +13,7 @@
     "src/types.ts",
     "src/index.ts",
     "src/createJson2SvgCLI.tsx",
+    "src/json2svgForTesting.tsx",
     "src/cli.tsx"
   ],
   "exclude": [

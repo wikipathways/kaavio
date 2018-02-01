@@ -6,6 +6,7 @@ const webpackConfig = require("./webpack.base.config");
 
 webpackConfig.entry = {
   cli: "./src/cli.tsx",
+  json2svgForTesting: "./src/json2svgForTesting.tsx",
   createJson2SvgCLI: "./src/createJson2SvgCLI.tsx"
 };
 webpackConfig.output = {

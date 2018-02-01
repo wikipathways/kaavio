@@ -350,7 +350,7 @@ export class Diagram extends React.Component<any, any> {
 
         return `
 ${nodeSelector},${edgeSelector} {
-	filter: "url(#${namespaceFilterId})";
+	filter: url(#${namespaceFilterId});
 }
 ${nodeSelector} {
 	fill: ${fill};
