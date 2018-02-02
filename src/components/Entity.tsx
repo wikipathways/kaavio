@@ -89,7 +89,7 @@ export class Entity extends React.Component<any, any> {
       drawAs: parentDrawAs,
       edgeDrawerMap,
       entityMap,
-      getPropsToPassDown,
+      createChildProps,
       height,
       kaavioType,
       points,
@@ -134,7 +134,7 @@ export class Entity extends React.Component<any, any> {
       .map(burr => {
         // Even though burr.kaavioType = "Node", we render the Burr as a new Entity.
         // If we just render it a Node, we can't do things like individually highlighting the burr.
-        return <Entity key={burr.id} {...getPropsToPassDown(props, burr)} />;
+        return <Entity key={burr.id} {...createChildProps(props, burr)} />;
       });
   }
 
@@ -184,7 +184,7 @@ export class Entity extends React.Component<any, any> {
       borderWidth,
       color,
       className,
-      getPropsToPassDown,
+      createChildProps,
       height,
       id,
       kaavioType,

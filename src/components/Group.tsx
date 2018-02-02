@@ -16,7 +16,7 @@ export class nodeWithGroup extends React.Component<any, any> {
       highlightedNodes,
       backgroundColor,
       parentBackgroundColor,
-      getPropsToPassDown,
+      createChildProps,
       fillOpacity,
       mergedStyle,
       contains,
@@ -33,7 +33,7 @@ export class nodeWithGroup extends React.Component<any, any> {
           <Entity
             key={entity.id}
             // TODO are these merging ala defaults or what?
-            {...getPropsToPassDown(this.props, entity)}
+            {...createChildProps(this.props, entity)}
           />
         );
       });

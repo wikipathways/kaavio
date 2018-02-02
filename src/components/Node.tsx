@@ -145,7 +145,7 @@ export class Node extends React.Component<any, any> {
 
     if (!!backgroundColor) {
       iconAttributes.fill = backgroundColor;
-      iconAttributes.fillOpacity = fillOpacity || 1;
+      iconAttributes.fillOpacity = isFinite(fillOpacity) ? fillOpacity : 1;
     }
 
     if (!!borderWidth) {

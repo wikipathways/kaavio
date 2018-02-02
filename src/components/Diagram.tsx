@@ -11,7 +11,7 @@ import {
   forOwn,
   isArray,
   isBoolean,
-  isNumber,
+  isFinite,
   isString,
   kebabCase,
   omitBy,
@@ -77,51 +77,21 @@ export class Diagram extends React.Component<any, any> {
     this.getNamespacedId = this.getNamespacedIdWithDiagramNamespace(
       diagramNamespace
     );
-    //props.fillOpacity = this.getFillOpacity(props);
-    /*
-    const fillOpacity = this.getFillOpacity(props);
-    if (isNumber(fillOpacity)) {
-      props.fillOpacity = fillOpacity;
-    }
-    //*/
     this.state = { ...this.setFillOpacity(props) };
     this.state.latestFilterReferenced = {} as LatestFilterReferenced;
     this.state.latestMarkerReferenced = {} as LatestMarkerReferenced;
   }
 
   public setFillOpacity = props => {
+    // TODO are we only using backgroundColor, not fill, for kaavio-formatted JSON?
     const { backgroundColor, fill, fillOpacity } = props;
-    if (isNumber(fillOpacity)) {
-      props.fillOpacity = fillOpacity;
-    } else if (backgroundColor === "transparent" || fill === "transparent") {
+    if (backgroundColor === "transparent" || fill === "transparent") {
       props.fillOpacity = 0;
+    } else if (isFinite(fillOpacity)) {
+      props.fillOpacity = fillOpacity;
     }
     return props;
   };
-
-  /*
-  public getFillOpacity = (props): number | undefined => {
-    const { fill, fillOpacity } = props;
-    if (isNumber(fillOpacity)) {
-      return fillOpacity;
-    } else if (fill === "transparent") {
-      return 0;
-    }
-  };
-	//*/
-
-  /*
-  getPropsWithFillOpacityHandled = (props) => {
-    const { fill } = props;
-	  let fillOpacity;
-    if (props.hasOwnProperty("fillOpacity")) {
-      fillOpacity = props.fillOpacity;
-    } else if (fill === "transparent") {
-      fillOpacity =  0;
-    }
-	  if (isNumber) 
-  };
-	//*/
 
   getNamespacedIdWithDiagramNamespace = curry(
     (diagramNamespace: string, id: string): string => {
@@ -202,7 +172,7 @@ export class Diagram extends React.Component<any, any> {
     }
   };
 
-  getPropsToPassDown = (
+  createChildProps = (
     parentProps: Record<string, any>,
     props: Record<string, any>
   ) => {
@@ -215,7 +185,7 @@ export class Diagram extends React.Component<any, any> {
         "getNamespacedFilterId",
         "getNamespacedId",
         "getNamespacedMarkerId",
-        "getPropsToPassDown",
+        "createChildProps",
         "setFillOpacity",
         "setFilter",
         "setMarker",
@@ -229,7 +199,7 @@ export class Diagram extends React.Component<any, any> {
       .reduce(function(acc, [key, value]) {
         if (!(key in parentProps)) {
           throw new Error(
-            `Error: props.${key} equals "inherit", but parentProps.${key} is missing in getPropsToPassDown(${JSON.stringify(
+            `Error: props.${key} equals "inherit", but parentProps.${key} is missing in createChildProps(${JSON.stringify(
               parentProps
             )}, ${JSON.stringify(props)})`
           );
@@ -313,7 +283,7 @@ export class Diagram extends React.Component<any, any> {
       getNamespacedFilterId,
       getNamespacedId,
       getNamespacedMarkerId,
-      getPropsToPassDown,
+      createChildProps,
       handleClick,
       state
     } = this;
@@ -454,7 +424,7 @@ ${nodeSelector} {
 
         <Entity
           className="Viewport"
-          {...getPropsToPassDown(pseudoParent, pathway)}
+          {...createChildProps(pseudoParent, pathway)}
         />
       </svg>
     );
