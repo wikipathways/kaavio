@@ -2,6 +2,7 @@ import "source-map-support/register";
 
 const fs = require("fs-extra");
 import * as ndjson from "ndjson";
+const JSONStream = require("JSONStream");
 import * as path from "path";
 import { DOMParser } from "xmldom";
 import { Base64 } from "js-base64";
@@ -142,26 +143,6 @@ function pipeToFilepath(inputStream, destPath) {
     });
 }
 
-function build() {
-  console.log("Rebuilding Kaavio (may take some time)...");
-
-  // NOTE: we want to build from the top level of the package.
-  // __dirname is kaavio/src/, even after compilation.
-  // We want either kaavio/ or else PKG-DEPENDING-ON-KAAVIO/
-  const targetCWD = dirs[0];
-
-  const webpackProdConfigPath = path.resolve(
-    targetCWD,
-    path.join(__dirname, "../webpack.lib.prod.config.js")
-  );
-
-  return exec(`webpack --config ${webpackProdConfigPath}`, {
-    cwd: targetCWD
-  })
-    .last()
-    .doto(x => console.log("Build complete."));
-}
-
 const bundleBySelectiveImport = curry(function(
   name,
   inputs,
@@ -224,24 +205,36 @@ function getIconMap(inputs: string[]) {
             }
           ]);
         } else {
+          console.warn("input");
+          console.warn(input);
           // User must have specified an icon map saved as a JSON file.
-          return get(input).through(ndjson.parse()).map(function(iconMap) {
-            return fromPairs(
-              toPairs(iconMap).map(function([key, value]) {
-                const [pathRelativeToJSONFile, id] = value
-                  .replace("file://", "")
-                  .split("#");
-                const pathRelativeToCWD = path.resolve(
-                  path.dirname(input),
-                  pathRelativeToJSONFile
+          return (
+            get(input)
+              .through(JSONStream.parse())
+              //.through(ndjson.parse({ strict: false }))
+              .map(function(iconMap) {
+                console.warn("iconMap");
+                console.warn(iconMap);
+                return fromPairs(
+                  toPairs(iconMap).map(function([key, value]) {
+                    if (value.indexOf("http") === 0) {
+                      return [key, value];
+                    }
+                    const [pathRelativeToJSONFile, id] = value
+                      .replace("file://", "")
+                      .split("#");
+                    const pathRelativeToCWD = path.resolve(
+                      path.dirname(input),
+                      pathRelativeToJSONFile
+                    );
+                    return [
+                      key,
+                      value.replace(pathRelativeToJSONFile, pathRelativeToCWD)
+                    ];
+                  })
                 );
-                return [
-                  key,
-                  value.replace(pathRelativeToJSONFile, pathRelativeToCWD)
-                ];
               })
-            );
-          });
+          );
         }
       })
       .reduce1(function(acc, iconMap) {
@@ -451,16 +444,19 @@ const bundlerMap = {
 
 program
   .command("bundle <whatToBundle> [input...]")
+  .option("-o, --out <string>", `Where to save the bundle.`)
+  /*
   .option(
-    "-b, --build <boolean>",
-    `Automatically rebuild after bundling so changes take effect. Default: true.`,
-    (s: string) => s === "true"
+    "-o, --out <string>",
+    `Where to save the bundle. Default: stdout.`,
+    (s?: string) => !s ? process.stdout : fs.createWriteStream(s)
   )
+//*/
   .option(
     "-p, --preserve-aspect-ratio [name1,name2,name3...]",
     `Preserve original aspect ratio of icon(s).
-		--build: preserve for all icons (notice no value specified)
-		--build name1 name2 name3: preserve for the icon(s) with the specified name(s)
+		-p: preserve for all icons (notice no value specified)
+		-p name1 name2 name3: preserve for the icon(s) with the specified name(s)
 		not specified: don't preserve for any icons (all icons stretch to fit their container)`,
     // NOTE: s below is always a string.
     // If the user specifies true, it comes through as a string, not a boolean.
@@ -471,9 +467,8 @@ program
   .action(function(whatToBundle, inputs: string[], options) {
     console.log(`Bundling ${whatToBundle}...`);
 
-    const buildAutomatically = options.hasOwnProperty("build")
-      ? options.build
-      : true;
+    //const outputStream = options.out;
+
     const preserveAspectRatio =
       options.hasOwnProperty("preserveAspectRatio") &&
       options.preserveAspectRatio;
@@ -489,28 +484,16 @@ program
 
     const bundler = bundlerMap[whatToBundle];
 
-    const bundlePath: string = path.join(
-      __dirname,
-      `../src/drawers/${whatToBundle}/`,
-      `__bundled_dont_edit__.tsx`
-    );
-
     const bundlerStream = bundler(inputs, {
       preserveAspectRatio
     });
 
-    pipeToFilepath(bundlerStream, bundlePath)
+    pipeToFilepath(bundlerStream, options.out)
       .flatMap(function() {
         console.log(`Successfully bundled ${whatToBundle}.`);
 
-        if (buildAutomatically) {
-          return build();
-        } else {
-          console.log(
-            `Rebuild Kaavio to make changes take effect: npm run build`
-          );
-          return hl([]);
-        }
+        console.log(`Rebuild your project to make changes take effect`);
+        return hl([]);
       })
       .errors(function(err) {
         console.error(err);
@@ -532,20 +515,16 @@ program
 			##################
 
 			Include all built-ins:
-			$ kaavio bundle markers
+			$ kaavio bundle markers -o ./src/drawers/MarkerBundle.tsx
 
 			Include only selected built-ins:
-			$ kaavio bundle markers Arrow TBar
+			$ kaavio bundle markers Arrow TBar -o ./src/drawers/MarkerBundle.tsx
 
 			################
 			# Bundle icons #
 			################
 
-			Include all built-ins:
-			$ kaavio bundle icons
-
-			Include only selected built-ins:
-			$ kaavio bundle icons Ellipse Rectangle
+			$ kaavio bundle icons Ellipse=./src/drawers/icons/Ellipse.svg -o ./src/drawers/icons/IconBundle.tsx
 
 			You can also use external SVG icons sources, such as:
 				https://commons.wikimedia.org/wiki/Category:SVG_icons
@@ -553,41 +532,51 @@ program
 				https://useiconic.com/open
 				https://thenounproject.com/term/biology/1130/
 				https://www.flaticon.com/free-icons/biology_23352
-				http://cdkdepict-openchem.rhcloud.com/depict.html
-					Use BridgeDb to get the SMILES string:
-					http://webservice.bridgedb.org/Human/attributes/Ch/HMDB00161?attrName=SMILES
+				
+				http://www.simolecule.com/cdkdepict/depict.html -- You can use BridgeDb to get the SMILES string, e.g.:
+
+					curl http://webservice.bridgedb.org/Human/attributes/Ch/HMDB00161?attrName=SMILES
+					=> CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C
+
+					Then append the SMILES string to "http://www.simolecule.com/cdkdepict/depict/bow/svg?smi=" to get
+					http://www.simolecule.com/cdkdepict/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C
+
 
 			Note that most SVG glyph sets expect a fill color but not a stroke.
 
-			Include a built-in icon and one from Wikimedia (the hash and value
-				"#ic_check_box_outline_blank_24px" after the Wikimedia URL means we
-				want to use the element with id "ic_check_box_outline_blank_24px"
-				from INSIDE the SVG specified by the URL):
-			$ kaavio bundle icons Ellipse \\
-				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px
+			Bundle a local icon and a remote one
 
-			Include all built-ins, but override the ones for Brace, Ellipse,
-				Mitochondria and RoundedRectangle.
-				Set wikidata:Q218642 (L-Alanine) and Mitochondria to retain their original aspect ratios.
-			$ kaavio bundle icons '*' Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg \\
+				$ kaavio bundle icons Ellipse=./src/drawers/icons/Ellipse.svg \\
+				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
+				-o ./src/drawers/icons/IconBundle.tsx
+
+				Note: the hash and value "#ic_check_box_outline_blank_24px" after the Wikimedia
+				URL means we want to use the element with id "ic_check_box_outline_blank_24px"
+				from INSIDE the SVG specified by the URL.
+
+			Bundle several icons, setting two of them to retain their original aspect ratios
+
+				$ kaavio bundle icons Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg \\
 				Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg \\
 				Mitochondria=http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg \\
 				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
-				wikidata:Q218642="http://cdkdepict-openchem.rhcloud.com/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \\
+				wikidata:Q218642="http://www.simolecule.com/cdkdepict/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \\
 				--preserve-aspect-ratio=wikidata:Q218642 Mitochondria
+				-o ./src/drawers/icons/IconBundle.tsx
 
-			Include the icons specified in an icon map JSON file:
-			$ kaavio bundle icons ./src/drawers/icons/defaultIconMap.json
+			Bundle icons as specified in an icon map JSON file:
+
+				$ kaavio bundle icons ./src/drawers/icons/defaultIconMap.json -o ./src/drawers/icons/IconBundle.tsx
 
 			################
 			# Bundle edges #
 			################
 
 			Include all built-ins:
-			$ kaavio bundle edges
+			$ kaavio bundle edges -o ./src/drawers/EdgeBundle.tsx
 
 			Include only selected built-ins:
-			$ kaavio bundle edges StraightLine CurvedLine ElbowLine SegmentedLine
+			$ kaavio bundle edges StraightLine CurvedLine ElbowLine SegmentedLine -o ./src/drawers/EdgeBundle.tsx
 							`);
     // also allowed:
     //console.log("    $ kaavio bundle markers '*'");
@@ -599,7 +588,7 @@ program
 				Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg \
 				Mitochondria="http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg" \
 				RoundedRectangle="https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px" \
-				wikidata:Q218642="http://cdkdepict-openchem.rhcloud.com/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \
+				wikidata:Q218642="http://www.simolecule.com/cdkdepict/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \
 				--preserve-aspect-ratio=wikidata:Q218642 Mitochondria
 //*/
     //

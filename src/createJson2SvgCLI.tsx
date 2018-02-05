@@ -4,7 +4,7 @@ import * as ndjson from "ndjson";
 import * as path from "path";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
 
-import { defaults, uniq, values } from "lodash/fp";
+import { defaults, keys, toPairs, uniq, values } from "lodash/fp";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -34,13 +34,6 @@ const dirs = uniq(
     .filter(p => !!p)
     .map(p => p.replace(/package\.json$/, ""))
 );
-/*
-console.log(`__dirname: ${__dirname}`);
-console.log(`pathToParent0: ${pathToParent0}`);
-console.log(`pathToParent1: ${pathToParent1}`);
-console.log("dirs");
-console.log(dirs);
-//*/
 
 const fs = require("fs-extra");
 const readdir = hl.wrapCallback(fs.readdir);
@@ -83,186 +76,253 @@ function pipeToFilepath(inputStream, destPath) {
     });
 }
 
-export function createJson2SvgCLI(name, drawers: Record<string, any> = {}) {
-  const {
-    edgeDrawerMap,
-    filterDrawerMap,
-    markerDrawerMap,
-    customStyleSVG,
-    Icons
-  } = defaults(
-    {
-      edgeDrawerMap: edgeDrawerMapDefault,
-      filterDrawerMap: filterDrawerMapDefault,
-      markerDrawerMap: markerDrawerMapDefault,
-      Icons: IconsDefault
-    },
-    drawers
-  );
+export type Theme = Record<string, any>;
+export function createJson2SvgCLI(name, themesRaw: Theme | Theme[] = {}) {
+  const themes: Theme[] = arrayify(themesRaw);
 
   program
     .version(npmPackage.version)
-    .description(`Run ${name} from the command line.`);
-
-  program
-    .command("json2svg [inputPath] [outputPath]")
-    .description("Convert Kaavio-formatted JSON into SVG")
-    .option(
-      "-s, --static [boolean]",
-      "Exclude extra DOM attributes, such as data-reactid, that React uses internally. Default: true",
-      (s: string) => ["", "true"].indexOf(s) > -1
+    .description(
+      `Convert Kaavio-formatted JSON to SVG by running ${name} from the command line.`
+    )
+    .arguments("[source] [target]")
+    .usage(
+      "[source] [target]. If specified, must be a filepath. Default: standard in and standard out for source and target, respectively."
     )
     .option(
-      "--hide [target1,target2,target3...]",
+      "--hide target[,target...]",
       `Specify entities to hide. 
+
 			target: entity id, type or textContent
 
 			Examples:
 				--hide b99fe
 				--hide b99fe,abd6e
 				--hide ensembl:ENSG00000124762
-				--hide b99fe,ensembl:ENSG00000124762`
+				--hide b99fe,ensembl:ENSG00000124762`,
+      (argValue: string) => {
+        return argValue
+          .split(",")
+          .filter(x => x !== "")
+          .map(decodeURIComponent);
+      },
+      []
     )
     .option(
-      "--highlight [color=target1,target2,target3]",
+      "--highlight target[=color][,target[=color],...]",
       `Specify entities to highlight.
-			To use multiple colors, you can specify multiple "--highlight" options.
+
+			target: entity id or typeof value
 
 			color: hex value or CSS/SVG color keyword
 				<https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#Color_keywords>
-			target: entity id or typeof value
+				Default: yellow
 
 			If target contains a comma, you must URL encode it, e.g.,
 				mytext,moretext => mytext%2Cmoretext
 
 			Examples:
-				--highlight red=b99fe
-				--highlight ff000=b99fe
-				--highlight "#ff000=b99fe"
-				--highlight red=b99fe,abd6e
-				--highlight red=ensembl:ENSG00000124762
-				--highlight red=b99fe,ensembl:ENSG00000124762
-				--highlight 66c2a5=b99fe --highlight 8da0cb=ensembl:ENSG00000124762`,
-      (s: string, acc) => {
-        const [color, targetString] = s.split(/=/);
-        acc.push({
-          color,
-          targets: targetString.split(",").map(decodeURIComponent)
-        });
-        return acc;
+				--highlight b99fe
+				--highlight b99fe=red
+				--highlight b99fe=ff000
+				--highlight "b99fe=#ff000"
+				--highlight b99fe=red,abd6e=red
+				--highlight ensembl:ENSG00000124762=red
+				--highlight b99fe,ensembl:ENSG00000124762=red
+				--highlight b99fe=red,ensembl:ENSG00000124762=red
+				--highlight b99fe=66c2a5,ensembl:ENSG00000124762=8da0cb`,
+      (argValue: string) => {
+        return argValue
+          .split(",")
+          .filter(x => x !== "")
+          .map(function(chunk: string) {
+            const [rawTarget, rawColor = "yellow"] = chunk.split(/=/);
+            let color;
+            if (Validator.isColor(rawColor)) {
+              color = Parser.parseColor(rawColor);
+            } else {
+              const colorSecondTry = "#" + rawColor;
+              if (Validator.isColor(colorSecondTry)) {
+                color = Parser.parseColor(colorSecondTry);
+              } else {
+                throw new Error(
+                  `
+							Could not parse provided highlight color ${rawColor}
+							`
+                );
+              }
+            }
+            return {
+              target: decodeURIComponent(rawTarget),
+              color: color || "yellow"
+            };
+          });
       },
       []
     )
-    .action(function(inputPath, outputPath, optionsRaw) {
-      const options = defaults(
-        {
-          static: true,
-          hide: [],
-          highlight: []
-        },
-        optionsRaw
-      );
-      const { static: staticMarkup, hide, highlight } = options;
-      const hiddenEntities = arrayify(hide);
-      const highlightedEntities = arrayify(highlight).reduce(function(
-        acc,
-        { color: rawColor, targets }
-      ) {
-        let color;
-        if (Validator.isColor(rawColor)) {
-          color = Parser.parseColor(rawColor);
-        } else {
-          const colorSecondTry = "#" + rawColor;
-          if (Validator.isColor(colorSecondTry)) {
-            color = Parser.parseColor(colorSecondTry);
-          } else {
-            throw new Error(
-              `
-							Could not parse provided highlight color ${rawColor}
-							`
-            );
-          }
-        }
-        targets.forEach(function(target) {
-          acc.push({ target, color: color.hex });
-        });
-        return acc;
-      }, []);
+    .option(
+      "--react",
+      /* When specified, we call ReactDOM.renderToString instead of ReactDOM.renderToStaticMarkup. */
+      "Include DOM attributes that React uses internally, like data-reactid."
+    );
 
-      const render = staticMarkup ? renderToStaticMarkup : renderToString;
-      const inputStream = !!inputPath
-        ? fs.createReadStream(inputPath)
-        : process.stdin;
-      const outputStream = !!outputPath
-        ? fs.createWriteStream(outputPath)
-        : process.stdout;
+  const defaultThemeName = themes[0].name || "default";
+  const themeMap = themes.reduce(function(acc, theme) {
+    /*
+    const {
+      edgeDrawerMap,
+      filterDrawerMap,
+      markerDrawerMap,
+      style,
+      Icons
+    } = defaults(
+      {
+        edgeDrawerMap: edgeDrawerMapDefault,
+        filterDrawerMap: filterDrawerMapDefault,
+        markerDrawerMap: markerDrawerMapDefault,
+        Icons: IconsDefault
+      },
+      theme
+    );
+	  //*/
+    const { name: themeName = defaultThemeName } = theme;
+    if (acc.hasOwnProperty(themeName)) {
+      if (!theme.hasOwnProperty("name")) {
+        throw new Error(
+          `Theme is missing property "name" (optional for first theme; required for the rest).`
+        );
+      } else {
+        throw new Error(`Multiple themes specified with name "${themeName}"`);
+      }
+    }
+    acc[themeName] = defaults(
+      {
+        edgeDrawerMap: edgeDrawerMapDefault,
+        filterDrawerMap: filterDrawerMapDefault,
+        markerDrawerMap: markerDrawerMapDefault,
+        Icons: IconsDefault
+      },
+      theme
+    );
+    return acc;
+  }, {});
 
-      hl(inputStream)
-        .through(ndjson.parse())
-        //      .flatMap(function(input) {
-        //        const entitiesWithText = values(input.entityMap).filter(entity =>
-        //          entity.hasOwnProperty("textContent")
-        //        );
-        //        const fontFamilies = compact(
-        //          uniq(
-        //            entitiesWithText.map(
-        //              (entity: Record<string, any>) => entity.fontFamily
-        //            )
-        //          )
-        //        );
-        //
-        //        /* this was an older version
-        //        return hl(nodeTextSizer.loadWrapprMap(fontFamilies)).map(function(
-        //          wrapprMap
-        //        ) {
-        //          entitiesWithText.forEach(function(entity: Record<string, any>) {
-        //            const {
-        //              fontFamily,
-        //              fontSize,
-        //              textContent,
-        //              width,
-        //              padding
-        //            } = entity;
-        //            var lines = wrapprMap[fontFamily].wrap(
-        //              textContent,
-        //              fontSize,
-        //              width - padding
-        //            );
-        //            console.log("lines");
-        //            console.log(lines);
-        //          });
-        //
-        //          return input;
-        //        });
-        //				//*/
-        //
-        //        return hl(
-        //          nodeTextSizer.loadOpentypeLayoutMap(fontFamilies)
-        //        ).map(function(opentypeLayoutMap) {
-        //          entitiesWithText.forEach(function(entity: Record<string, any>) {
-        //            const {
-        //              fontFamily,
-        //              fontSize,
-        //              textContent,
-        //              width,
-        //              padding
-        //            } = entity;
-        //            console.log(`trying to use opentypeLayoutMap[${fontFamily}]`);
-        //            console.log(opentypeLayoutMap);
-        //            var lines = opentypeLayoutMap[fontFamily](textContent, {
-        //              //fontSize,
-        //              width: width - padding
-        //            });
-        //            console.log("lines");
-        //            console.log(lines);
-        //          });
-        //
-        //          return input;
-        //        });
-        //      })
-        .map(function(input) {
-          //return render(<div id="wow" />);
-          /*
+  const themeNames = keys(themeMap);
+
+  if (themeNames.length > 1) {
+    program.option("--theme [name]", `Available: ${themeNames.join(", ")}`);
+  }
+
+  program.on("--help", function() {
+    console.log(`
+				Examples:
+
+				Convert Kaavio-formatted JSON into SVG:
+				$ ${name} WP100.json WP100.svg
+
+				Convert streaming:
+				$ cat WP100.json | ${name} > WP100.svg
+
+				Convert streaming w/ pretty output:
+				$ cat WP100.json | ${name} | xmllint --pretty 2 - | pygmentize -O encoding=UTF-8 -l xml
+				`);
+  });
+
+  program.parse(process.argv);
+
+  const [source, target] = program.args;
+
+  if (["-", "/dev/stdin"].indexOf(source) > -1) {
+    console.warn(
+      "To use standard in as source, just don't specify a [source]."
+    );
+  }
+
+  if (["-", "/dev/stdout"].indexOf(target) > -1) {
+    console.warn(
+      "To use standard out as target, just don't specify a [target]."
+    );
+  }
+
+  const inputStream = !source ? process.stdin : fs.createReadStream(source);
+  const outputStream = !target ? process.stdout : fs.createWriteStream(target);
+
+  // If stdin not being piped to json2svg and no source arg specified, output help.
+  if (process.stdin.isTTY && !inputStream) program.help();
+
+  const render = program.react ? renderToString : renderToStaticMarkup;
+  const { hide, highlight, theme: themeName = defaultThemeName } = program;
+  const hiddenEntities = arrayify(hide);
+  const highlightedEntities = arrayify(highlight);
+
+  const {
+    edgeDrawerMap,
+    filterDrawerMap,
+    markerDrawerMap,
+    style,
+    Icons
+  } = themeMap[themeName];
+
+  hl(inputStream)
+    .through(ndjson.parse())
+    //      .flatMap(function(input) {
+    //        const entitiesWithText = values(input.entityMap).filter(entity =>
+    //          entity.hasOwnProperty("textContent")
+    //        );
+    //        const fontFamilies = compact(
+    //          uniq(
+    //            entitiesWithText.map(
+    //              (entity: Record<string, any>) => entity.fontFamily
+    //            )
+    //          )
+    //        );
+    //
+    //        /* this was an older version
+    //        return hl(nodeTextSizer.loadWrapprMap(fontFamilies)).map(function(
+    //          wrapprMap
+    //        ) {
+    //          entitiesWithText.forEach(function(entity: Record<string, any>) {
+    //            const {
+    //              fontFamily,
+    //              fontSize,
+    //              textContent,
+    //              width,
+    //              padding
+    //            } = entity;
+    //            var lines = wrapprMap[fontFamily].wrap(
+    //              textContent,
+    //              fontSize,
+    //              width - padding
+    //            );
+    //          });
+    //
+    //          return input;
+    //        });
+    //				//*/
+    //
+    //        return hl(
+    //          nodeTextSizer.loadOpentypeLayoutMap(fontFamilies)
+    //        ).map(function(opentypeLayoutMap) {
+    //          entitiesWithText.forEach(function(entity: Record<string, any>) {
+    //            const {
+    //              fontFamily,
+    //              fontSize,
+    //              textContent,
+    //              width,
+    //              padding
+    //            } = entity;
+    //            var lines = opentypeLayoutMap[fontFamily](textContent, {
+    //              //fontSize,
+    //              width: width - padding
+    //            });
+    //          });
+    //
+    //          return input;
+    //        });
+    //      })
+    .map(function(input) {
+      //return render(<div id="wow" />);
+      /*
           return render(
             <Diagram
               customStyle={customStyle}
@@ -278,69 +338,47 @@ export function createJson2SvgCLI(name, drawers: Record<string, any> = {}) {
           );
 				  //*/
 
-          //            React.createElement(
-          //              Diagram,
-          //              {
-          //                customStyle,
-          //                edgeDrawerMap,
-          //                filterDrawerMap,
-          //                Icons,
-          //                markerDrawerMap,
-          //                pathway: input.pathway,
-          //                entityMap: input.entityMap,
-          //                /*
-          //								id: input.pathway.id,
-          //								backgroundColor: input.pathway.backgroundColor,
-          //								height: input.pathway.height,
-          //								name: input.pathway.height,
-          //								width: input.pathway.width,
-          //								//*/
-          //                highlightedEntities,
-          //                hiddenEntities
-          //              },
-          //              null
-          //            )
+      //            React.createElement(
+      //              Diagram,
+      //              {
+      //                customStyle,
+      //                edgeDrawerMap,
+      //                filterDrawerMap,
+      //                Icons,
+      //                markerDrawerMap,
+      //                pathway: input.pathway,
+      //                entityMap: input.entityMap,
+      //                /*
+      //								id: input.pathway.id,
+      //								backgroundColor: input.pathway.backgroundColor,
+      //								height: input.pathway.height,
+      //								name: input.pathway.height,
+      //								width: input.pathway.width,
+      //								//*/
+      //                highlightedEntities,
+      //                hiddenEntities
+      //              },
+      //              null
+      //            )
 
-          return render(
-            <Diagram
-              customStyleSVG={customStyleSVG}
-              edgeDrawerMap={edgeDrawerMap}
-              filterDrawerMap={filterDrawerMap}
-              Icons={Icons}
-              markerDrawerMap={markerDrawerMap}
-              pathway={input.pathway}
-              entityMap={input.entityMap}
-            />
-          );
-        })
-        .errors(function(err) {
-          console.error("err");
-          console.error(err);
-          process.exitCode = 1;
-        })
-        .pipe(outputStream);
+      return render(
+        <Diagram
+          customStyleSVG={style}
+          edgeDrawerMap={edgeDrawerMap}
+          filterDrawerMap={filterDrawerMap}
+          Icons={Icons}
+          markerDrawerMap={markerDrawerMap}
+          pathway={input.pathway}
+          entityMap={input.entityMap}
+        />
+      );
     })
-    .on("--help", function() {
-      console.log(`
-				Examples:
-
-				Convert Kaavio-formatted JSON into SVG:
-				$ ${name} json2svg WP100.json WP100.svg
-
-				Convert streaming:
-				$ cat WP100.json | ${name} json2svg > WP100.svg
-
-				Convert streaming w/ pretty output:
-				$ cat ../bulk-gpml2pvjson/unified/WP100.json | ./bin/${name} json2svg | xmllint --pretty 2 - | pygmentize -O encoding=UTF-8 -l xml
-				`);
-    });
-
-  program.parse(process.argv);
-
-  // If no command is specified, output help.
-  if (!process.argv.slice(2).length) {
-    program.outputHelp();
-  }
+    .errors(function(err) {
+      console.error("err");
+      console.error(err);
+      process.exitCode = 1;
+    })
+    .pipe(outputStream);
 }
 
 /*
@@ -357,6 +395,6 @@ hl(source).map(x => hl([x]))
 //*/
 
 /*
-./bin/kaavio json2svg ./WP4.json 
-cat ../gpml2pvjson-js/test/input/playground.gpml | ../gpml2pvjson-js/bin/gpml2pvjson | ./bin/kaavio json2svg > output.svg
+./bin/kaavio ./WP4.json 
+cat ../gpml2pvjson-js/test/input/playground.gpml | ../gpml2pvjson-js/bin/gpml2pvjson | ./bin/kaavio > output.svg
 //*/
