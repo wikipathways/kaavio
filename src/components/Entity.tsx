@@ -199,6 +199,9 @@ export class Entity extends React.Component<any, any> {
 
     //const childProps = omit("className", props);
     const childProps = props;
+    if (childProps.type.indexOf(kaavioType) === -1) {
+      childProps.type.push(kaavioType);
+    }
 
     // Anders: I think it's best to be explicit. Instead of using components[kaavioType] do this.
     // I know it's a bit redundant but in this case I think it aids comprehension

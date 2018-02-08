@@ -4,14 +4,13 @@ import * as ndjson from "ndjson";
 import * as path from "path";
 import { renderToStaticMarkup, renderToString } from "react-dom/server";
 
-import { defaults, keys, toPairs, uniq, values } from "lodash/fp";
+import { defaults, defaultsDeep, keys, toPairs, uniq, values } from "lodash/fp";
 
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 // TODO why doesn't "import * as name" work with Webpack for the following packages?
 const hl = require("highland");
-const parent = require("parent-package-json");
 import { Parser, Validator } from "collit";
 const program = require("commander");
 const VError = require("verror");
@@ -21,22 +20,12 @@ import { Diagram } from "./components/Diagram";
 import * as edgeDrawerMapDefault from "./drawers/edges/index";
 import * as filterDrawerMapDefault from "./drawers/filters/index";
 import * as markerDrawerMapDefault from "./drawers/markers/index";
-import { Icons as IconsDefault } from "./drawers/icons/__bundled_dont_edit__";
 
 import { arrayify } from "./spinoffs/jsonld-utils";
 
-const npmPackage = require("../package.json");
-//const exec = hl.wrapCallback(require("child_process").exec);
-const pathToParent0 = parent(__dirname) ? parent(__dirname).path : false;
-const pathToParent1 = parent(__dirname, 1) ? parent(__dirname, 1).path : false;
-const dirs = uniq(
-  [pathToParent1 || pathToParent0 || path.join(__dirname, "..")]
-    .filter(p => !!p)
-    .map(p => p.replace(/package\.json$/, ""))
-);
+const KaavioNPMPackage = require("../package.json");
 
 const fs = require("fs-extra");
-const readdir = hl.wrapCallback(fs.readdir);
 const ensureFile = hl.wrapCallback(fs.ensureFile);
 const readFile = hl.wrapCallback(fs.readFile);
 
@@ -77,13 +66,17 @@ function pipeToFilepath(inputStream, destPath) {
 }
 
 export type Theme = Record<string, any>;
-export function createJson2SvgCLI(name, themesRaw: Theme | Theme[] = {}) {
+export function createJson2SvgCLI(
+  { name, version },
+  themesRaw: Theme | Theme[] = {}
+) {
   const themes: Theme[] = arrayify(themesRaw);
 
   program
-    .version(npmPackage.version)
+    .version(version)
     .description(
-      `Convert Kaavio-formatted JSON to SVG by running ${name} from the command line.`
+      `Convert Kaavio-formatted JSON to SVG by running ${name} from the command line.
+	${name}, version ${version}, built on version ${KaavioNPMPackage.version} of Kaavio.`
     )
     .arguments("[source] [target]")
     .usage(
@@ -168,23 +161,6 @@ export function createJson2SvgCLI(name, themesRaw: Theme | Theme[] = {}) {
 
   const defaultThemeName = themes[0].name || "default";
   const themeMap = themes.reduce(function(acc, theme) {
-    /*
-    const {
-      edgeDrawerMap,
-      filterDrawerMap,
-      markerDrawerMap,
-      style,
-      Icons
-    } = defaults(
-      {
-        edgeDrawerMap: edgeDrawerMapDefault,
-        filterDrawerMap: filterDrawerMapDefault,
-        markerDrawerMap: markerDrawerMapDefault,
-        Icons: IconsDefault
-      },
-      theme
-    );
-	  //*/
     const { name: themeName = defaultThemeName } = theme;
     if (acc.hasOwnProperty(themeName)) {
       if (!theme.hasOwnProperty("name")) {
@@ -199,8 +175,7 @@ export function createJson2SvgCLI(name, themesRaw: Theme | Theme[] = {}) {
       {
         edgeDrawerMap: edgeDrawerMapDefault,
         filterDrawerMap: filterDrawerMapDefault,
-        markerDrawerMap: markerDrawerMapDefault,
-        Icons: IconsDefault
+        markerDrawerMap: markerDrawerMapDefault
       },
       theme
     );
@@ -255,13 +230,17 @@ export function createJson2SvgCLI(name, themesRaw: Theme | Theme[] = {}) {
   const hiddenEntities = arrayify(hide);
   const highlightedEntities = arrayify(highlight);
 
+  const theme = themeMap[themeName];
+
+  /*
   const {
     edgeDrawerMap,
     filterDrawerMap,
     markerDrawerMap,
-    style,
-    Icons
-  } = themeMap[themeName];
+    customSVGStyle,
+    Defs
+  } = theme;
+	//*/
 
   hl(inputStream)
     .through(ndjson.parse())
@@ -321,57 +300,25 @@ export function createJson2SvgCLI(name, themesRaw: Theme | Theme[] = {}) {
     //        });
     //      })
     .map(function(input) {
-      //return render(<div id="wow" />);
+      const props = defaultsDeep(input, theme);
       /*
-          return render(
-            <Diagram
-              customStyle={customStyle}
-              edgeDrawerMap={edgeDrawerMap}
-              filterDrawerMap={filterDrawerMap}
-              Icons={Icons}
-              markerDrawerMap={markerDrawerMap}
-              pathway={input.pathway}
-              entityMap={input.entityMap}
-              highlightedEntities={highlightedEntities}
-              hiddenEntities={hiddenEntities}
-            />
-          );
-				  //*/
-
-      //            React.createElement(
-      //              Diagram,
-      //              {
-      //                customStyle,
-      //                edgeDrawerMap,
-      //                filterDrawerMap,
-      //                Icons,
-      //                markerDrawerMap,
-      //                pathway: input.pathway,
-      //                entityMap: input.entityMap,
-      //                /*
-      //								id: input.pathway.id,
-      //								backgroundColor: input.pathway.backgroundColor,
-      //								height: input.pathway.height,
-      //								name: input.pathway.height,
-      //								width: input.pathway.width,
-      //								//*/
-      //                highlightedEntities,
-      //                hiddenEntities
-      //              },
-      //              null
-      //            )
-
+      console.warn("props");
+      console.warn(JSON.stringify(props, null, "  "));
+	    //*/
+      return render(<Diagram {...props} />);
+      /*
       return render(
         <Diagram
-          customStyleSVG={style}
+          customSVGStyle={customSVGStyle}
           edgeDrawerMap={edgeDrawerMap}
           filterDrawerMap={filterDrawerMap}
-          Icons={Icons}
+          Defs={Defs}
           markerDrawerMap={markerDrawerMap}
           pathway={input.pathway}
           entityMap={input.entityMap}
         />
       );
+	    //*/
     })
     .errors(function(err) {
       console.error("err");
@@ -380,21 +327,3 @@ export function createJson2SvgCLI(name, themesRaw: Theme | Theme[] = {}) {
     })
     .pipe(outputStream);
 }
-
-/*
-hl(source).map(x => hl([x]))
-.each(function(jsonStream) {
-  jsonStream
-    .errors(function(err) {
-      console.error(err);
-      process.exit(1);
-    })
-    .map(x => String(x))
-    .pipe(process.stdout);
-});
-//*/
-
-/*
-./bin/kaavio ./WP4.json 
-cat ../gpml2pvjson-js/test/input/playground.gpml | ../gpml2pvjson-js/bin/gpml2pvjson | ./bin/kaavio > output.svg
-//*/

@@ -93,8 +93,8 @@ import { Kaavio } from "./Kaavio";
       edgeDrawerMap,
       filterDrawerMap,
       markerDrawerMap,
-      customStyleSVG,
-      Icons,
+      customSVGStyle,
+      Defs,
       showPanZoomControls = true,
       panZoomLocked = false
     } = this.props;

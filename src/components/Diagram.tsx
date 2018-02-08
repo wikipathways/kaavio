@@ -35,7 +35,7 @@ import { Entity } from "./Entity";
 import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import { getSVGMarkerReferenceType } from "./Marker/helpers";
-const kaavioStyleSVG = require("../kaavioStyleSVG.css");
+const kaavioSVGStyle = require("../kaavioSVGStyle.css");
 import { interpolate } from "../spinoffs/interpolate";
 import { normalizeElementId } from "../utils/normalizeElementId";
 
@@ -57,7 +57,7 @@ export class Diagram extends React.Component<any, any> {
   getNamespacedId: GetNamespacedId;
   constructor(props) {
     super(props);
-    const { customStyleSVG, filterDrawerMap, pathway } = props;
+    const { customSVGStyle, filterDrawerMap, pathway } = props;
     this.filterDrawerMap = filterDrawerMap;
 
     const { id } = pathway;
@@ -289,8 +289,8 @@ export class Diagram extends React.Component<any, any> {
     } = this;
 
     const {
-      customStyleSVG,
-      Icons,
+      customSVGStyle,
+      Defs,
       markerDrawerMap,
       entityMap,
       hiddenEntities,
@@ -399,8 +399,8 @@ ${nodeSelector} {
           dangerouslySetInnerHTML={{
             __html: `
 				<![CDATA[
-					${kaavioStyleSVG || ""}
-					${customStyleSVG || ""}
+					${kaavioSVGStyle || ""}
+					${customSVGStyle || ""}
 					${highlightedStyle || ""}
 				]]>
 			`
@@ -413,7 +413,7 @@ ${nodeSelector} {
             latestFilterReferenced={state.latestFilterReferenced}
             {...state}
           />
-          <Icons />
+          <Defs />
           <MarkerDefs
             getNamespacedMarkerId={getNamespacedMarkerId}
             latestMarkerReferenced={state.latestMarkerReferenced}

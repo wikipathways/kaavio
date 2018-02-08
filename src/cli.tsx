@@ -33,7 +33,6 @@ import { Parser, Validator } from "collit";
 const hl = require("highland");
 const isVarName = require("is-valid-var-name");
 const getit = require("getit");
-const parent = require("parent-package-json");
 const program = require("commander");
 const urlRegex = require("url-regex");
 const validDataUrl = require("valid-data-url");
@@ -42,39 +41,9 @@ const VError = require("verror");
 import { Diagram } from "./components/Diagram";
 import { arrayify } from "./spinoffs/jsonld-utils";
 
-/*
-const iconPath = process.env.KAAVIO_ICONS;
-if (!iconPath) {
-  throw new Error("Missing KAAVIO_ICONS. Please set in .profile.");
-}
-console.log("iconPath");
-console.log(iconPath);
-//*/
-
 const npmPackage = require("../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
-const pathToParent0 = parent(__dirname) ? parent(__dirname).path : false;
-const pathToParent1 = parent(__dirname, 1) ? parent(__dirname, 1).path : false;
-const dirs = uniq(
-  [pathToParent1 || pathToParent0 || path.join(__dirname, "..")]
-    .filter(p => !!p)
-    .map(p => p.replace(/package\.json$/, ""))
-);
-/*
-console.log(`__dirname: ${__dirname}`);
-console.log(`pathToParent0: ${pathToParent0}`);
-console.log(`pathToParent1: ${pathToParent1}`);
-console.log("dirs");
-console.log(dirs);
-//*/
 
-const BUILTIN_ICONS_DIR = path.join(__dirname, "../src/drawers/icons/");
-const ICONS_BUNDLE_PATH = path.join(
-  BUILTIN_ICONS_DIR,
-  "__bundled_dont_edit__.tsx"
-);
-
-const readdir = hl.wrapCallback(fs.readdir);
 const ensureFile = hl.wrapCallback(fs.ensureFile);
 const readFile = hl.wrapCallback(fs.readFile);
 
@@ -175,72 +144,54 @@ const bundleBySelectiveImport = curry(function(
   return hl([bundledDrawerCode]);
 });
 
-function getIconMap(inputs: string[]) {
-  return readdir(BUILTIN_ICONS_DIR).flatMap(function(filenames) {
-    const allLocalIconNames = filenames
-      .filter(filename => filename.slice(-4) === ".svg")
-      .map(filename => filename.slice(0, -4));
-
-    if (isEmpty(inputs)) {
-      inputs = allLocalIconNames;
-    } else if (inputs[0] === "*") {
-      inputs = union(allLocalIconNames, inputs.slice(1));
-    }
-
-    return hl(uniq(inputs))
-      .flatMap(function(input) {
-        if (allLocalIconNames.indexOf(input) > -1) {
-          return hl([
-            {
-              [input]: `file://${BUILTIN_ICONS_DIR}${input}.svg#${input}`
-            }
-          ]);
-        } else if (input.indexOf("=") > -1) {
-          const inputParts = input.split("=");
-          const iconName = inputParts[0];
-          const iconLocation = inputParts.slice(1).join("=");
-          return hl([
-            {
-              [iconName]: iconLocation
-            }
-          ]);
-        } else {
-          console.warn("input");
-          console.warn(input);
-          // User must have specified an icon map saved as a JSON file.
-          return (
-            get(input)
-              .through(JSONStream.parse())
-              //.through(ndjson.parse({ strict: false }))
-              .map(function(iconMap) {
-                console.warn("iconMap");
-                console.warn(iconMap);
-                return fromPairs(
-                  toPairs(iconMap).map(function([key, value]) {
-                    if (value.indexOf("http") === 0) {
-                      return [key, value];
-                    }
-                    const [pathRelativeToJSONFile, id] = value
-                      .replace("file://", "")
-                      .split("#");
-                    const pathRelativeToCWD = path.resolve(
-                      path.dirname(input),
-                      pathRelativeToJSONFile
-                    );
-                    return [
-                      key,
-                      value.replace(pathRelativeToJSONFile, pathRelativeToCWD)
-                    ];
-                  })
-                );
-              })
-          );
-        }
-      })
-      .reduce1(function(acc, iconMap) {
-        return assign(acc, iconMap);
-      });
-  });
+function getDefMap(inputs: string[]) {
+  return hl(uniq(inputs))
+    .flatMap(function(input) {
+      if (input.indexOf("=") > -1) {
+        const inputParts = input.split("=");
+        const defName = inputParts[0];
+        const defLocation = inputParts.slice(1).join("=");
+        return hl([
+          {
+            [defName]: defLocation
+          }
+        ]);
+      } else {
+        console.warn("input");
+        console.warn(input);
+        // User must have specified a def map saved as a JSON file.
+        return (
+          get(input)
+            .through(JSONStream.parse())
+            //.through(ndjson.parse({ strict: false }))
+            .map(function(defMap) {
+              console.warn("defMap");
+              console.warn(defMap);
+              return fromPairs(
+                toPairs(defMap).map(function([key, value]) {
+                  if (value.indexOf("http") === 0) {
+                    return [key, value];
+                  }
+                  const [pathRelativeToJSONFile, id] = value
+                    .replace("file://", "")
+                    .split("#");
+                  const pathRelativeToCWD = path.resolve(
+                    path.dirname(input),
+                    pathRelativeToJSONFile
+                  );
+                  return [
+                    key,
+                    value.replace(pathRelativeToJSONFile, pathRelativeToCWD)
+                  ];
+                })
+              );
+            })
+        );
+      }
+    })
+    .reduce1(function(acc, defMap) {
+      return assign(acc, defMap);
+    });
 }
 
 function bundleStyles(inputs: string[]) {
@@ -284,26 +235,26 @@ ${typeStyleExportString}`;
     })
     .errors(function(err, push) {
       err.message = err.message || "";
-      err.message += ` in bundleIcons(${JSON.stringify(inputs)})`;
+      err.message += ` in bundleDefs(${JSON.stringify(inputs)})`;
       push(err);
     });
 }
 
-function bundleIcons(inputs, { preserveAspectRatio }) {
-  const iconStream = getIconMap(inputs)
-    .flatMap(function(iconMap) {
+function bundleDefs(inputs, { preserveAspectRatio }) {
+  const defStream = getDefMap(inputs)
+    .flatMap(function(defMap) {
       console.log("Importing:");
       return hl
-        .pairs(iconMap)
-        .flatMap(function([name, iconPath]) {
+        .pairs(defMap)
+        .flatMap(function([name, defPath]) {
           const thisPreserveAspectRatio =
             preserveAspectRatio === true ||
             (isArray(preserveAspectRatio) &&
               preserveAspectRatio.indexOf(name) > -1);
           console.log(`  ${name}
-	source: ${iconPath}
+	source: ${defPath}
 	preserveAspectRatio: ${thisPreserveAspectRatio}`);
-          const [url, idInSource] = iconPath.split("#");
+          const [url, idInSource] = defPath.split("#");
           // NOTE: data URI parsing is a variation of code from
           // https://github.com/killmenot/parse-data-url/blob/master/index.js
           let svgStringStream;
@@ -348,7 +299,7 @@ function bundleIcons(inputs, { preserveAspectRatio }) {
             //       the element id in the source SVG.
             node.setAttribute("id", name);
             const nodeClass = node.getAttribute("class") || "";
-            node.setAttribute("class", `${nodeClass} Icon ${name}`);
+            node.setAttribute("class", `${nodeClass} ${name}`);
             if (thisPreserveAspectRatio) {
               node.setAttribute("preserveAspectRatio", "xMidYMid");
             } else {
@@ -386,17 +337,16 @@ function bundleIcons(inputs, { preserveAspectRatio }) {
         })
         .collect()
         .map(function(svgStrings) {
-          const iconNames = keys(iconMap);
-          const suggestedFillOnlyCSS = iconNames
+          const defNames = keys(defMap);
+          const suggestedFillOnlyCSS = defNames
             .map(
-              (iconName, i) =>
-                `.Icon.${iconName} {fill: currentColor; stroke: none;}`
+              (defName, i) => `#${defName} {fill: currentColor; stroke: none;}`
             )
             .join("\n\t");
 
           console.log(`
 Note that most SVG glyph sets expect a fill color but not a stroke.
-To disable stroke for your icon(s) and enable fill, you can use this in your custom CSS:
+To disable stroke for your def(s) and enable fill, you can use this in your custom CSS:
 
 <style xmlns="http://www.w3.org/2000/svg" type="text/css">
 	<![CDATA[
@@ -404,20 +354,20 @@ To disable stroke for your icon(s) and enable fill, you can use this in your cus
 	]]>
 </style>
 `);
-          const joinedIconNamesString = iconNames.join("");
+          const joinedDefNamesString = defNames.join("");
           const joinedSvgString = svgStrings.join("").replace(/[\r\n]/g, "");
           // TODO look at using an SVG to JSX converter instead of using dangerouslySetInnerHTML
           return (
             `//import "source-map-support/register";
 							import * as React from "react";
 							import * as ReactDom from "react-dom";
-							export class Icons extends React.Component<any, any> {
+							export class Defs extends React.Component<any, any> {
 								constructor(props) {
 									super(props);
 								}
 
 								render() {
-									return <g id="icon-defs-${joinedIconNamesString}" dangerouslySetInnerHTML={{
+									return <g id="bundled-defs-${joinedDefNamesString}" dangerouslySetInnerHTML={{
 											__html: '${joinedSvgString}'
 										}}/>
 								}
@@ -427,17 +377,17 @@ To disable stroke for your icon(s) and enable fill, you can use this in your cus
     })
     .errors(function(err, push) {
       err.message = err.message || "";
-      err.message += ` in bundleIcons(${JSON.stringify(inputs)})`;
+      err.message += ` in bundleDefs(${JSON.stringify(inputs)})`;
       push(err);
     });
 
-  return iconStream;
+  return defStream;
 }
 
 const bundlerMap = {
   edges: bundleBySelectiveImport("edges"),
   filters: bundleBySelectiveImport("filters"),
-  icons: bundleIcons,
+  defs: bundleDefs,
   markers: bundleBySelectiveImport("markers"),
   styles: bundleStyles
 };
@@ -454,10 +404,10 @@ program
 //*/
   .option(
     "-p, --preserve-aspect-ratio [name1,name2,name3...]",
-    `Preserve original aspect ratio of icon(s).
-		-p: preserve for all icons (notice no value specified)
-		-p name1 name2 name3: preserve for the icon(s) with the specified name(s)
-		not specified: don't preserve for any icons (all icons stretch to fit their container)`,
+    `Preserve original aspect ratio of def(s).
+		-p: preserve for all defs (notice no value specified)
+		-p name1 name2 name3: preserve for the def(s) with the specified name(s)
+		not specified: don't preserve for any defs (all defs stretch to fit their container)`,
     // NOTE: s below is always a string.
     // If the user specifies true, it comes through as a string, not a boolean.
     // If the user doesn't use this option, the function below is not called.
@@ -521,12 +471,12 @@ program
 			$ kaavio bundle markers Arrow TBar -o ./src/drawers/MarkerBundle.tsx
 
 			################
-			# Bundle icons #
+			# Bundle defs #
 			################
 
-			$ kaavio bundle icons Ellipse=./src/drawers/icons/Ellipse.svg -o ./src/drawers/icons/IconBundle.tsx
+			$ kaavio bundle defs Ellipse=./src/drawers/defs/Ellipse.svg -o ./src/drawers/defs/DefsBundle.tsx
 
-			You can also use external SVG icons sources, such as:
+			You can use external SVG icons sources for defs. For example:
 				https://commons.wikimedia.org/wiki/Category:SVG_icons
 				https://www.github.com/encharm/Font-Awesome-SVG-PNG
 				https://useiconic.com/open
@@ -544,29 +494,29 @@ program
 
 			Note that most SVG glyph sets expect a fill color but not a stroke.
 
-			Bundle a local icon and a remote one
+			Bundle a local def and a remote one
 
-				$ kaavio bundle icons Ellipse=./src/drawers/icons/Ellipse.svg \\
+				$ kaavio bundle defs Ellipse=./src/drawers/defs/Ellipse.svg \\
 				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
-				-o ./src/drawers/icons/IconBundle.tsx
+				-o ./src/drawers/defs/DefsBundle.tsx
 
 				Note: the hash and value "#ic_check_box_outline_blank_24px" after the Wikimedia
 				URL means we want to use the element with id "ic_check_box_outline_blank_24px"
 				from INSIDE the SVG specified by the URL.
 
-			Bundle several icons, setting two of them to retain their original aspect ratios
+			Bundle several defs, setting two of them to retain their original aspect ratios
 
-				$ kaavio bundle icons Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg \\
+				$ kaavio bundle defs Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg \\
 				Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg \\
 				Mitochondria=http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg \\
 				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
 				wikidata:Q218642="http://www.simolecule.com/cdkdepict/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \\
 				--preserve-aspect-ratio=wikidata:Q218642 Mitochondria
-				-o ./src/drawers/icons/IconBundle.tsx
+				-o ./src/drawers/defs/DefsBundle.tsx
 
-			Bundle icons as specified in an icon map JSON file:
+			Bundle defs as specified in a def map JSON file:
 
-				$ kaavio bundle icons ./src/drawers/icons/defaultIconMap.json -o ./src/drawers/icons/IconBundle.tsx
+				$ kaavio bundle defs ./src/drawers/defs/defaultDefMap.json -o ./src/drawers/defs/DefsBundle.tsx
 
 			################
 			# Bundle edges #
@@ -581,10 +531,10 @@ program
     // also allowed:
     //console.log("    $ kaavio bundle markers '*'");
     /*
-./bin/kaavio bundle icons '*' Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg Mitochondria=http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px --preserve-aspect-ratio=Mitochondria
+./bin/kaavio bundle defs '*' Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg Mitochondria=http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px --preserve-aspect-ratio=Mitochondria
 
 
-./bin/kaavio bundle icons '*' Brace="https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg" \
+./bin/kaavio bundle defs '*' Brace="https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg" \
 				Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg \
 				Mitochondria="http://smpdb.ca/assets/legend_svgs/drawable_elements/mitochondria-a6d8b51f5dde7f3a99a0d91d35f777970fee88d4439e0f1cacc25f717d2ee303.svg" \
 				RoundedRectangle="https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px" \
