@@ -19,7 +19,7 @@ import { Diagram } from "./components/Diagram";
 
 import * as edgeDrawerMapDefault from "./drawers/edges/index";
 import * as filterDrawerMapDefault from "./drawers/filters/index";
-import * as markerDrawerMapDefault from "./drawers/markers/index";
+//import * as markerDrawerMapDefault from "./drawers/markers/index";
 
 import { arrayify } from "./spinoffs/jsonld-utils";
 
@@ -174,8 +174,7 @@ export function createJson2SvgCLI(
     acc[themeName] = defaults(
       {
         edgeDrawerMap: edgeDrawerMapDefault,
-        filterDrawerMap: filterDrawerMapDefault,
-        markerDrawerMap: markerDrawerMapDefault
+        filterDrawerMap: filterDrawerMapDefault
       },
       theme
     );
@@ -301,24 +300,7 @@ export function createJson2SvgCLI(
     //      })
     .map(function(input) {
       const props = defaultsDeep(input, theme);
-      /*
-      console.warn("props");
-      console.warn(JSON.stringify(props, null, "  "));
-	    //*/
       return render(<Diagram {...props} />);
-      /*
-      return render(
-        <Diagram
-          customSVGStyle={customSVGStyle}
-          edgeDrawerMap={edgeDrawerMap}
-          filterDrawerMap={filterDrawerMap}
-          Defs={Defs}
-          markerDrawerMap={markerDrawerMap}
-          pathway={input.pathway}
-          entityMap={input.entityMap}
-        />
-      );
-	    //*/
     })
     .errors(function(err) {
       console.error("err");

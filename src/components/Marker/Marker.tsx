@@ -15,22 +15,15 @@ export class Marker extends React.Component<any, any> {
       markerDrawer,
       markerProperty,
       markerName,
-      color,
-      getNamespacedMarkerId,
-      parentBackgroundColor
+      getNamespacedMarkerId
     } = this.props;
 
-    const { markerAttributes, groupChildren } = markerDrawer(
-      parentBackgroundColor,
-      color
-    );
+    const { markerAttributes, groupChildren } = markerDrawer("white", "black");
     const { markerWidth, markerHeight } = markerAttributes;
 
     const namespacedMarkerId = getNamespacedMarkerId({
       markerProperty,
-      markerName,
-      color,
-      parentBackgroundColor
+      markerName
     });
 
     return (

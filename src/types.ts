@@ -92,8 +92,6 @@ export type GetNamespacedMarkerId = (
 ) => string;
 
 export interface MarkerComponentProps {
-  backgroundColor: string;
-  color: string;
   getNamespacedMarkerId: GetNamespacedMarkerId;
   markerDrawerMap: Record<string, Function>;
   markerLocationType: MarkerProperty;
@@ -138,8 +136,6 @@ export interface NodeProps {
 export interface LatestMarkerReferenced {
   markerProperty: string;
   markerName: string;
-  color: string;
-  parentBackgroundColor: string;
 }
 
 /* Declare the Kaavio function with overloads */

@@ -144,56 +144,6 @@ const bundleBySelectiveImport = curry(function(
   return hl([bundledDrawerCode]);
 });
 
-function getDefMap(inputs: string[]) {
-  return hl(uniq(inputs))
-    .flatMap(function(input) {
-      if (input.indexOf("=") > -1) {
-        const inputParts = input.split("=");
-        const defName = inputParts[0];
-        const defLocation = inputParts.slice(1).join("=");
-        return hl([
-          {
-            [defName]: defLocation
-          }
-        ]);
-      } else {
-        console.warn("input");
-        console.warn(input);
-        // User must have specified a def map saved as a JSON file.
-        return (
-          get(input)
-            .through(JSONStream.parse())
-            //.through(ndjson.parse({ strict: false }))
-            .map(function(defMap) {
-              console.warn("defMap");
-              console.warn(defMap);
-              return fromPairs(
-                toPairs(defMap).map(function([key, value]) {
-                  if (value.indexOf("http") === 0) {
-                    return [key, value];
-                  }
-                  const [pathRelativeToJSONFile, id] = value
-                    .replace("file://", "")
-                    .split("#");
-                  const pathRelativeToCWD = path.resolve(
-                    path.dirname(input),
-                    pathRelativeToJSONFile
-                  );
-                  return [
-                    key,
-                    value.replace(pathRelativeToJSONFile, pathRelativeToCWD)
-                  ];
-                })
-              );
-            })
-        );
-      }
-    })
-    .reduce1(function(acc, defMap) {
-      return assign(acc, defMap);
-    });
-}
-
 function bundleStyles(inputs: string[]) {
   // NOTE: we're not accepting CSS strings. Must be filepaths.
   const strippedInputs = inputs.map((input: string) =>
@@ -240,111 +190,107 @@ ${typeStyleExportString}`;
     });
 }
 
-function bundleDefs(inputs, { preserveAspectRatio }) {
-  const defStream = getDefMap(inputs)
-    .flatMap(function(defMap) {
-      console.log("Importing:");
-      return hl
-        .pairs(defMap)
-        .flatMap(function([name, defPath]) {
-          const thisPreserveAspectRatio =
-            preserveAspectRatio === true ||
-            (isArray(preserveAspectRatio) &&
-              preserveAspectRatio.indexOf(name) > -1);
-          console.log(`  ${name}
+function bundleDefs(defMap, { preserveAspectRatio }) {
+  console.log("Importing:");
+  return hl
+    .pairs(defMap)
+    .flatMap(function([name, defPath]) {
+      const thisPreserveAspectRatio =
+        preserveAspectRatio === true ||
+        (isArray(preserveAspectRatio) &&
+          preserveAspectRatio.indexOf(name) > -1);
+      console.log(`  ${name}
 	source: ${defPath}
 	preserveAspectRatio: ${thisPreserveAspectRatio}`);
-          const [url, idInSource] = defPath.split("#");
-          // NOTE: data URI parsing is a variation of code from
-          // https://github.com/killmenot/parse-data-url/blob/master/index.js
-          let svgStringStream;
-          if (validDataUrl(url)) {
-            const parts = url.match(validDataUrl.regex);
-            let mediaType;
-            if (parts[1]) {
-              mediaType = parts[1].toLowerCase();
-            }
+      const [url, idInSource] = defPath.split("#");
+      // NOTE: data URI parsing is a variation of code from
+      // https://github.com/killmenot/parse-data-url/blob/master/index.js
+      let svgStringStream;
+      if (validDataUrl(url)) {
+        const parts = url.match(validDataUrl.regex);
+        let mediaType;
+        if (parts[1]) {
+          mediaType = parts[1].toLowerCase();
+        }
 
-            let charset;
-            if (parts[2]) {
-              charset = parts[2].split("=")[1].toLowerCase();
-            }
+        let charset;
+        if (parts[2]) {
+          charset = parts[2].split("=")[1].toLowerCase();
+        }
 
-            const isBase64 = !!parts[3];
+        const isBase64 = !!parts[3];
 
-            let data;
-            if (parts[4]) {
-              data = parts[4];
-            }
+        let data;
+        if (parts[4]) {
+          data = parts[4];
+        }
 
-            const decoded = !isBase64
-              ? decodeURIComponent(data)
-              : Base64.decode(data);
-            svgStringStream = hl([decoded]);
-          } else {
-            const strippedPath = url.replace("file://", "");
-            if (urlRegex({ strict: true, exact: true }).test(strippedPath)) {
-              svgStringStream = get(strippedPath);
-            } else {
-              svgStringStream = get(strippedPath);
-            }
+        const decoded = !isBase64
+          ? decodeURIComponent(data)
+          : Base64.decode(data);
+        svgStringStream = hl([decoded]);
+      } else {
+        const strippedPath = url.replace("file://", "");
+        if (urlRegex({ strict: true, exact: true }).test(strippedPath)) {
+          svgStringStream = get(strippedPath);
+        } else {
+          svgStringStream = get(strippedPath);
+        }
+      }
+
+      return svgStringStream.map(function(svgString) {
+        const doc = new DOMParser().parseFromString(svgString);
+        const node = !idInSource
+          ? doc.documentElement
+          : doc.getElementById(idInSource);
+        // NOTE: "name" may or may not equal "idInSource", which is
+        //       the element id in the source SVG.
+        node.setAttribute("id", name);
+        const nodeClass = node.getAttribute("class") || "";
+        node.setAttribute("class", `${nodeClass} ${name}`);
+        if (thisPreserveAspectRatio) {
+          node.setAttribute("preserveAspectRatio", "xMidYMid");
+        } else {
+          node.setAttribute("preserveAspectRatio", "none");
+        }
+
+        const viewBox = node.getAttribute("viewBox");
+        if (!viewBox) {
+          const width = node.getAttribute("width") || 200;
+          const height = node.getAttribute("height") || 100;
+          if (!width || !height) {
+            throw new Error(`Cannot set viewBox for ${name}.`);
           }
+          node.setAttribute("viewBox", `0 0 ${width} ${height}`);
+        }
+        const [
+          viewBoxX,
+          viewBoxY,
+          viewBoxWidth,
+          viewBoxHeight
+        ] = node.getAttribute("viewBox").split(/[\ ,]/);
+        const x = node.getAttribute("x");
+        const y = node.getAttribute("y");
+        if (
+          !isFinite(x) ||
+          !isFinite(y) ||
+          x > viewBoxWidth ||
+          y > viewBoxHeight
+        ) {
+          node.setAttribute("x", viewBoxX);
+          node.setAttribute("y", viewBoxY);
+        }
+        return node.toString();
+      });
+    })
+    .collect()
+    .map(function(svgStrings) {
+      const defNames = keys(defMap);
+      const suggestedFillOnlyCSS = defNames
+        .map((defName, i) => `#${defName} {fill: currentColor; stroke: none;}`)
+        .join("\n\t");
 
-          return svgStringStream.map(function(svgString) {
-            const doc = new DOMParser().parseFromString(svgString);
-            const node = !idInSource
-              ? doc.documentElement
-              : doc.getElementById(idInSource);
-            // NOTE: "name" may or may not equal "idInSource", which is
-            //       the element id in the source SVG.
-            node.setAttribute("id", name);
-            const nodeClass = node.getAttribute("class") || "";
-            node.setAttribute("class", `${nodeClass} ${name}`);
-            if (thisPreserveAspectRatio) {
-              node.setAttribute("preserveAspectRatio", "xMidYMid");
-            } else {
-              node.setAttribute("preserveAspectRatio", "none");
-            }
-
-            const viewBox = node.getAttribute("viewBox");
-            if (!viewBox) {
-              const width = node.getAttribute("width") || 200;
-              const height = node.getAttribute("height") || 100;
-              if (!width || !height) {
-                throw new Error(`Cannot set viewBox for ${name}.`);
-              }
-              node.setAttribute("viewBox", `0 0 ${width} ${height}`);
-            }
-            const [
-              viewBoxX,
-              viewBoxY,
-              viewBoxWidth,
-              viewBoxHeight
-            ] = node.getAttribute("viewBox").split(/[\ ,]/);
-            const x = node.getAttribute("x");
-            const y = node.getAttribute("y");
-            if (
-              !isFinite(x) ||
-              !isFinite(y) ||
-              x > viewBoxWidth ||
-              y > viewBoxHeight
-            ) {
-              node.setAttribute("x", viewBoxX);
-              node.setAttribute("y", viewBoxY);
-            }
-            return node.toString();
-          });
-        })
-        .collect()
-        .map(function(svgStrings) {
-          const defNames = keys(defMap);
-          const suggestedFillOnlyCSS = defNames
-            .map(
-              (defName, i) => `#${defName} {fill: currentColor; stroke: none;}`
-            )
-            .join("\n\t");
-
-          console.log(`
+      console.log(`
 Note that most SVG glyph sets expect a fill color but not a stroke.
 To disable stroke for your def(s) and enable fill, you can use this in your custom CSS:
 
@@ -354,11 +300,11 @@ To disable stroke for your def(s) and enable fill, you can use this in your cust
 	]]>
 </style>
 `);
-          const joinedDefNamesString = defNames.join("");
-          const joinedSvgString = svgStrings.join("").replace(/[\r\n]/g, "");
-          // TODO look at using an SVG to JSX converter instead of using dangerouslySetInnerHTML
-          return (
-            `//import "source-map-support/register";
+      const joinedDefNamesString = defNames.join("");
+      const joinedSvgString = svgStrings.join("").replace(/[\r\n]/g, "");
+      // TODO look at using an SVG to JSX converter instead of using dangerouslySetInnerHTML
+      return (
+        `//import "source-map-support/register";
 							import * as React from "react";
 							import * as ReactDom from "react-dom";
 							export class Defs extends React.Component<any, any> {
@@ -372,18 +318,16 @@ To disable stroke for your def(s) and enable fill, you can use this in your cust
 										}}/>
 								}
 							}` + "\n"
-          );
-        });
+      );
     })
     .errors(function(err, push) {
       err.message = err.message || "";
-      err.message += ` in bundleDefs(${JSON.stringify(inputs)})`;
+      err.message += ` in bundleDefs(${JSON.stringify(defMap)})`;
       push(err);
     });
-
-  return defStream;
 }
 
+/*
 const bundlerMap = {
   edges: bundleBySelectiveImport("edges"),
   filters: bundleBySelectiveImport("filters"),
@@ -391,17 +335,23 @@ const bundlerMap = {
   markers: bundleBySelectiveImport("markers"),
   styles: bundleStyles
 };
+//*/
 
 program
-  .command("bundle <whatToBundle> [input...]")
+  .command("bundle nameOrConfigPath")
   .option("-o, --out <string>", `Where to save the bundle.`)
-  /*
   .option(
-    "-o, --out <string>",
-    `Where to save the bundle. Default: stdout.`,
-    (s?: string) => !s ? process.stdout : fs.createWriteStream(s)
+    "-d, --defs [name1=path,name2=path,name3=path...]",
+    `Include the defs specified.
+    Example:
+			--defs Ellipse=./src/drawers/defs/Ellipse.svg
+	`,
+    // NOTE: s below is always a string.
+    // If the user specifies true, it comes through as a string, not a boolean.
+    // If the user doesn't use this option, the function below is not called.
+    (s: string) =>
+      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
   )
-//*/
   .option(
     "-p, --preserve-aspect-ratio [name1,name2,name3...]",
     `Preserve original aspect ratio of def(s).
@@ -414,18 +364,39 @@ program
     (s: string) =>
       STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
   )
-  .action(function(whatToBundle, inputs: string[], options) {
-    console.log(`Bundling ${whatToBundle}...`);
+  .option(
+    "-e, --edges [name1,name2,name3...]",
+    `Include the edges specified. If argument not specified, default is to include all.
+    Example:
+			--edges StraightLine CurvedLine ElbowLine SegmentedLine
+	`,
+    // NOTE: s below is always a string.
+    // If the user specifies true, it comes through as a string, not a boolean.
+    // If the user doesn't use this option, the function below is not called.
+    (s: string) =>
+      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
+  )
+  .option(
+    "-m, --markers [name1,name2,name3...]",
+    `Include the markers specified. If argument not specified, default is to include all.
+    Example:
+			--markers Arrow TBar
+	`,
+    // NOTE: s below is always a string.
+    // If the user specifies true, it comes through as a string, not a boolean.
+    // If the user doesn't use this option, the function below is not called.
+    (s: string) =>
+      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
+  )
+  .action(function(nameOrConfigPath: string, options) {
+    console.log(`Bundling...`);
 
     //const outputStream = options.out;
 
-    const preserveAspectRatio =
-      options.hasOwnProperty("preserveAspectRatio") &&
-      options.preserveAspectRatio;
-
+    /*
     if (!bundlerMap.hasOwnProperty(whatToBundle)) {
       const cmdSuggestions = keys(bundlerMap)
-        .map(key => `\tkaavio bundle ${key} ${inputs.join(", ")}`)
+        .map(key => `\tkaavio bundle ${key} ${defs.join(", ")}`)
         .join("\r\n");
       throw new Error(
         `"${whatToBundle}" is not a supported whatToBundle option. Supported options: \r\n${cmdSuggestions}\r\n`
@@ -433,48 +404,87 @@ program
     }
 
     const bundler = bundlerMap[whatToBundle];
+	  //*/
 
-    const bundlerStream = bundler(inputs, {
-      preserveAspectRatio
-    });
+    let themeMapStream;
+    if (nameOrConfigPath.match(/\.json$/)) {
+      themeMapStream = get(nameOrConfigPath)
+        .through(JSONStream.parse())
+        .map(function(themeMap) {
+          const { defMap } = themeMap;
+          themeMap.defMap = fromPairs(
+            toPairs(defMap).map(function([key, value]) {
+              if (value.indexOf("http") === 0) {
+                return [key, value];
+              }
+              const [pathRelativeToJSONFile, id] = value
+                .replace("file://", "")
+                .split("#");
+              const pathRelativeToCWD = path.resolve(
+                path.dirname(nameOrConfigPath),
+                pathRelativeToJSONFile
+              );
+              return [
+                key,
+                value.replace(pathRelativeToJSONFile, pathRelativeToCWD)
+              ];
+            })
+          );
+          themeMap.name = path
+            .basename(nameOrConfigPath)
+            .replace(/\.json$/, "");
+          return themeMap;
+        });
+    } else {
+      const { defs, edges, markers } = options;
 
-    pipeToFilepath(bundlerStream, options.out)
-      .flatMap(function() {
-        console.log(`Successfully bundled ${whatToBundle}.`);
+      const preserveAspectRatio =
+        options.hasOwnProperty("preserveAspectRatio") &&
+        options.preserveAspectRatio;
 
-        console.log(`Rebuild your project to make changes take effect`);
-        return hl([]);
-      })
-      .errors(function(err) {
-        console.error(err);
-        process.exitCode = 1;
-      })
-      .last()
-      .each(function(x) {
-        process.exitCode = 0;
+      const defMap = uniq(defs).reduce(function(acc, def) {
+        const defParts = def.split("=");
+        const defName = defParts[0];
+        const defLocation = defParts.slice(1).join("=");
+        acc[defName] = defLocation;
+        return acc;
+      }, {});
+      themeMapStream = hl([
+        { name: nameOrConfigPath, defMap, preserveAspectRatio }
+      ]);
+    }
+
+    themeMapStream.each(function(themeMap) {
+      const { name, defMap, preserveAspectRatio } = themeMap;
+
+      const defStream = bundleDefs(defMap, {
+        preserveAspectRatio
       });
+
+      pipeToFilepath(
+        defStream,
+        path.join(options.out, `__bundles_dont_edit__/${name}/Defs.tsx`)
+      )
+        .flatMap(function() {
+          console.log(`Successfully completing bundling.`);
+          console.log(`Rebuild your project to make changes take effect`);
+          return hl([]);
+        })
+        .errors(function(err) {
+          console.error(err);
+          process.exitCode = 1;
+        })
+        .last()
+        .each(function(x) {
+          process.exitCode = 0;
+        });
+    });
   })
   .on("--help", function() {
     console.log(`
-			Valid <whatToBundle> values: ${keys(bundlerMap).join(", ")}
-
 			Examples:
 
-			##################
-			# Bundle markers #
-			##################
-
-			Include all built-ins:
-			$ kaavio bundle markers -o ./src/drawers/MarkerBundle.tsx
-
-			Include only selected built-ins:
-			$ kaavio bundle markers Arrow TBar -o ./src/drawers/MarkerBundle.tsx
-
-			################
-			# Bundle defs #
-			################
-
-			$ kaavio bundle defs Ellipse=./src/drawers/defs/Ellipse.svg -o ./src/drawers/defs/DefsBundle.tsx
+			$ kaavio bundle Ellipse=./src/drawers/defs/Ellipse.svg -o ./src/themes/__bundled_dont_edit__/dark.tsx
 
 			You can use external SVG icons sources for defs. For example:
 				https://commons.wikimedia.org/wiki/Category:SVG_icons
@@ -494,17 +504,17 @@ program
 
 			Note that most SVG glyph sets expect a fill color but not a stroke.
 
-			Bundle a local def and a remote one
+			Bundle a local icon and a remote one
 
-				$ kaavio bundle defs Ellipse=./src/drawers/defs/Ellipse.svg \\
+				$ kaavio bundle Ellipse=./src/drawers/defs/Ellipse.svg \\
 				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
-				-o ./src/drawers/defs/DefsBundle.tsx
+				-o ./src/themes/__bundled_dont_edit__/dark.tsx
 
 				Note: the hash and value "#ic_check_box_outline_blank_24px" after the Wikimedia
 				URL means we want to use the element with id "ic_check_box_outline_blank_24px"
 				from INSIDE the SVG specified by the URL.
 
-			Bundle several defs, setting two of them to retain their original aspect ratios
+			Bundle several icons, setting two of them to retain their original aspect ratios
 
 				$ kaavio bundle defs Brace=https://cdn.rawgit.com/encharm/Font-Awesome-SVG-PNG/266b63d5/black/svg/heart-o.svg \\
 				Ellipse=~/Downloads/open-iconic-master/svg/aperture.svg \\
@@ -512,21 +522,11 @@ program
 				RoundedRectangle=https://upload.wikimedia.org/wikipedia/commons/f/fc/Svg-sprite-toggle.svg#ic_check_box_outline_blank_24px \\
 				wikidata:Q218642="http://www.simolecule.com/cdkdepict/depict/bow/svg?smi=CN1C%3DNC2%3DC1C(%3DO)N(C(%3DO)N2C)C" \\
 				--preserve-aspect-ratio=wikidata:Q218642 Mitochondria
-				-o ./src/drawers/defs/DefsBundle.tsx
+				-o ./src/themes/__bundled_dont_edit__/dark.tsx
 
-			Bundle defs as specified in a def map JSON file:
+			Bundle icons as specified in a def map JSON file:
 
-				$ kaavio bundle defs ./src/drawers/defs/defaultDefMap.json -o ./src/drawers/defs/DefsBundle.tsx
-
-			################
-			# Bundle edges #
-			################
-
-			Include all built-ins:
-			$ kaavio bundle edges -o ./src/drawers/EdgeBundle.tsx
-
-			Include only selected built-ins:
-			$ kaavio bundle edges StraightLine CurvedLine ElbowLine SegmentedLine -o ./src/drawers/EdgeBundle.tsx
+				$ kaavio bundle ./src/themes/dark.json -o ./src/themes/__bundled_dont_edit__/dark.tsx
 							`);
     // also allowed:
     //console.log("    $ kaavio bundle markers '*'");

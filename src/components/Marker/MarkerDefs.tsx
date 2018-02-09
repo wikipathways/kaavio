@@ -130,12 +130,7 @@ export class MarkerDefs extends React.Component<any, any> {
     const { defined } = state;
     const { latestMarkerReferenced, markerDrawerMap } = nextProps;
     if (!isEmpty(latestMarkerReferenced)) {
-      const {
-        markerProperty,
-        markerName,
-        color,
-        parentBackgroundColor
-      } = latestMarkerReferenced;
+      const { markerProperty, markerName } = latestMarkerReferenced;
 
       if (getSVGMarkerReferenceType(markerName) === "localIRI") {
         const namespacedMarkerId = getNamespacedMarkerId(
@@ -144,9 +139,7 @@ export class MarkerDefs extends React.Component<any, any> {
         if (keys(defined).indexOf(namespacedMarkerId) === -1) {
           defined[namespacedMarkerId] = {
             markerProperty,
-            markerName,
-            color,
-            parentBackgroundColor
+            markerName
           };
           // TODO should we ever update markerDrawerMap?
           this.setState({
@@ -165,22 +158,15 @@ export class MarkerDefs extends React.Component<any, any> {
     return (
       <g id="marker-defs">
         {toPairs(defined).map(([namespacedMarkerId, details]) => {
-          const {
-            markerProperty,
-            markerName,
-            color,
-            parentBackgroundColor
-          } = details;
+          const { markerProperty, markerName } = details;
           return (
             <Marker
               id={namespacedMarkerId}
               key={namespacedMarkerId}
-              color={color}
               getNamespacedMarkerId={getNamespacedMarkerId}
               markerDrawer={markerDrawerMap[markerName]}
               markerName={markerName}
               markerProperty={markerProperty}
-              parentBackgroundColor={parentBackgroundColor}
             />
           );
         })}

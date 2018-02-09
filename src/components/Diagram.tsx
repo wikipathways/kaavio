@@ -5,7 +5,6 @@ import {
   assignAll,
   curry,
   defaults,
-  defaultsDeep,
   defaultsAll,
   filter,
   forOwn,
@@ -35,7 +34,7 @@ import { Entity } from "./Entity";
 import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
 import { MarkerDefs } from "./Marker/MarkerDefs";
 import { getSVGMarkerReferenceType } from "./Marker/helpers";
-const kaavioSVGStyle = require("../kaavioSVGStyle.css");
+const diagramStyleBase = require("./Diagram.css");
 import { interpolate } from "../spinoffs/interpolate";
 import { normalizeElementId } from "../utils/normalizeElementId";
 
@@ -57,7 +56,7 @@ export class Diagram extends React.Component<any, any> {
   getNamespacedId: GetNamespacedId;
   constructor(props) {
     super(props);
-    const { customSVGStyle, filterDrawerMap, pathway } = props;
+    const { filterDrawerMap, pathway } = props;
     this.filterDrawerMap = filterDrawerMap;
 
     const { id } = pathway;
@@ -114,7 +113,9 @@ export class Diagram extends React.Component<any, any> {
   // because our SVGs use marker and filter functionality in two different places:
   // the defs and the usage of the defs. Since this is the lowest common ancestor
   // for those two places, we need to define them way up here.
+
   /*
+  // TODO: delete the commented out function above if possible
   getNamespacedFilterId: GetNamespacedFilterId = filterProps => {
     const { filterDrawerMap, getNamespacedId, getNamespacedFilterId } = this;
     const {
@@ -133,9 +134,7 @@ export class Diagram extends React.Component<any, any> {
     });
     return getNamespacedId(filterProperties.id);
   };
-	//*/
-
-  // TODO: delete the commented out function above if possible
+  //*/
   getNamespacedFilterId: GetNamespacedFilterId = latestFilterReferenced => {
     const { getNamespacedFilter } = this;
     const { filterName } = latestFilterReferenced;
@@ -152,21 +151,14 @@ export class Diagram extends React.Component<any, any> {
 
   getNamespacedMarkerId: GetNamespacedMarkerId = latestMarkerReferenced => {
     const { getNamespacedId } = this;
-    const {
-      markerProperty,
-      markerName,
-      color,
-      parentBackgroundColor
-    } = latestMarkerReferenced;
+    const { markerProperty, markerName } = latestMarkerReferenced;
 
     const svgReferenceType = getSVGMarkerReferenceType(markerName);
 
     if (svgReferenceType === "localIRI") {
       // We can only tweak the color, border width, etc. for markers that are
       // located in this SVG (referenced via local IRIs)
-      return getNamespacedId(
-        [markerProperty, markerName, color, parentBackgroundColor].join("")
-      );
+      return getNamespacedId([markerProperty, markerName].join(""));
     } else {
       return markerName;
     }
@@ -180,12 +172,13 @@ export class Diagram extends React.Component<any, any> {
 
     const propsToPassDown = pick(
       [
+        "createChildProps",
         "edgeDrawerMap",
         "entityMap",
         "getNamespacedFilterId",
         "getNamespacedId",
         "getNamespacedMarkerId",
-        "createChildProps",
+        "markerDrawerMap",
         "setFillOpacity",
         "setFilter",
         "setMarker",
@@ -289,7 +282,7 @@ export class Diagram extends React.Component<any, any> {
     } = this;
 
     const {
-      customSVGStyle,
+      style: diagramStyleCustom,
       Defs,
       markerDrawerMap,
       entityMap,
@@ -336,7 +329,7 @@ export class Diagram extends React.Component<any, any> {
       [textContent]
     );
 
-    const highlightedStyle = (highlightedEntities || [])
+    const diagramStyleForEntityHighlighting = (highlightedEntities || [])
       .map(function({ target, color }) {
         const namespaceFilterId = getNamespacedFilterId({
           color,
@@ -399,9 +392,9 @@ ${nodeSelector} {
           dangerouslySetInnerHTML={{
             __html: `
 				<![CDATA[
-					${kaavioSVGStyle || ""}
-					${customSVGStyle || ""}
-					${highlightedStyle || ""}
+					${diagramStyleBase || ""}
+					${diagramStyleCustom || ""}
+					${diagramStyleForEntityHighlighting || ""}
 				]]>
 			`
           }}

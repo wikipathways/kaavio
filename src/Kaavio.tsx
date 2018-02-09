@@ -4,7 +4,7 @@ import { Validator } from "collit";
 
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
-const kaavioHTMLStyle = require("./kaavioHTMLStyle.css");
+const containerStyleBase = require("./Kaavio.css");
 
 /**
  * Kaavio component.
@@ -17,7 +17,9 @@ export class Kaavio extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
-    const { customHTMLStyle, hiddenEntities, highlightedEntities } = this.props;
+    const { style, hiddenEntities, highlightedEntities } = this.props;
+    const { container: containerStyleCustom } = style;
+
     const searchParams = new URLSearchParams(location.search);
 
     // TODO reconcile query params and class props for pan/zoom settings
@@ -109,7 +111,7 @@ export class Kaavio extends React.Component<any, any> {
       });
     }
 
-    this.addStyle([kaavioHTMLStyle, customHTMLStyle]);
+    this.addStyle([containerStyleBase, containerStyleCustom]);
 
     this.state = {
       diagramRef: null,
@@ -149,11 +151,13 @@ export class Kaavio extends React.Component<any, any> {
       edgeDrawerMap,
       filterDrawerMap,
       markerDrawerMap,
-      customSVGStyle,
+      style,
       Defs,
       showPanZoomControls = true,
       panZoomLocked = false
     } = this.props;
+
+    const { diagram: diagramStyleCustom } = style;
 
     const {
       highlightedEntities,
@@ -184,7 +188,7 @@ export class Kaavio extends React.Component<any, any> {
           highlightedEntities={highlightedEntities}
           pathway={pathway}
           handleClick={this.handleClick}
-          customSVGStyle={customSVGStyle}
+          style={diagramStyleCustom}
           edgeDrawerMap={edgeDrawerMap}
           filterDrawerMap={filterDrawerMap}
           Defs={Defs}

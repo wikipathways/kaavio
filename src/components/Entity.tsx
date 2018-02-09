@@ -1,4 +1,5 @@
 import * as React from "react";
+import { unionLSV } from "../spinoffs/jsonld-utils";
 import * as ReactDom from "react-dom";
 import {
   filter,
@@ -198,10 +199,8 @@ export class Entity extends React.Component<any, any> {
     } = props;
 
     //const childProps = omit("className", props);
-    const childProps = props;
-    if (childProps.type.indexOf(kaavioType) === -1) {
-      childProps.type.push(kaavioType);
-    }
+    const childPropsType = unionLSV(type, kaavioType);
+    const childProps = { type: childPropsType, ...props };
 
     // Anders: I think it's best to be explicit. Instead of using components[kaavioType] do this.
     // I know it's a bit redundant but in this case I think it aids comprehension
@@ -230,6 +229,10 @@ export class Entity extends React.Component<any, any> {
 
     let { filters } = props;
 
+    if (borderStyle === "double") {
+      filters = unionLSV(filters, "Double");
+    }
+
     let entityTransform;
     if (x || y || rotation) {
       entityTransform = `translate(${x},${y})`;
@@ -237,16 +240,6 @@ export class Entity extends React.Component<any, any> {
         entityTransform += ` rotate(${rotation},${width / 2},${height / 2})`;
       }
     }
-
-    //*
-    if (borderStyle === "double") {
-      if (isArray(filters) && filters.indexOf("Double") === -1) {
-        filters.push("Double");
-      } else {
-        filters = ["Double"];
-      }
-    }
-    //*/
 
     return (
       <g
