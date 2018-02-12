@@ -4,17 +4,17 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
 
-    <title>Pathvisiojs Simple Built Production Example</title>
+    <title>Pathvisi.min.js Simple Built Production Example</title>
 
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" media="screen">
-    <link rel="stylesheet" href="../demo/lib/pathvisiojs/css/pathvisiojs.css">
+    <link rel="stylesheet" href="../demo/lib/pathvisi.min.js/css/pathvisi.min.js.css">
 
     <!--[if lt IE 9]>
     <script>
 
-      // pvjs won't run on IE8 and earlier
-      var pathvisiojs = {};
-      pathvisiojs.init = {};
+      // p.min.js won't run on IE8 and earlier
+      var pathvisi.min.js = {};
+      pathvisi.min.js.init = {};
 
       // IE8 only allows console.log when Developer Tools is open. This will prevent errors
       // from showing up if I use console.log without DevTools being open.
@@ -47,14 +47,14 @@
   <body style="margin: 0; width: 100%; height: 100%; ">
     <div id="production-container" style="width:inherit; height:inherit; margin:0; overflow:hidden;">
     </div>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
-    <script src="../dist/lib/modernizr/js/modernizr.min.js"></script>
-    <script src="../dist/lib/cross-platform-shapes/js/cross-platform-shapes.js"></script>
-    <script src="../dist/lib/cross-platform-text/js/cross-platform-text.js"></script>
-    <script src="../dist/lib/pathvisiojs/js/pathvisiojs.js"></script>
-    <script src="../dist/plugins/pathvisiojs-notifications/pathvisiojs-notifications.js"></script>
-    <script src="./load.js"></script>
+    <script src="//cd.min.js.cloudflare.com/ajax/libs/d3/3.4.6/d3.min.js"></script>
+    <script src="//cd.min.js.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="../dist/lib/modernizr.min.js/modernizr.min.js"></script>
+    <script src="../dist/lib/cross-platform-shapes.min.js/cross-platform-shapes.min.js"></script>
+    <script src="../dist/lib/cross-platform-text.min.js/cross-platform-text.min.js"></script>
+    <script src="../dist/lib/pathvisi.min.js.min.js/pathvisi.min.js.min.js"></script>
+    <script src="../dist/plugins/pathvisi.min.js-notifications/pathvisi.min.js-notifications.min.js"></script>
+    <script src="./load.min.js"></script>
 
     <script>
     window.addEventListener('load',
@@ -63,10 +63,10 @@
         developmentLoader.parseUriParams(function(parsedInputData) {
 
           /* *******************
-          /* Load pathvisiojs
+          /* Load pathvisi.min.js
           /* *******************/
           $(function(){
-            $('#production-container').pathvisiojs({
+            $('#production-container').pathvisi.min.js({
               fitToContainer: true
             , manualRender: true
             , sourceData:parsedInputData.sourceData
@@ -87,10 +87,10 @@
             })
 
             // Get first element from array of instances
-            var pathInstance = $('#production-container').pathvisiojs('get').pop()
+            var pathInstance = $('#production-container').pathvisi.min.js('get').pop()
 
             // Load plugins
-            pathvisiojsNotifications(pathInstance, {displayErrors: true, displayWarnings: true})
+            pathvisi.min.jsNotifications(pathInstance, {displayErrors: true, displayWarnings: true})
 
             // Call renderer
             pathInstance.render()

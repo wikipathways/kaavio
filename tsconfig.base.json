@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "experimentalDecorators": true,
+    "inlineSourceMap": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
+    "noImplicitAny": false,
+    "pretty": true
+  },
+  "files": [
+    "src/types.ts",
+    "src/index.ts",
+    "src/createJson2SvgCLI.tsx",
+    "src/json2svgForTesting.tsx",
+    "src/cli.tsx"
+  ],
+  "exclude": [
+    "dist/**/*",
+    "tmp/**/*",
+    "node_modules"
+  ]
+}
