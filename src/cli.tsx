@@ -7,11 +7,14 @@ import * as path from "path";
 import { DOMParser } from "xmldom";
 import { Base64 } from "js-base64";
 
+import { MarkerProperty } from "./types";
+import { createMarkerId, MARKER_PROPERTIES } from "./components/Marker/helpers";
+
 import {
   assign,
   camelCase,
-  //compact,
   curry,
+  defaultsDeep,
   isArray,
   isEmpty,
   isFinite,
@@ -40,6 +43,10 @@ const VError = require("verror");
 
 import { Diagram } from "./components/Diagram";
 import { arrayify } from "./spinoffs/jsonld-utils";
+
+const NS = {
+  svg: "http://www.w3.org/2000/svg"
+};
 
 const npmPackage = require("../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
@@ -190,141 +197,290 @@ ${typeStyleExportString}`;
     });
 }
 
-function bundleDefs(defMap, { preserveAspectRatio }) {
-  console.log("Importing:");
-  return hl
-    .pairs(defMap)
-    .flatMap(function([name, defPath]) {
-      const thisPreserveAspectRatio =
-        preserveAspectRatio === true ||
-        (isArray(preserveAspectRatio) &&
-          preserveAspectRatio.indexOf(name) > -1);
-      console.log(`  ${name}
-	source: ${defPath}
-	preserveAspectRatio: ${thisPreserveAspectRatio}`);
-      const [url, idInSource] = defPath.split("#");
-      // NOTE: data URI parsing is a variation of code from
-      // https://github.com/killmenot/parse-data-url/blob/master/index.js
-      let svgStringStream;
-      if (validDataUrl(url)) {
-        const parts = url.match(validDataUrl.regex);
-        let mediaType;
-        if (parts[1]) {
-          mediaType = parts[1].toLowerCase();
-        }
+function surroundWithFlip180Container(markerEl, markerWidth, markerHeight) {
+  var dom = new DOMParser().parseFromString(`<svg xmlns="${NS.svg}" />`);
+  const container = dom.createElementNS(NS.svg, "g");
+  container.setAttribute(
+    "transform",
+    `rotate(180, ${markerWidth / 2}, ${markerHeight / 2})`
+  );
 
-        let charset;
-        if (parts[2]) {
-          charset = parts[2].split("=")[1].toLowerCase();
-        }
+  /* Strange that the following doesn't work
+  const childNodeClones = markerEl.cloneNode(true).childNodes || [];
+  const childNodes = markerEl.childNodes || [];
+  for (let i = 0; i < childNodeClones.length; i++) {
+    container.appendChild(childNodeClones[i].cloneNode(true));
+    markerEl.removeChild(childNodes[i]);
+  }
+  //*/
 
-        const isBase64 = !!parts[3];
+  //* It doesn't seem the following should be any different than what's above, but it is:
+  const childNodeClones = markerEl.cloneNode(true).childNodes || [];
+  for (let i = 0; i < childNodeClones.length; i++) {
+    container.appendChild(childNodeClones[i].cloneNode(true));
+  }
+  do {
+    markerEl.removeChild(markerEl.firstChild);
+  } while (markerEl.hasChildNodes());
+  //*/
 
-        let data;
-        if (parts[4]) {
-          data = parts[4];
-        }
+  markerEl.appendChild(container);
+  return markerEl;
+}
 
-        const decoded = !isBase64
-          ? decodeURIComponent(data)
-          : Base64.decode(data);
-        svgStringStream = hl([decoded]);
-      } else {
-        const strippedPath = url.replace("file://", "");
-        if (urlRegex({ strict: true, exact: true }).test(strippedPath)) {
-          svgStringStream = get(strippedPath);
-        } else {
-          svgStringStream = get(strippedPath);
+const markerPropertyToRefXMultiplierMap: Record<MarkerProperty, number> = {
+  marker: 0.5,
+  markerStart: 0,
+  markerMid: 0.5,
+  markerEnd: 1
+};
+
+const defProcessorMap = {
+  clipPaths: function(node, { preserveAspectRatio }) {
+    return [{ node, cache: {} }];
+  },
+  filters: function(node, { preserveAspectRatio }) {
+    //const childNodes = node.childNodes;
+    const feColorMatrices = node.getElementsByTagNameNS(
+      NS.svg,
+      "feColorMatrix"
+    );
+    for (let i = 0; i < feColorMatrices.length; i++) {
+      const feColorMatrix = feColorMatrices[i];
+      if (feColorMatrix.hasAttribute("values")) {
+        const values = feColorMatrix.getAttribute("values");
+        const updatedValues = values.trim().replace(/[\r\n]/g, " ");
+        if (values !== updatedValues) {
+          console.warn(`\tWarning: Safari cannot handle untrimmed filter values.
+    	See https://stackoverflow.com/a/39335132/5354298
+	Converting:
+	${values}
+	to:
+	${updatedValues}`);
+          feColorMatrix.setAttribute("values", updatedValues);
         }
       }
+    }
+    return [{ node, cache: {} }];
+  },
+  markers: function(node, { preserveAspectRatio }) {
+    const id = node.getAttribute("id");
 
-      return svgStringStream.map(function(svgString) {
-        const doc = new DOMParser().parseFromString(svgString);
-        const node = !idInSource
-          ? doc.documentElement
-          : doc.getElementById(idInSource);
-        // NOTE: "name" may or may not equal "idInSource", which is
-        //       the element id in the source SVG.
-        node.setAttribute("id", name);
-        const nodeClass = node.getAttribute("class") || "";
-        node.setAttribute("class", `${nodeClass} ${name}`);
-        if (thisPreserveAspectRatio) {
-          node.setAttribute("preserveAspectRatio", "xMidYMid");
-        } else {
-          node.setAttribute("preserveAspectRatio", "none");
-        }
+    const markerWidth = parseFloat(node.getAttribute("markerWidth"));
+    if (!isFinite(markerWidth)) {
+      throw new Error(
+        `markerWidth "${markerWidth}" for ${id} is not a finite number.`
+      );
+    }
 
-        const viewBox = node.getAttribute("viewBox");
-        if (!viewBox) {
-          const width = node.getAttribute("width") || 200;
-          const height = node.getAttribute("height") || 100;
-          if (!width || !height) {
-            throw new Error(`Cannot set viewBox for ${name}.`);
+    const markerHeight = parseFloat(node.getAttribute("markerHeight"));
+    if (!isFinite(markerHeight)) {
+      throw new Error(
+        `markerHeight "${markerHeight}" for ${id} is not a finite number.`
+      );
+    }
+
+    if (!node.hasAttribute("stroke-dasharray")) {
+      // TODO watch for Safari to fix its behavior related to this.
+      // Chrome and FF don't apply the stroke-dasharray of the
+      // edge to the marker, but Safari does.
+      node.setAttribute("stroke-dasharray", 99999);
+    }
+
+    if (!node.hasAttribute("refY")) {
+      node.setAttribute("refY", markerHeight / 2);
+    }
+    if (!node.hasAttribute("viewBox")) {
+      node.setAttribute("viewBox", `0 0 ${markerWidth} ${markerHeight}`);
+    }
+    return MARKER_PROPERTIES.map(function(markerProperty) {
+      const nodeClone = node.cloneNode(true);
+      const markerForThisProperty = markerProperty === "markerStart"
+        ? surroundWithFlip180Container(nodeClone, markerWidth, markerHeight)
+        : nodeClone;
+
+      const updatedId = createMarkerId(markerProperty, id);
+      nodeClone.setAttribute("id", updatedId);
+
+      if (!node.hasAttribute("refX")) {
+        nodeClone.setAttribute(
+          "refX",
+          markerPropertyToRefXMultiplierMap[markerProperty] * markerWidth
+        );
+      }
+      const contextStrokeDashoffset = parseFloat(
+        nodeClone.getAttribute("data-context-stroke-dashoffset")
+      );
+      return {
+        node: nodeClone,
+        cache: {
+          [updatedId]: {
+            contextStrokeDashoffset: isFinite(contextStrokeDashoffset)
+              ? contextStrokeDashoffset
+              : markerHeight
           }
-          node.setAttribute("viewBox", `0 0 ${width} ${height}`);
         }
-        const [
-          viewBoxX,
-          viewBoxY,
-          viewBoxWidth,
-          viewBoxHeight
-        ] = node.getAttribute("viewBox").split(/[\ ,]/);
-        const x = node.getAttribute("x");
-        const y = node.getAttribute("y");
-        if (
-          !isFinite(x) ||
-          !isFinite(y) ||
-          x > viewBoxWidth ||
-          y > viewBoxHeight
-        ) {
-          node.setAttribute("x", viewBoxX);
-          node.setAttribute("y", viewBoxY);
-        }
-        return node.toString();
+      };
+    });
+  },
+  patterns: function(node, { preserveAspectRatio }) {
+    return [{ node, cache: {} }];
+  },
+  symbols: function(node, { preserveAspectRatio }) {
+    const id = node.getAttribute("id");
+    const nodeClass = node.getAttribute("class") || "";
+    //node.setAttribute("class", `${nodeClass} ${name}`);
+    if (preserveAspectRatio) {
+      node.setAttribute("preserveAspectRatio", "xMidYMid");
+    } else {
+      node.setAttribute("preserveAspectRatio", "none");
+    }
+
+    const viewBox = node.getAttribute("viewBox");
+    if (!viewBox) {
+      const width = node.getAttribute("width") || 200;
+      const height = node.getAttribute("height") || 100;
+      if (!width || !height) {
+        throw new Error(`Cannot set viewBox for ${id}.`);
+      }
+      node.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    }
+    const [viewBoxX, viewBoxY, viewBoxWidth, viewBoxHeight] = node
+      .getAttribute("viewBox")
+      .split(/[\ ,]/);
+    const x = node.getAttribute("x");
+    const y = node.getAttribute("y");
+    if (!isFinite(x) || !isFinite(y) || x > viewBoxWidth || y > viewBoxHeight) {
+      node.setAttribute("x", viewBoxX);
+      node.setAttribute("y", viewBoxY);
+    }
+    return [{ node, cache: {} }];
+  }
+};
+
+function bundleDefs(defType, defMap, { preserveAspectRatio }) {
+  console.log("Importing:");
+  const processedStream = hl.pairs(defMap).flatMap(function([name, defPath]) {
+    const thisPreserveAspectRatio =
+      preserveAspectRatio === true ||
+      (isArray(preserveAspectRatio) && preserveAspectRatio.indexOf(name) > -1);
+    console.log(`  ${name}
+	source: ${defPath}
+	preserveAspectRatio: ${thisPreserveAspectRatio}`);
+    const [url, idAsSetInSource] = defPath.split("#");
+    // NOTE: data URI parsing is a variation of code from
+    // https://github.com/killmenot/parse-data-url/blob/master/index.js
+    let svgStringStream;
+    if (validDataUrl(url)) {
+      const parts = url.match(validDataUrl.regex);
+      let mediaType;
+      if (parts[1]) {
+        mediaType = parts[1].toLowerCase();
+      }
+
+      let charset;
+      if (parts[2]) {
+        charset = parts[2].split("=")[1].toLowerCase();
+      }
+
+      const isBase64 = !!parts[3];
+
+      let data;
+      if (parts[4]) {
+        data = parts[4];
+      }
+
+      const decoded = !isBase64
+        ? decodeURIComponent(data)
+        : Base64.decode(data);
+      svgStringStream = hl([decoded]);
+    } else {
+      const strippedPath = url.replace("file://", "");
+      if (urlRegex({ strict: true, exact: true }).test(strippedPath)) {
+        svgStringStream = get(strippedPath);
+      } else {
+        svgStringStream = get(strippedPath);
+      }
+    }
+
+    return svgStringStream.flatMap(function(svgString) {
+      const doc = new DOMParser().parseFromString(svgString);
+      const node = !idAsSetInSource
+        ? doc.documentElement
+        : doc.getElementById(idAsSetInSource);
+      // NOTE: "name" may or may not equal "idAsSetInSource", which is
+      //       the element id in the source SVG.
+      node.setAttribute("id", name);
+      //const tagName = node.tagName;
+      return hl(
+        !!defProcessorMap[defType]
+          ? defProcessorMap[defType](node, {
+              preserveAspectRatio: thisPreserveAspectRatio
+            })
+          : [node]
+      ).map(function({ node, cache }) {
+        return {
+          id: node.getAttribute("id"),
+          defType,
+          svgString: node.toString(),
+          cache
+        };
       });
-    })
-    .collect()
-    .map(function(svgStrings) {
-      const defNames = keys(defMap);
-      const suggestedFillOnlyCSS = defNames
-        .map((defName, i) => `#${defName} {fill: currentColor; stroke: none;}`)
-        .join("\n\t");
+    });
+  });
 
-      console.log(`
+  processedStream
+    .observe()
+    .filter(({ defType }) => defType === "symbols")
+    .map(({ id }) => id)
+    .toArray(function(ids) {
+      if (ids.length > 0) {
+        const suggestedFillOnlyCSS = ids
+          .map((id, i) => `#${id} {fill: currentColor; stroke: none;}`)
+          .join("\n\t");
+
+        console.log(`
 Note that most SVG glyph sets expect a fill color but not a stroke.
-To disable stroke for your def(s) and enable fill, you can use this in your custom CSS:
+To disable stroke for your def(s) and enable fill, add this to the CSS string for Kaavio prop style.diagram:
 
-<style xmlns="http://www.w3.org/2000/svg" type="text/css">
+<style xmlns="${NS.svg}" type="text/css">
 	<![CDATA[
 	${suggestedFillOnlyCSS}
 	]]>
 </style>
 `);
-      const joinedDefNamesString = defNames.join("");
-      const joinedSvgString = svgStrings.join("").replace(/[\r\n]/g, "");
-      // TODO look at using an SVG to JSX converter instead of using dangerouslySetInnerHTML
-      return (
-        `//import "source-map-support/register";
-							import * as React from "react";
-							import * as ReactDom from "react-dom";
-							export class Defs extends React.Component<any, any> {
-								constructor(props) {
-									super(props);
-								}
+      }
+    });
 
-								render() {
-									return <g id="bundled-defs-${joinedDefNamesString}" dangerouslySetInnerHTML={{
-											__html: '${joinedSvgString}'
-										}}/>
-								}
-							}` + "\n"
-      );
+  return processedStream
+    .reduce({ svgString: "", cache: {} }, function(acc, { svgString, cache }) {
+      acc.svgString += svgString;
+      acc.cache = defaultsDeep(acc.cache, cache);
+      return acc;
     })
     .errors(function(err, push) {
       err.message = err.message || "";
       err.message += ` in bundleDefs(${JSON.stringify(defMap)})`;
       push(err);
     });
+}
+
+function resolveDefMapPaths(configPath, defMap) {
+  return fromPairs(
+    toPairs(defMap).map(function([key, value]) {
+      if (value.indexOf("http") === 0) {
+        return [key, value];
+      }
+      const [pathRelativeToJSONFile, id] = value
+        .replace("file://", "")
+        .split("#");
+      const pathRelativeToCWD = path.resolve(
+        path.dirname(configPath),
+        pathRelativeToJSONFile
+      );
+      return [key, value.replace(pathRelativeToJSONFile, pathRelativeToCWD)];
+    })
+  );
 }
 
 /*
@@ -341,8 +497,8 @@ program
   .command("bundle nameOrConfigPath")
   .option("-o, --out <string>", `Where to save the bundle.`)
   .option(
-    "-d, --defs [name1=path,name2=path,name3=path...]",
-    `Include the defs specified.
+    "-s, --symbols [name1=path,name2=path,name3=path...]",
+    `Include the symbols specified.
     Example:
 			--defs Ellipse=./src/drawers/defs/Ellipse.svg
 	`,
@@ -410,75 +566,111 @@ program
     if (nameOrConfigPath.match(/\.json$/)) {
       themeMapStream = get(nameOrConfigPath)
         .through(JSONStream.parse())
-        .map(function(themeMap) {
-          const { defMap } = themeMap;
-          themeMap.defMap = fromPairs(
-            toPairs(defMap).map(function([key, value]) {
-              if (value.indexOf("http") === 0) {
-                return [key, value];
-              }
-              const [pathRelativeToJSONFile, id] = value
-                .replace("file://", "")
-                .split("#");
-              const pathRelativeToCWD = path.resolve(
-                path.dirname(nameOrConfigPath),
-                pathRelativeToJSONFile
-              );
-              return [
-                key,
-                value.replace(pathRelativeToJSONFile, pathRelativeToCWD)
-              ];
-            })
-          );
-          themeMap.name = path
-            .basename(nameOrConfigPath)
-            .replace(/\.json$/, "");
-          return themeMap;
+        .map(function({
+          filters,
+          markers,
+          preserveAspectRatio,
+          styles,
+          symbols
+        }) {
+          return {
+            name: path.basename(nameOrConfigPath).replace(/\.json$/, ""),
+            filters: resolveDefMapPaths(nameOrConfigPath, filters),
+            markers: resolveDefMapPaths(nameOrConfigPath, markers),
+            preserveAspectRatio,
+            symbols: resolveDefMapPaths(nameOrConfigPath, symbols),
+            styles
+          };
         });
     } else {
-      const { defs, edges, markers } = options;
-
+      const { symbols, edges, markers } = options;
       const preserveAspectRatio =
         options.hasOwnProperty("preserveAspectRatio") &&
         options.preserveAspectRatio;
-
-      const defMap = uniq(defs).reduce(function(acc, def) {
-        const defParts = def.split("=");
-        const defName = defParts[0];
-        const defLocation = defParts.slice(1).join("=");
-        acc[defName] = defLocation;
-        return acc;
-      }, {});
       themeMapStream = hl([
-        { name: nameOrConfigPath, defMap, preserveAspectRatio }
+        {
+          name: nameOrConfigPath,
+          symbols: uniq(symbols).reduce(function(acc, def) {
+            const defParts = def.split("=");
+            const defName = defParts[0];
+            const defLocation = defParts.slice(1).join("=");
+            acc[defName] = defLocation;
+            return acc;
+          }, {}),
+          preserveAspectRatio
+        }
       ]);
     }
 
-    themeMapStream.each(function(themeMap) {
-      const { name, defMap, preserveAspectRatio } = themeMap;
+    themeMapStream
+      .flatMap(function(themeMap) {
+        const { name, preserveAspectRatio } = themeMap;
+        return hl(toPairs(themeMap))
+          .filter(
+            ([defType, defMap]) =>
+              [
+                "clipPaths",
+                "filters",
+                "markers",
+                "patterns",
+                "symbols"
+              ].indexOf(defType) > -1
+          )
+          .flatMap(function([defType, defMap]) {
+            return bundleDefs(defType, defMap, {
+              preserveAspectRatio
+            });
+          })
+          .reduce({ svgString: "", cache: {} }, function(
+            acc,
+            { svgString, cache }
+          ) {
+            acc.svgString += svgString;
+            acc.cache = defaultsDeep(acc.cache, cache);
+            return acc;
+          })
+          .map(function({ svgString, cache }) {
+            const joinedSvgString = svgString.replace(/[\r\n]/g, "");
+            console.log("Caching the following extracted data:");
+            console.log(cache);
 
-      const defStream = bundleDefs(defMap, {
-        preserveAspectRatio
+            const cacheKeys = keys(cache).map(k => `"${k}"`).join("|");
+            const cacheString = JSON.stringify(cache);
+
+            // TODO look at using an SVG to JSX converter instead of using dangerouslySetInnerHTML
+            return (
+              `//import "source-map-support/register";
+		import * as React from "react";
+		import * as ReactDom from "react-dom";
+		export class Defs extends React.Component<any, any> {
+			static cache: Record<${cacheKeys}, Record<"contextStrokeDashoffset", number>> = ${cacheString};
+			constructor(props) {
+				super(props);
+			}
+			render() {
+				return <g id="bundled-defs-${name}" dangerouslySetInnerHTML={{
+						__html: '${joinedSvgString}'
+					}}/>
+			}
+		}` + "\n"
+            );
+          })
+          .flatMap(function(result) {
+            return pipeToFilepath(
+              hl([result]),
+              path.join(options.out, `__bundles_dont_edit__/${name}/Defs.tsx`)
+            );
+          });
+      })
+      .errors(function(err) {
+        console.error(err);
+        process.exitCode = 1;
+      })
+      .toArray(function() {
+        console.log(`Successfully completing bundling.`);
+        console.log(`Rebuild your project to make changes take effect`);
+        process.exitCode = 0;
       });
-
-      pipeToFilepath(
-        defStream,
-        path.join(options.out, `__bundles_dont_edit__/${name}/Defs.tsx`)
-      )
-        .flatMap(function() {
-          console.log(`Successfully completing bundling.`);
-          console.log(`Rebuild your project to make changes take effect`);
-          return hl([]);
-        })
-        .errors(function(err) {
-          console.error(err);
-          process.exitCode = 1;
-        })
-        .last()
-        .each(function(x) {
-          process.exitCode = 0;
-        });
-    });
   })
   .on("--help", function() {
     console.log(`

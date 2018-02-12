@@ -32,7 +32,6 @@ import {
 } from "../types";
 import { Entity } from "./Entity";
 import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
-import { MarkerDefs } from "./Marker/MarkerDefs";
 import { getSVGMarkerReferenceType } from "./Marker/helpers";
 const diagramStyleBase = require("./Diagram.css");
 import { interpolate } from "../spinoffs/interpolate";
@@ -108,9 +107,9 @@ export class Diagram extends React.Component<any, any> {
     });
   };
 
-  // NOTE: it's kind of annoying to have the marker and filter functions all the
+  // NOTE: it's kind of annoying to have the filter functions be all the
   // way up here in the component hierarchy, but we need to have them here,
-  // because our SVGs use marker and filter functionality in two different places:
+  // because our SVGs use filter functionality in two different places:
   // the defs and the usage of the defs. Since this is the lowest common ancestor
   // for those two places, we need to define them way up here.
 
@@ -173,12 +172,12 @@ export class Diagram extends React.Component<any, any> {
     const propsToPassDown = pick(
       [
         "createChildProps",
+        "Defs",
         "edgeDrawerMap",
         "entityMap",
         "getNamespacedFilterId",
         "getNamespacedId",
         "getNamespacedMarkerId",
-        "markerDrawerMap",
         "setFillOpacity",
         "setFilter",
         "setMarker",
@@ -284,7 +283,6 @@ export class Diagram extends React.Component<any, any> {
     const {
       style: diagramStyleCustom,
       Defs,
-      markerDrawerMap,
       entityMap,
       hiddenEntities,
       highlightedEntities,
@@ -373,6 +371,19 @@ ${nodeSelector} {
     // TODO add any prefixes, vocab and base if there is a provided @context
     const prefix = ["schema:http://schema.org/"].join(" ");
 
+    // TODO for foregroundColor, we actually just want to get the color that has
+    // the strongest contrast with backgroundColor. What if backgroundColor were
+    // green or dark gray?
+    const foregroundColor = [
+      "white",
+      "#FFF",
+      "#fff",
+      "#FFFFFF",
+      "#ffffff"
+    ].indexOf(backgroundColor) > -1
+      ? "black"
+      : "white";
+
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -382,6 +393,7 @@ ${nodeSelector} {
         version="1.1"
         baseProfile="full"
         preserveAspectRatio="xMidYMid"
+        color={foregroundColor}
         onClick={handleClick}
         className={formatClassNames("Diagram")}
         typeof="Diagram"
@@ -407,12 +419,6 @@ ${nodeSelector} {
             {...state}
           />
           <Defs />
-          <MarkerDefs
-            getNamespacedMarkerId={getNamespacedMarkerId}
-            latestMarkerReferenced={state.latestMarkerReferenced}
-            markerDrawerMap={markerDrawerMap}
-            {...state}
-          />
         </defs>
 
         <Entity

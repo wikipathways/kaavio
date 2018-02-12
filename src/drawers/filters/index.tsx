@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { Parser } from "collit";
 import { FilterResponse, FilterRequestProps } from "../../types";
 
 function getMorphProps(radius: number) {
@@ -103,6 +104,60 @@ export function Double({
       y: "-50%"
     },
     filterPrimitives: filterPrimitives
+  };
+}
+
+export function BlackToColor({
+  color,
+  getNamespacedId
+}: FilterRequestProps): FilterResponse {
+  const source = "SourceGraphic";
+
+  const { r, g, b, a } = Parser.parseColor(color).rgb;
+
+  return {
+    filterProperties: {
+      id: getNamespacedId(["BlackTo", color, "filter"].join("-")),
+      filterUnits: "userSpaceOnUse"
+    },
+    filterPrimitives: [
+      <feColorMatrix
+        key={`BlackTo${color}`}
+        type="matrix"
+        in="SourceGraphic"
+        values={`-1   0   0 0 ${r / 255}
+                  0  -1   0 0 ${g / 255}
+                  0   0  -1 0 ${b / 255}
+                  0   0   0 1 0`}
+      />
+    ]
+  };
+}
+
+export function WhiteToColor({
+  color,
+  getNamespacedId
+}: FilterRequestProps): FilterResponse {
+  const source = "SourceGraphic";
+
+  const { r, g, b, a } = Parser.parseColor(color).rgb;
+
+  return {
+    filterProperties: {
+      id: getNamespacedId(["WhiteTo", color, "filter"].join("-")),
+      filterUnits: "userSpaceOnUse"
+    },
+    filterPrimitives: [
+      <feColorMatrix
+        key={`WhiteTo${color}`}
+        type="matrix"
+        in="SourceGraphic"
+        values={`1  0  0 0 -${r / 255}
+                 0  1  0 0 -${g / 255}
+                 0  0  1 0 -${b / 255}
+                 0  0  0 1 0`}
+      />
+    ]
   };
 }
 

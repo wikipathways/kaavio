@@ -179,15 +179,13 @@ export class Node extends React.Component<any, any> {
     const { state } = this;
     const { children, className, iconAttributes, type } = state;
 
+    //className={formatClassNames(type, className, "Node")}
     return (
       <g
-        className={formatClassNames(type, className, "Node")}
+        className="Node"
         ref={containerRef => (this.containerRef = containerRef)}
       >
-        <state.iconTagName
-          className={formatClassNames(type, className, "Node", "Icon")}
-          {...iconAttributes}
-        />
+        <state.iconTagName className="Icon" {...iconAttributes} />
         {children}
       </g>
     );

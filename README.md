@@ -1,10 +1,11 @@
-kaavio
+Kaavio
 ====================
 
-The diagram viewer functionality for [pvjs](https://github.com/wikipathways/pvjs). "Kaavio" is the Finnish word for diagram.
+A component for creating custom diagram renderers. "Kaavio" is the Finnish word for diagram.
 
+This library is not intended to be used on its own. Rather, it is to be used as a dependency for a parent library like [Pvjs](https://github.com/wikipathways/pvjs). The parent library provides one or more themes --- filters, markers, styles and symbols -- that Kaavio uses for rendering.
 
-See also the [Editor Plugin](https://github.com/wikipathways/kaavio-editor), which allows for updating the pvjson data.
+~~See also the [Editor Plugin](https://github.com/wikipathways/kaavio-editor), which allows for updating the pvjson data.~~ (Not ready yet.)
 
 License
 =======

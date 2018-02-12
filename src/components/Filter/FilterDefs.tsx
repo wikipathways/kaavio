@@ -22,8 +22,6 @@ export class FilterDefs extends React.Component<any, any> {
 
     const entityValues = values(entityMap);
 
-    //const definedFromBorderStyleDouble = find((entity) => !!entity.borderStyle && entity.borderStyle === 'double', entityValues) ?  : {};
-
     const definedFromBorderStyleDouble = entityValues
       .filter(
         entity =>
@@ -70,11 +68,39 @@ export class FilterDefs extends React.Component<any, any> {
         return acc;
       }, {});
 
+    const definedFromBlackToColor = entityValues
+      .filter(entity => entity.hasOwnProperty("color"))
+      .reduce(function(acc, entity) {
+        const filterName = "BlackToColor";
+        const { filterProperties, filterPrimitives } = getNamespacedFilter({
+          color: entity.color,
+          filterName
+        });
+
+        acc[filterProperties.id] = { filterProperties, filterPrimitives };
+        return acc;
+      }, {});
+
+    const definedFromWhiteToColor = entityValues
+      .filter(entity => entity.hasOwnProperty("color"))
+      .reduce(function(acc, entity) {
+        const filterName = "WhiteToColor";
+        const { filterProperties, filterPrimitives } = getNamespacedFilter({
+          color: entity.color,
+          filterName
+        });
+
+        acc[filterProperties.id] = { filterProperties, filterPrimitives };
+        return acc;
+      }, {});
+
     this.state = {
       defined: defaultsAll([
         definedFromEntityFilterProperties,
         definedFromBorderStyleDouble,
-        definedFromHighlights
+        definedFromHighlights,
+        definedFromBlackToColor,
+        definedFromWhiteToColor
       ])
     };
   }
@@ -133,7 +159,7 @@ export class FilterDefs extends React.Component<any, any> {
     const { defined } = this.state;
 
     return (
-      <g id="filter-defs">
+      <g id="calculated-filter-defs">
         {toPairs(
           defined
         ).map(([filterId, { filterProperties, filterPrimitives }]) => {

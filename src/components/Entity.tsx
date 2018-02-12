@@ -38,7 +38,7 @@ export class Entity extends React.Component<any, any> {
 
   renderText() {
     const { props } = this;
-    const { className, id, textContent, textRotation, type } = props;
+    const { id, textContent, textRotation, type } = props;
     if (!textContent) return;
 
     const textPropsToPassDown = [
@@ -72,11 +72,12 @@ export class Entity extends React.Component<any, any> {
       containerPropsToPassDown
     );
 
+    //className={formatClassNames(type, className, "textContent")}
     return (
       <Text
         id={`${id}-text`}
         key={`${id}-text`}
-        className={formatClassNames(type, className, "textContent")}
+        className="textContent"
         rotation={textRotation}
         {...propsToPassDown}
       />
@@ -198,9 +199,11 @@ export class Entity extends React.Component<any, any> {
       y
     } = props;
 
-    //const childProps = omit("className", props);
+    const childProps = omit("className", props);
+    /*
     const childPropsType = unionLSV(type, kaavioType);
     const childProps = { type: childPropsType, ...props };
+	  //*/
 
     // Anders: I think it's best to be explicit. Instead of using components[kaavioType] do this.
     // I know it's a bit redundant but in this case I think it aids comprehension
@@ -233,6 +236,10 @@ export class Entity extends React.Component<any, any> {
       filters = unionLSV(filters, "Double");
     }
 
+    if (kaavioType === "Edge" && !!color) {
+      filters = unionLSV(filters, "BlackToColor");
+    }
+
     let entityTransform;
     if (x || y || rotation) {
       entityTransform = `translate(${x},${y})`;
@@ -245,9 +252,9 @@ export class Entity extends React.Component<any, any> {
       <g
         id={id}
         key={id}
-        className={formatClassNames(type, className)}
+        className={formatClassNames(type, kaavioType, className)}
         about={id}
-        color={color}
+        color={kaavioType === "Edge" ? "currentColor" : color}
         name={textContent}
         transform={entityTransform}
         typeof={type.map(encodeURI).join(" ")}
@@ -294,11 +301,9 @@ export class Entity extends React.Component<any, any> {
                 borderWidth,
                 parentBackgroundColor
               });
+              //className={formatClassNames(type, className)}
               return (
-                <g
-                  className={formatClassNames(type, className)}
-                  filter={filterPropertyValue}
-                >
+                <g filter={filterPropertyValue}>
                   {acc}
                 </g>
               );

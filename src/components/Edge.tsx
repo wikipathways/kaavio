@@ -1,27 +1,41 @@
-import { floor, intersection, keys, omit, sum, toFinite } from "lodash/fp";
+import {
+  concat,
+  floor,
+  intersection,
+  keys,
+  omit,
+  round,
+  sum,
+  toFinite
+} from "lodash/fp";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { getSVGMarkerReferenceType, MARKER_PROPERTIES } from "./Marker/helpers";
+import {
+  createMarkerId,
+  getSVGMarkerReferenceType,
+  MARKER_PROPERTIES
+} from "./Marker/helpers";
 import { formatClassNames } from "../utils/formatClassNames";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
-import {
-  GetNamespacedMarkerId,
-  MarkerProperty,
-  StringReferenceValue
-} from "../types";
+import { MarkerProperty, StringReferenceValue } from "../types";
+
+const STROKE_DASHARRAY_ROUNDING_FACTOR = 100;
+function roundForStrokeDasharraySegment(n) {
+  return (
+    round(n * STROKE_DASHARRAY_ROUNDING_FACTOR) /
+    STROKE_DASHARRAY_ROUNDING_FACTOR
+  );
+}
 
 export class Edge extends React.Component<any, any> {
-  getNamespacedMarkerId: GetNamespacedMarkerId;
   constructor(props) {
     super(props);
-    this.getNamespacedMarkerId = props.getNamespacedMarkerId;
   }
 
   getMarkerPropertyValue = (
     markerProperty: MarkerProperty,
     markerName: StringReferenceValue & string
   ): StringReferenceValue | string => {
-    const { getNamespacedMarkerId } = this;
     const svgReferenceType = getSVGMarkerReferenceType(markerName);
 
     if (svgReferenceType === "string") {
@@ -32,42 +46,21 @@ export class Edge extends React.Component<any, any> {
       return formatSVGReference(markerName, [svgReferenceType]);
     }
 
-    const namespacedMarkerId = getNamespacedMarkerId({
-      markerProperty,
-      markerName
-    });
-    return formatSVGReference(namespacedMarkerId, [svgReferenceType]);
+    return formatSVGReference(createMarkerId(markerProperty, markerName), [
+      svgReferenceType
+    ]);
   };
 
-  // making sure we've defined any markers referenced after initial mount
-  componentWillReceiveProps(nextProps) {
-    const { getNamespacedMarkerId } = this;
-    const { color, parentBackgroundColor } = nextProps;
-    intersection(MARKER_PROPERTIES, keys(nextProps)).forEach(function(
-      markerProperty: MarkerProperty
-    ) {
-      const markerName = nextProps[markerProperty];
-      if (markerName) {
-        if (!!getNamespacedMarkerId) {
-          getNamespacedMarkerId({
-            markerProperty,
-            markerName
-          });
-        }
-      }
-    });
-  }
-
   render() {
-    const { getMarkerPropertyValue, getNamespacedMarkerId } = this;
+    const { getMarkerPropertyValue } = this;
     const {
       id,
+      color,
+      Defs,
       drawAs,
       edgeDrawerMap,
-      markerDrawerMap,
-      color,
       parentBackgroundColor,
-      strokeDasharray: strokeDasharrayMidString,
+      strokeDasharray: strokeDasharrayPatternString,
       borderWidth,
       points,
       type
@@ -94,9 +87,8 @@ export class Edge extends React.Component<any, any> {
       keys(this.props)
     ).reduce((acc, markerProperty: MarkerProperty) => {
       const markerName = this.props[markerProperty];
-      if (markerName && markerDrawerMap[markerName]) {
-        acc[markerProperty] = markerDrawerMap[markerName]("white", "black");
-      }
+      const markerId = createMarkerId(markerProperty, markerName);
+      acc[markerProperty] = Defs.cache[markerId];
       return acc;
     }, {});
 
@@ -133,57 +125,116 @@ export class Edge extends React.Component<any, any> {
      * appears that only applies to the start, so it wouldn't work for markers
      * at the end.
      */
-    const strokeDasharray = [];
-    const markerStartGap = !!markerDetailsMap.markerStart &&
-      !!markerDetailsMap.markerStart.markerAttributes
-      ? markerDetailsMap.markerStart.markerAttributes["data-gap"]
+    const strokeDasharrayWithMarkerOffsets = [];
+    const markerStartOffset = !!markerDetailsMap.markerStart &&
+      !!markerDetailsMap.markerStart.contextStrokeDashoffset
+      ? markerDetailsMap.markerStart.contextStrokeDashoffset
       : 0;
-    if (markerStartGap) {
-      strokeDasharray.push(0);
-      strokeDasharray.push(markerStartGap);
+    if (markerStartOffset) {
+      strokeDasharrayWithMarkerOffsets.push(0);
+      strokeDasharrayWithMarkerOffsets.push(markerStartOffset);
     }
-    const markerEndGap = !!markerDetailsMap.markerEnd &&
-      !!markerDetailsMap.markerEnd.markerAttributes
-      ? markerDetailsMap.markerEnd.markerAttributes["data-gap"]
+    const markerEndOffset = !!markerDetailsMap.markerEnd &&
+      !!markerDetailsMap.markerEnd.contextStrokeDashoffset
+      ? markerDetailsMap.markerEnd.contextStrokeDashoffset
       : 0;
-    const totalLength = getTotalLength();
-    const nonMarkerEdgeLength = totalLength - (markerStartGap + markerEndGap);
-    if (strokeDasharrayMidString) {
-      const strokeDasharrayMid = strokeDasharrayMidString
+    let distanceToEndOffset =
+      getTotalLength() - markerStartOffset - markerEndOffset;
+    if (strokeDasharrayPatternString) {
+      const strokeDasharrayPatternHalfOrFull = strokeDasharrayPatternString
         .split(/[,\ ]+/)
         .map(toFinite);
-      const strokeDasharrayMidSectionLength = sum(strokeDasharrayMid);
-      const repetitions = nonMarkerEdgeLength / strokeDasharrayMidSectionLength;
-      const repetitionCount = floor(repetitions);
-      const remainder = repetitions - repetitionCount;
-      for (var i = 0; i < repetitionCount; i++) {
-        strokeDasharrayMid.forEach(function(x) {
-          strokeDasharray.push(x);
-        });
-      }
-      strokeDasharray.push(remainder * strokeDasharrayMidSectionLength);
-      if (strokeDasharray.length % 2 === 0) {
-        // if even, next one will be a dash
-        strokeDasharray.push(0);
-      }
-      strokeDasharray.push(markerEndGap);
-    } else {
-      strokeDasharray.push(nonMarkerEdgeLength);
-      strokeDasharray.push(markerEndGap);
-    }
+      // See MDN -- if stroke-dasharray has an odd number of segments, it is concatenated with itself.
+      const strokeDasharrayPattern = strokeDasharrayPatternHalfOrFull.length %
+        2 ===
+        0
+        ? strokeDasharrayPatternHalfOrFull
+        : concat(
+            strokeDasharrayPatternHalfOrFull,
+            strokeDasharrayPatternHalfOrFull
+          );
+      const strokeDasharrayPatternSegmentCount = strokeDasharrayPattern.length;
 
+      const strokeDasharrayPatternSummedLength = sum(strokeDasharrayPattern);
+      const firstDashLength = strokeDasharrayPattern[0];
+      const repetitionCount = floor(
+        (distanceToEndOffset - firstDashLength) /
+          strokeDasharrayPatternSummedLength
+      );
+      // NOTE: if strokeDasharrayPatternSummedLength is very large and the edge is very short,
+      // we could inadvertently make a huge change to the strokeDasharray.
+      // We only want to try making a subtle adjustment so as to get the edge to
+      // terminate with a dash into the end marker. If it's not subtle (<20% change),
+      // we'll just stick with the original scale and cut it off wherever it ends.
+      // NOTE: scaleFactor will always be positive, because we used floor() above.
+      const scaleFactor = Math.min(
+        1.2,
+        distanceToEndOffset /
+          (repetitionCount * strokeDasharrayPatternSummedLength +
+            firstDashLength)
+      );
+
+      const maxRoundingError = 1 / STROKE_DASHARRAY_ROUNDING_FACTOR;
+      do {
+        for (let i = 0; i < strokeDasharrayPatternSegmentCount; i++) {
+          if (distanceToEndOffset <= maxRoundingError) {
+            break;
+          }
+          const segmentLengthOnDeck = scaleFactor * strokeDasharrayPattern[i];
+          let segmentLength;
+          if (2 * segmentLengthOnDeck > distanceToEndOffset) {
+            segmentLength = segmentLengthOnDeck;
+          } else {
+            if (strokeDasharrayPatternSegmentCount % 2 === 0) {
+              segmentLength = Math.min(
+                segmentLengthOnDeck,
+                distanceToEndOffset
+              );
+            } else {
+              // We want the edge to terminate into the end marker with
+              // a dash that is long enough to be visible.
+              // If we reach this part of the code, the segment on deck is a gap,
+              // because strokeDasharrayWithMarkerOffsets.length is odd,
+              // but the subsequent dash would be shorter than this gap and hence
+              // too short to be visible (assuming the user-specified gap is visible).
+              // So in this case, we "skip" the final gap by pushing an empty gap and
+              // filling the rest of the distance to the end marker with a dash.
+              // TODO is it possible to reach this section?
+              console.warn("Adding a placeholder empty gap inside while loop.");
+              strokeDasharrayWithMarkerOffsets.push(0);
+              segmentLength = distanceToEndOffset;
+            }
+          }
+          const segmentLengthRounded = roundForStrokeDasharraySegment(
+            segmentLength
+          );
+          strokeDasharrayWithMarkerOffsets.push(segmentLengthRounded);
+          distanceToEndOffset -= segmentLengthRounded;
+        }
+      } while (distanceToEndOffset > maxRoundingError);
+      if (strokeDasharrayWithMarkerOffsets.length % 2 === 0) {
+        // if even, next segment will be a dash, but we want it to be a gap,
+        // so we "skip" this dash by making it zero-length.
+        strokeDasharrayWithMarkerOffsets.push(0);
+      }
+    } else {
+      strokeDasharrayWithMarkerOffsets.push(distanceToEndOffset);
+    }
+    strokeDasharrayWithMarkerOffsets.push(markerEndOffset);
+
+    //stroke={color}
     return (
       <path
         id={id}
         key={`${id}-path`}
-        className={formatClassNames(type)}
+        className="Edge"
         d={d}
         fill={"transparent"}
         fillOpacity="0"
-        stroke={color}
-        strokeDasharray={strokeDasharray.join(", ")}
+        stroke="currentColor"
+        strokeDasharray={strokeDasharrayWithMarkerOffsets.join(", ")}
         strokeWidth={borderWidth}
-        {...omit("data-gap", markerProperties)}
+        {...markerProperties}
       />
     );
   }

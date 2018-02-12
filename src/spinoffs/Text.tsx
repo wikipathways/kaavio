@@ -277,7 +277,6 @@ export class Text extends React.Component<any, any> {
           </clipPath>
         </defs>
         <text
-          className={className}
           clipPath={overflow === "hidden" ? `url(#${clipPathId})` : null}
           dominantBaseline="central"
           fill={color}
@@ -302,7 +301,6 @@ export class Text extends React.Component<any, any> {
             return (
               <tspan
                 key={`text-line-${i}-${line}`}
-                className={className}
                 direction={ltrCentric ? "ltr" : textDirection}
                 fontSize={`${fontSize}px`}
                 x="0"

@@ -150,7 +150,6 @@ export class Kaavio extends React.Component<any, any> {
       onPanZoomChange,
       edgeDrawerMap,
       filterDrawerMap,
-      markerDrawerMap,
       style,
       Defs,
       showPanZoomControls = true,
@@ -192,7 +191,6 @@ export class Kaavio extends React.Component<any, any> {
           edgeDrawerMap={edgeDrawerMap}
           filterDrawerMap={filterDrawerMap}
           Defs={Defs}
-          markerDrawerMap={markerDrawerMap}
         />
         <PanZoom
           diagram={this.state.diagramRef}
