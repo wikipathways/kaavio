@@ -483,30 +483,11 @@ function resolveDefMapPaths(configPath, defMap) {
   );
 }
 
-/*
-const bundlerMap = {
-  edges: bundleBySelectiveImport("edges"),
-  filters: bundleBySelectiveImport("filters"),
-  defs: bundleDefs,
-  markers: bundleBySelectiveImport("markers"),
-  styles: bundleStyles
-};
-//*/
-
 program
   .command("bundle nameOrConfigPath")
-  .option("-o, --out <string>", `Where to save the bundle.`)
   .option(
-    "-s, --symbols [name1=path,name2=path,name3=path...]",
-    `Include the symbols specified.
-    Example:
-			--defs Ellipse=./src/drawers/defs/Ellipse.svg
-	`,
-    // NOTE: s below is always a string.
-    // If the user specifies true, it comes through as a string, not a boolean.
-    // If the user doesn't use this option, the function below is not called.
-    (s: string) =>
-      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
+    "-o, --out [string]",
+    `Where to save the bundle. If JSON config file provided, out defaults to directory containing that file.`
   )
   .option(
     "-p, --preserve-aspect-ratio [name1,name2,name3...]",
@@ -521,8 +502,32 @@ program
       STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
   )
   .option(
-    "-e, --edges [name1,name2,name3...]",
-    `Include the edges specified. If argument not specified, default is to include all.
+    "--clipPaths [name1=path,name2=path,name3=path...]",
+    `Include the clipPaths specified.
+    Example:
+			--clipPaths ClipPathRoundedRectangle=./src/themes/clipPaths/ClipPathRoundedRectangle.svg#ClipPathRoundedRectangle
+	`,
+    // NOTE: s below is always a string.
+    // If the user specifies true, it comes through as a string, not a boolean.
+    // If the user doesn't use this option, the function below is not called.
+    (s: string) =>
+      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
+  )
+  .option(
+    "--filters [name1,name2,name3...]",
+    `Include the filters specified. If argument not specified, default is to include all Kaavio filters.
+    Example:
+			--filters FilterWhiteToBlue=./src/themes/filters/FilterWhiteToBlue.svg#FilterWhiteToBlue
+	`,
+    // NOTE: s below is always a string.
+    // If the user specifies true, it comes through as a string, not a boolean.
+    // If the user doesn't use this option, the function below is not called.
+    (s: string) =>
+      STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
+  )
+  .option(
+    "--edges [name1,name2,name3...]",
+    `Include the edges specified. If argument not specified, default is to include all Kaavio edges.
     Example:
 			--edges StraightLine CurvedLine ElbowLine SegmentedLine
 	`,
@@ -533,10 +538,10 @@ program
       STRING_TO_BOOLEAN.hasOwnProperty(s) ? STRING_TO_BOOLEAN[s] : s.split(",")
   )
   .option(
-    "-m, --markers [name1,name2,name3...]",
-    `Include the markers specified. If argument not specified, default is to include all.
+    "--symbols [name1=path,name2=path,name3=path...]",
+    `Include the symbols specified.
     Example:
-			--markers Arrow TBar
+			--symbols Ellipse=./src/themes/symbols/Ellipse.svg
 	`,
     // NOTE: s below is always a string.
     // If the user specifies true, it comes through as a string, not a boolean.
@@ -546,75 +551,57 @@ program
   )
   .action(function(nameOrConfigPath: string, options) {
     console.log(`Bundling...`);
-
-    //const outputStream = options.out;
-
-    /*
-    if (!bundlerMap.hasOwnProperty(whatToBundle)) {
-      const cmdSuggestions = keys(bundlerMap)
-        .map(key => `\tkaavio bundle ${key} ${defs.join(", ")}`)
-        .join("\r\n");
-      throw new Error(
-        `"${whatToBundle}" is not a supported whatToBundle option. Supported options: \r\n${cmdSuggestions}\r\n`
-      );
-    }
-
-    const bundler = bundlerMap[whatToBundle];
-	  //*/
+    const defProcessorNames = keys(defProcessorMap);
 
     let themeMapStream;
     if (nameOrConfigPath.match(/\.json$/)) {
+      // NOTE: JSON config file provided.
+      const name = path.basename(nameOrConfigPath).replace(/\.json$/, "");
+      const out = options.out || path.dirname(nameOrConfigPath);
       themeMapStream = get(nameOrConfigPath)
         .through(JSONStream.parse())
-        .map(function({
-          filters,
-          markers,
-          preserveAspectRatio,
-          styles,
-          symbols
-        }) {
-          return {
-            name: path.basename(nameOrConfigPath).replace(/\.json$/, ""),
-            filters: resolveDefMapPaths(nameOrConfigPath, filters),
-            markers: resolveDefMapPaths(nameOrConfigPath, markers),
-            preserveAspectRatio,
-            symbols: resolveDefMapPaths(nameOrConfigPath, symbols),
-            styles
-          };
+        .map(function(options) {
+          const { preserveAspectRatio } = options;
+          return defProcessorNames.reduce(
+            function(acc, defProcessorName) {
+              acc[defProcessorName] = resolveDefMapPaths(
+                nameOrConfigPath,
+                options[defProcessorName]
+              );
+              return acc;
+            },
+            { name, out, preserveAspectRatio }
+          );
         });
     } else {
-      const { symbols, edges, markers } = options;
+      const { out } = options;
       const preserveAspectRatio =
         options.hasOwnProperty("preserveAspectRatio") &&
         options.preserveAspectRatio;
+
       themeMapStream = hl([
-        {
-          name: nameOrConfigPath,
-          symbols: uniq(symbols).reduce(function(acc, def) {
-            const defParts = def.split("=");
-            const defName = defParts[0];
-            const defLocation = defParts.slice(1).join("=");
-            acc[defName] = defLocation;
-            return acc;
-          }, {}),
-          preserveAspectRatio
-        }
+        defProcessorNames.reduce(function(acc, defProcessorName) {
+          acc[defProcessorName] = uniq(acc[defProcessorName]).reduce(
+            function(subAcc, def) {
+              const defParts = def.split("=");
+              const defName = defParts[0];
+              const defLocation = defParts.slice(1).join("=");
+              subAcc[defName] = defLocation;
+              return subAcc;
+            },
+            { name, out, preserveAspectRatio }
+          );
+          return acc;
+        })
       ]);
     }
 
     themeMapStream
       .flatMap(function(themeMap) {
-        const { name, preserveAspectRatio } = themeMap;
+        const { name, out, preserveAspectRatio } = themeMap;
         return hl(toPairs(themeMap))
           .filter(
-            ([defType, defMap]) =>
-              [
-                "clipPaths",
-                "filters",
-                "markers",
-                "patterns",
-                "symbols"
-              ].indexOf(defType) > -1
+            ([defType, defMap]) => defProcessorNames.indexOf(defType) > -1
           )
           .flatMap(function([defType, defMap]) {
             return bundleDefs(defType, defMap, {
@@ -658,7 +645,7 @@ program
           .flatMap(function(result) {
             return pipeToFilepath(
               hl([result]),
-              path.join(options.out, `__bundles_dont_edit__/${name}/Defs.tsx`)
+              path.join(out, `__bundles_dont_edit__/${name}/Defs.tsx`)
             );
           });
       })
