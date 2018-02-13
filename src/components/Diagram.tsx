@@ -7,7 +7,6 @@ import {
   defaults,
   defaultsAll,
   filter,
-  forOwn,
   isArray,
   isBoolean,
   isFinite,
@@ -21,6 +20,7 @@ import {
   toPairs,
   values
 } from "lodash/fp";
+import { forOwn } from "lodash";
 import { formatClassNames } from "../utils/formatClassNames";
 import {
   GetNamespacedId,
@@ -253,7 +253,7 @@ export class Diagram extends React.Component<any, any> {
 
     const nextProps = this.setFillOpacity(nextPropsRaw);
 
-    forOwn(function(prop, key) {
+    forOwn(nextProps, function(prop, key) {
       if (key === "filters") {
         that.setState({
           [key]: prop
@@ -266,7 +266,7 @@ export class Diagram extends React.Component<any, any> {
           [key]: prop
         });
       }
-    }, nextProps);
+    });
   }
 
   render() {
