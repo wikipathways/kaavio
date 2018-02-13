@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "4.0.0-47",
+  "version": "4.0.0-48",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "dist/index.js",
   "module": "lib/index.js",
@@ -141,7 +141,7 @@
     "expose-loader": "^0.7.3",
     "extract-text-webpack-plugin": "^2.1.2",
     "jest": "^22.1.4",
-    "npm-run-all": "^4.1.1",
+    "npm-run-all": "^4.1.2",
     "onchange": "^3.2.1",
     "postcss-loader": "^2.0.8",
     "precss": "^2.0.0",
