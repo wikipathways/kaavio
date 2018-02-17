@@ -11,14 +11,14 @@ function getMorphProps(radius: number) {
 }
 
 export function Double({
-  backgroundColor,
-  borderWidth = 1,
+  fill,
+  strokeWidth = 1,
   color,
   getNamespacedId,
-  parentBackgroundColor
+  parentFill
 }: FilterRequestProps): FilterResponse {
   const source = "SourceGraphic";
-  const hasFill = ["none", "transparent"].indexOf(backgroundColor) === -1;
+  const hasFill = ["none", "transparent"].indexOf(fill) === -1;
 
   let filterPrimitives;
   const inPrimitiveName = "inDouble";
@@ -27,19 +27,19 @@ export function Double({
   let compositeOperator;
 
   // almost impossible to see a double line if it's under 1px wide.
-  const minBorderWidth = Math.max(borderWidth, 1);
+  const minStrokeWidth = Math.max(strokeWidth, 1);
 
   if (!hasFill) {
     compositeOperator = "out";
 
     // Sets the width of the thick line.
-    inRadius = minBorderWidth;
+    inRadius = minStrokeWidth;
 
     // Related to setting the width of the inner stripe that splits the thick
     // line, although visual inspection shows it's setting something else,
     // because the stripe width doesn't equal inRadius2 or 2 * inRadius2.
     // NOTE: FF seems to need this, but Chrome does not.
-    const in2Radius = 1 / minBorderWidth / 2;
+    const in2Radius = 1 / minStrokeWidth / 2;
 
     filterPrimitives = [
       // darken
@@ -61,10 +61,10 @@ export function Double({
     compositeOperator = "atop";
 
     // Appears to be related to setting the outside line.
-    const in2Radius = minBorderWidth;
+    const in2Radius = minStrokeWidth;
 
     // Appears to be related to setting the inside line.
-    inRadius = -1 * minBorderWidth;
+    inRadius = -1 * minStrokeWidth;
 
     filterPrimitives = [
       <feMorphology
@@ -97,7 +97,7 @@ export function Double({
 
   return {
     filterProperties: {
-      id: getNamespacedId(["double", hasFill, borderWidth, "filter"].join("-")),
+      id: getNamespacedId(["double", hasFill, strokeWidth, "filter"].join("-")),
       width: "200%",
       height: "200%",
       x: "-50%",
@@ -187,15 +187,15 @@ export function Highlight({
 }
 
 export function Round({
-  backgroundColor,
-  borderWidth = 1,
+  fill,
+  strokeWidth = 1,
   color,
   getNamespacedId,
-  parentBackgroundColor
+  parentFill
 }: FilterRequestProps): FilterResponse {
   const source = "SourceGraphic";
-  // Can we handle a borderWidth of 0.4?
-  //const roundedStrokeWidth = Math.max(1, Math.round(borderWidth || 1));
+  // Can we handle a strokeWidth of 0.4?
+  //const roundedStrokeWidth = Math.max(1, Math.round(strokeWidth || 1));
 
   // C' = slope * C + intercept
   // where C is the initial component (e.g., ‘feFuncR’),
@@ -209,24 +209,24 @@ export function Round({
   const darkOutputIntercept = -0.7;
 
   const normalizedWidth = 3;
-  //const borderWidthNormalizationOperator = (borderWidth > 2) ? 'contract' : 'dilate';
-  const borderWidthNormalizationOperator = borderWidth > normalizedWidth
+  //const strokeWidthNormalizationOperator = (strokeWidth > 2) ? 'contract' : 'dilate';
+  const strokeWidthNormalizationOperator = strokeWidth > normalizedWidth
     ? "contract"
     : "dilate";
   // strangely, this is what appears needed to normalize stroke width to a value
   // large enough to be blurred without being destroyed:
-  const radius = borderWidthNormalizationOperator === "dilate" ? 1 : 0;
+  const radius = strokeWidthNormalizationOperator === "dilate" ? 1 : 0;
   // would have expected this, but it doesn't produce expected results:
-  //const radius = (borderWidthNormalizationOperator === 'dilate') ? (normalizedWidth - borderWidth) : borderWidth - normalizedWidth;
-  //const radius = Math.abs((normalizedWidth - borderWidth - 1) / 2 );
-  //const radius = Math.abs(normalizedWidth - borderWidth);
+  //const radius = (strokeWidthNormalizationOperator === 'dilate') ? (normalizedWidth - strokeWidth) : strokeWidth - normalizedWidth;
+  //const radius = Math.abs((normalizedWidth - strokeWidth - 1) / 2 );
+  //const radius = Math.abs(normalizedWidth - strokeWidth);
 
-  const borderWidthRevertOperator = borderWidthNormalizationOperator ===
+  const strokeWidthRevertOperator = strokeWidthNormalizationOperator ===
     "contract"
     ? "dilate"
     : "contract";
 
-  const normalizedDark = borderWidth === 1
+  const normalizedDark = strokeWidth === 1
     ? [
         <feBlend
           in="SourceGraphic"
@@ -242,7 +242,7 @@ export function Round({
         />,
         <feMorphology
           in="roundnormalizeddarkinput"
-          operator={borderWidthNormalizationOperator}
+          operator={strokeWidthNormalizationOperator}
           radius={radius}
           result="roundnormalized"
         />
@@ -256,7 +256,7 @@ export function Round({
         />,
         <feMorphology
           in="roundnormalizeddarkinput"
-          operator={borderWidthNormalizationOperator}
+          operator={strokeWidthNormalizationOperator}
           radius={radius}
           result="roundnormalized"
         />
@@ -264,7 +264,7 @@ export function Round({
 
   return {
     filterProperties: {
-      id: getNamespacedId(["round", borderWidth, "filter"].join("-"))
+      id: getNamespacedId(["round", strokeWidth, "filter"].join("-"))
     },
     filterPrimitives: normalizedDark.concat([
       <feGaussianBlur
@@ -295,7 +295,7 @@ export function Round({
       />,
       <feMorphology
         in="rounddarkeroutput"
-        operator={borderWidthRevertOperator}
+        operator={strokeWidthRevertOperator}
         radius={radius}
         result="roundResult"
       />

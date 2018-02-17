@@ -1,15 +1,15 @@
 import "source-map-support/register";
-import * as edgeDrawerMap from "./drawers/edges/index";
-import * as filterDrawerMap from "./drawers/filters/index";
-import * as markerDrawerMap from "./drawers/markers/index";
+import * as edgeDrawerMap from "../drawers/edges/index";
+import * as filterDrawerMap from "../drawers/filters/index";
+import * as markerDrawerMap from "../drawers/markers/index";
 //import * as customSVGStyle from "./drawers/styles/__bundled_dont_edit__";
 // This file is just for testing purposes, so we're only using a placeholder set
 // of defs here.
-import { Defs } from "./drawers/defs/__bundled_dont_edit__";
+import { Defs } from "../drawers/defs/__bundled_dont_edit__";
 
-const npmPackage = require("../package.json");
+const npmPackage = require("../../package.json");
 
-import { createJson2SvgCLI } from "./createJson2SvgCLI";
+import { createJson2SvgCLI } from "../createJson2SvgCLI";
 
 createJson2SvgCLI(npmPackage, [
   {

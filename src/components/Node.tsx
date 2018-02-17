@@ -1,9 +1,14 @@
 import * as React from "react";
-import { assign, isFinite, pick } from "lodash/fp";
+import { assign, difference, isEmpty, isFinite, pick } from "lodash/fp";
 import * as ReactDOM from "react-dom";
 import * as validDataUrl from "valid-data-url";
 import { formatClassNames } from "../utils/formatClassNames";
 import { NodeProps } from "../types";
+import { Filter } from "./Filter/Filter";
+
+// TODO use TS types updated for version 16. But I also have some changes
+// I made for SVG attributes that need to get merged.
+const Fragment = React["Fragment"];
 
 // These are the white-listed SVG tag names that kaavio can render
 // TODO either let symbols override these, or else check in CLI to notify user of clobbering.
@@ -39,6 +44,7 @@ const SVG_ATTRIBUTES = [
   "strokeMiterlimit",
   "strokeOpacity",
   "strokeWidth",
+  "style",
   "transform",
   "width",
   "x",
@@ -48,6 +54,21 @@ const SVG_ATTRIBUTES = [
   "y1",
   "y2"
 ];
+
+const SVG_STYLE_ATTRIBUTES = [
+  "fill",
+  "fillOpacity",
+  "stroke",
+  "strokeDasharray",
+  "strokeDashoffset",
+  "strokeLinecap",
+  "strokeLinejoin",
+  "strokeMiterlimit",
+  "strokeOpacity",
+  "strokeWidth"
+];
+
+const ICON_ONLY_ATTRIBUTES = difference(SVG_ATTRIBUTES, SVG_STYLE_ATTRIBUTES);
 // TODO only x and y are corrected for translation of container. All of these are not: x1, x2, y1, y2, d, points, cx, cy! Fix this.
 
 /**
@@ -59,73 +80,62 @@ export class Node extends React.Component<any, any> {
 
   constructor(props: NodeProps) {
     super(props);
-    this.state = this.getStateFromProps(props);
   }
 
-  getStateFromProps(
-    props
-  ): {
-    iconTagName: any;
-    iconAttributes: Record<string, any>;
-    className: string;
-    children: any[];
-    type: string[];
-  } {
+  componentWillReceiveProps(nextProps) {
+    // TODO this might be slower than it needs to be. Can we set only a subset?
+    //const nextState = this.getStateFromProps(nextProps);
+    //this.setState(nextState);
+  }
+
+  renderIcon() {
+    const { props } = this;
     const {
-      backgroundColor,
+      fill,
       borderRadius,
       borderStyle,
-      borderWidth,
+      strokeWidth,
       children,
-      className,
       color,
       fillOpacity,
       drawAs,
       height,
       id,
+      parentFill,
       stroke,
+      style,
       type,
       width
     } = props;
-
-    const state = { className, children, type };
-
     // If drawAs specifies an SVG element, render icon as the SVG element.
     // Otherwise, render as a symbol via a use tag.
-    const iconTagName = SVG_TAG_NAMES.indexOf(drawAs) > -1 ? drawAs : "use";
-    const iconAttributes: any = pick(SVG_ATTRIBUTES, props);
+    const TagName = SVG_TAG_NAMES.indexOf(drawAs) > -1 ? drawAs : "use";
+    const iconOnlyProps: any = pick(ICON_ONLY_ATTRIBUTES, props);
+    const firstChildStyleProps: any = pick(SVG_STYLE_ATTRIBUTES, props);
 
     if (!!id) {
-      iconAttributes.id = `${id}-icon`;
-      iconAttributes.key = `${id}-icon`;
+      iconOnlyProps.id = `${id}-icon`;
+      iconOnlyProps.key = `${id}-icon`;
     }
 
-    if (iconTagName === "use") {
-      iconAttributes.href = "#" + drawAs;
-      // TODO href is now preferred. Does it work in enough browsers?
-      // href={icon ? "#" + icon.id : null}
-      // xlinkHref={loadedIcon ? "#" + loadedIcon.id : null}
-      if (drawAs === "none") {
-        return {
-          ...state,
-          iconTagName,
-          iconAttributes
-        };
-      }
+    if (TagName === "use") {
+      // TODO href is now preferred, but it doesn't work in Safari. Why?
+      //iconOnlyProps.href = "#" + drawAs;
+      iconOnlyProps.xlinkHref = "#" + drawAs;
     }
 
-    if (iconAttributes.hasOwnProperty("x")) {
+    if (iconOnlyProps.hasOwnProperty("x")) {
       // correcting for translation of container.
-      iconAttributes.x = "0";
-      iconAttributes.y = "0";
+      iconOnlyProps.x = "0";
+      iconOnlyProps.y = "0";
     }
 
     // TODO do we need to specify these as px?
     if (!!width && isFinite(parseFloat(width))) {
-      iconAttributes.width = width + "px";
+      iconOnlyProps.width = width + "px";
     }
     if (!!height && isFinite(parseFloat(height))) {
-      iconAttributes.height = height + "px";
+      iconOnlyProps.height = height + "px";
     }
 
     // TODO: for icons with borderStyle of double, it appears the actual border
@@ -133,61 +143,60 @@ export class Node extends React.Component<any, any> {
     // TODO: we're getting box-sizing: border-box behavior for a 200x100 rect
     // with a 3px double-line border, but it's slightly off for a 40x40 rect
     // with same border.
-    const actualBorderWidth = borderStyle === "double"
-      ? borderWidth * 4
-      : borderWidth;
-    const scaleX = width / (width + actualBorderWidth);
-    const scaleY = height / (height + actualBorderWidth);
-    const translateX = width / 2;
-    const translateY = height / 2;
-    iconAttributes.transform = `matrix(${scaleX}, 0, 0, ${scaleY}, ${translateX -
-      scaleX * translateX}, ${translateY - scaleY * translateY})`;
-
-    if (!!backgroundColor) {
-      iconAttributes.fill = backgroundColor;
-      iconAttributes.fillOpacity = isFinite(fillOpacity) ? fillOpacity : 1;
+    const actualStrokeWidth = borderStyle === "double"
+      ? strokeWidth * 4
+      : strokeWidth;
+    if (width + actualStrokeWidth > 0 && height + actualStrokeWidth > 0) {
+      const scaleX = width / (width + actualStrokeWidth);
+      const scaleY = height / (height + actualStrokeWidth);
+      const translateX = width / 2;
+      const translateY = height / 2;
+      iconOnlyProps.transform = `matrix(${scaleX}, 0, 0, ${scaleY}, ${translateX -
+        scaleX * translateX}, ${translateY - scaleY * translateY})`;
     }
 
-    if (!!borderWidth) {
-      iconAttributes.stroke = stroke || color;
-      iconAttributes.strokeWidth = borderWidth;
+    if (!!fill) {
+      firstChildStyleProps.fillOpacity = isFinite(fillOpacity)
+        ? fillOpacity
+        : 1;
+    }
+
+    if (!!strokeWidth) {
+      firstChildStyleProps.stroke = stroke || color;
+      firstChildStyleProps.strokeWidth = strokeWidth;
     }
 
     if (borderStyle === "dashed") {
-      iconAttributes.strokeDasharray = "5,3";
+      firstChildStyleProps.strokeDasharray = "5,3";
     }
 
     if (borderRadius) {
-      iconAttributes.rx = borderRadius;
-      iconAttributes.ry = borderRadius;
+      iconOnlyProps.rx = borderRadius;
+      iconOnlyProps.ry = borderRadius;
     }
 
-    return {
-      ...state,
-      iconTagName,
-      iconAttributes
-    };
-  }
-
-  componentWillReceiveProps(nextProps) {
-    // TODO this might be slower than it needs to be. Can we set only a subset?
-    const nextState = this.getStateFromProps(nextProps);
-    this.setState(nextState);
+    return (
+      <Filter
+        borderStyle={borderStyle}
+        childTag={TagName}
+        parentFill={parentFill}
+        childOnlyProps={{
+          ...iconOnlyProps,
+          ...{ className: "Icon" }
+        }}
+        firstChildStyleProps={firstChildStyleProps}
+      />
+    );
   }
 
   render() {
-    const { state } = this;
-    const { children, className, iconAttributes, type } = state;
+    const { children } = this.props;
 
-    //className={formatClassNames(type, className, "Node")}
     return (
-      <g
-        className="Node"
-        ref={containerRef => (this.containerRef = containerRef)}
-      >
-        <state.iconTagName className="Icon" {...iconAttributes} />
+      <Fragment>
+        {this.renderIcon()}
         {children}
-      </g>
+      </Fragment>
     );
   }
 }

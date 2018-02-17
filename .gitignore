@@ -1,7 +1,7 @@
 node_modules/
 tmp/
 .idea/
-test/lib/
+test/es5/
 test/reports/
 test/last-known-goods/
 test/logs/
@@ -10,14 +10,16 @@ demo/web-component-demos/
 demo/input-data/
 demo/doc/
 docs/
-demo/lib/
+demo/es5/
 gh-pages
 gh-pages/*
 dist/
 jspm_packages/
 logs/
 typings
-lib/
+es5/
 src/**/__bundled_dont_edit__.tsx
 old/
 *.css.d.ts
+esnext/
+es5/

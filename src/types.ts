@@ -30,9 +30,9 @@ export type GetNamespacedId = (input: string) => string;
 export interface FilterProps {
   color: string;
   filterName: string;
-  backgroundColor?: string;
-  borderWidth?: number;
-  parentBackgroundColor?: string;
+  fill?: string;
+  strokeWidth?: number;
+  parentFill?: string;
 }
 
 export interface FilterRequestProps extends FilterProps {
@@ -40,9 +40,9 @@ export interface FilterRequestProps extends FilterProps {
 }
 
 export interface LatestFilterReferenced extends FilterProps {
-  backgroundColor: string;
-  borderWidth: number;
-  parentBackgroundColor: string;
+  fill: string;
+  strokeWidth: number;
+  parentFill: string;
 }
 
 export interface FilterResponseProps {
@@ -104,12 +104,12 @@ export interface HighlightedNode {
 }
 
 export interface EntityProps extends NodeProps {
-  edgeDrawerMap: Record<string, Function>;
+  edges: Record<string, Function>;
   kaavioType: string; // The type of Kaavio component the Entity is mapped to
   x: number;
   y: number;
   rotation: number;
-  backgroundColor: string;
+  fill: string;
   isHighlighted: boolean;
   highlightedColor?: string;
   customClass?: string;
@@ -126,7 +126,7 @@ export interface EntityProps extends NodeProps {
 }
 
 export interface NodeProps {
-  borderWidth: number;
+  strokeWidth: number;
   color: string; // Used for borders
   height: number;
   id: number;

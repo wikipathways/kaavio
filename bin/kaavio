@@ -1,5 +1,4 @@
 #!/usr/bin/env node
 
 var path = require("path");
-var cli = require(path.resolve(__dirname, "../dist/cli"));
-module.exports = cli;
+module.exports = require(path.resolve(__dirname, "../es5/cli/kaavio"));

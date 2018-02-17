@@ -10,6 +10,7 @@ import {
 } from "lodash/fp";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { unionLSV } from "../spinoffs/jsonld-utils";
 import {
   createMarkerId,
   getSVGMarkerReferenceType,
@@ -18,6 +19,7 @@ import {
 import { formatClassNames } from "../utils/formatClassNames";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
 import { MarkerProperty, StringReferenceValue } from "../types";
+import { Filter } from "./Filter/Filter";
 
 const STROKE_DASHARRAY_ROUNDING_FACTOR = 100;
 function roundForStrokeDasharraySegment(n) {
@@ -52,21 +54,27 @@ export class Edge extends React.Component<any, any> {
   };
 
   render() {
-    const { getMarkerPropertyValue } = this;
+    const { getMarkerPropertyValue, props } = this;
     const {
       id,
       color,
-      Defs,
       drawAs,
-      edgeDrawerMap,
-      parentBackgroundColor,
       strokeDasharray: strokeDasharrayPatternString,
-      borderWidth,
+      strokeWidth,
       points,
-      type
-    } = this.props;
+      theme,
+      type,
+      borderStyle,
+      height,
+      parentFill,
+      stroke,
+      style
+    } = props;
+    let filters = props.filters || [];
 
-    const { d, getTotalLength } = new edgeDrawerMap[drawAs](points);
+    const { Defs } = theme;
+
+    const { d, getTotalLength } = new theme[drawAs](points);
 
     const markerProperties = intersection(
       MARKER_PROPERTIES,
@@ -88,7 +96,7 @@ export class Edge extends React.Component<any, any> {
     ).reduce((acc, markerProperty: MarkerProperty) => {
       const markerName = this.props[markerProperty];
       const markerId = createMarkerId(markerProperty, markerName);
-      acc[markerProperty] = Defs.cache[markerId];
+      acc[markerProperty] = Defs.jic[markerId];
       return acc;
     }, {});
 
@@ -222,19 +230,46 @@ export class Edge extends React.Component<any, any> {
     }
     strokeDasharrayWithMarkerOffsets.push(markerEndOffset);
 
+    //*
+    // NOTE: this is a kludge to deal with SVG not
+    // allowing for defining marker color in relation
+    // to the color of the element that refernces the
+    // marker.
+    // We're setting edge + marker color by doing
+    // a filter transformation from black to
+    // the desired color.
+    if (!!color) {
+      filters = unionLSV(filters, "BlackToColor");
+    }
+    let firstChildStyleProps = {
+      color: stroke,
+      fill: "transparent",
+      fillOpacity: 0,
+      stroke: "black",
+      strokeDasharray: strokeDasharrayWithMarkerOffsets.join(", "),
+      strokeWidth: strokeWidth
+    };
+    let childOnlyProps = {
+      id,
+      key: `${id}-path`,
+      d,
+      ...markerProperties
+    };
+    //*/
+
     //stroke={color}
+
     return (
-      <path
-        id={id}
-        key={`${id}-path`}
-        className="Edge"
-        d={d}
-        fill={"transparent"}
-        fillOpacity="0"
-        stroke="currentColor"
-        strokeDasharray={strokeDasharrayWithMarkerOffsets.join(", ")}
-        strokeWidth={borderWidth}
-        {...markerProperties}
+      <Filter
+        borderStyle={borderStyle}
+        childTag="path"
+        parentFill={parentFill}
+        filters={filters}
+        childOnlyProps={{
+          ...childOnlyProps,
+          ...{ className: "EdgeBody" }
+        }}
+        firstChildStyleProps={firstChildStyleProps}
       />
     );
   }

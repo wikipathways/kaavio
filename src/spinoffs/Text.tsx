@@ -46,6 +46,10 @@
 const direction = require("direction");
 import * as React from "react";
 
+// TODO use TS types updated for version 16. But I also have some changes
+// I made for SVG attributes that need to get merged.
+const Fragment = React["Fragment"];
+
 const LTR_CENTRIC_TEXT_ALIGNS = ["left", "right"];
 
 const shiftXCalculatorsByTextAlign = {
@@ -264,23 +268,41 @@ export class Text extends React.Component<any, any> {
     y={-1 * height / 2}
               y={-1 * shiftY + lineHeightPx / 2}
 		//*/
+
+    // NOTE: in Chrome, direction and fontSize need to be applied to the
+    // tspan elements, not the parent text element. Otherwise, they don't
+    // take effect.
+    //
+    // We need to apply a diagram-wide style to the SVG to make text and/or tspan elements inherit their container's styling:
+    // .textContent * {
+    //   fill: inherit;
+    //   font-size: inherit;
+    //   ...
+    // }
+
     return (
-      <g id={id} className={className}>
-        <defs>
-          <clipPath id={clipPathId}>
-            <rect
-              x={-1 * shiftX}
-              y={-1 * shiftY}
-              width={width}
-              height={height}
-            />
-          </clipPath>
-        </defs>
+      <Fragment>
+        {overflow === "hidden"
+          ? <defs>
+              <clipPath id={clipPathId}>
+                <rect
+                  x={-1 * shiftX}
+                  y={-1 * shiftY}
+                  width={width}
+                  height={height}
+                />
+              </clipPath>
+            </defs>
+          : null}
         <text
+          id={id}
+          className={"Text" + (!!className ? " " + className : "")}
           clipPath={overflow === "hidden" ? `url(#${clipPathId})` : null}
+          direction={ltrCentric ? "ltr" : textDirection}
           dominantBaseline="central"
           fill={color}
           fontFamily={fontFamily}
+          fontSize={`${fontSize}px`}
           fontStyle={fontStyle}
           fontWeight={fontWeight}
           overflow={overflow}
@@ -294,15 +316,9 @@ export class Text extends React.Component<any, any> {
             //					dy={
             //						i === 0 ? -1 * (lineCount - 1) * lineHeightPx / 2 : lineHeightPx
             //					}
-            //
-            // NOTE: in Chrome, direction and fontSize need to be applied to the
-            // tspan elements, not the parent text element. Otherwise, they don't
-            // take effect.
             return (
               <tspan
                 key={`text-line-${i}-${line}`}
-                direction={ltrCentric ? "ltr" : textDirection}
-                fontSize={`${fontSize}px`}
                 x="0"
                 y={(i - (lineCount - 1) / 2) * lineHeightPx}
               >
@@ -311,7 +327,7 @@ export class Text extends React.Component<any, any> {
             );
           })}
         </text>
-      </g>
+      </Fragment>
     );
   }
 }
