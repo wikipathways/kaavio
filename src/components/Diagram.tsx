@@ -1,3 +1,4 @@
+import { foreground } from "../spinoffs/wcag-contrast";
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import {
@@ -7,9 +8,11 @@ import {
   defaults,
   defaultsAll,
   filter,
+  fromPairs,
   forOwn,
   isArray,
   isBoolean,
+  isEmpty,
   isFinite,
   isString,
   kebabCase,
@@ -22,17 +25,9 @@ import {
   values
 } from "lodash/fp";
 import { formatClassNames } from "../utils/formatClassNames";
-import {
-  GetNamespacedId,
-  LatestFilterReferenced,
-  LatestMarkerReferenced,
-  GetNamespacedFilter,
-  GetNamespacedFilterId,
-  GetNamespacedMarkerId
-} from "../types";
+import { GetNamespacedId } from "../types";
 import { Entity } from "./Entity";
-import { FilterDefs, getSVGFilterReferenceType } from "./Filter/FilterDefs";
-import { getSVGMarkerReferenceType } from "./Marker/helpers";
+import { FilterDefs, getFilterReference } from "./Filter/FilterDefs";
 const diagramStyleBase = require("./Diagram.css");
 import { interpolate } from "../spinoffs/interpolate";
 import { normalizeElementId } from "../utils/normalizeElementId";
@@ -51,12 +46,15 @@ const TEXT_CONTENT_DEFAULTS = {
 };
 
 export class Diagram extends React.Component<any, any> {
-  filterDrawerMap: Record<string, Function>;
   getNamespacedId: GetNamespacedId;
+
   constructor(props) {
     super(props);
-    const { filterDrawerMap, pathway } = props;
-    this.filterDrawerMap = filterDrawerMap;
+    const { entityMap, pathway, theme } = props;
+    const mapEntityToSVGTerms = this.mapEntityToSVGTerms;
+    // TODO update gpml2pvjson to always use SVG terms, except maybe for textContent
+    mapEntityToSVGTerms(pathway);
+    values(entityMap).forEach(mapEntityToSVGTerms);
 
     const { id } = pathway;
     let diagramNamespace;
@@ -76,14 +74,11 @@ export class Diagram extends React.Component<any, any> {
       diagramNamespace
     );
     this.state = { ...this.setFillOpacity(props) };
-    this.state.latestFilterReferenced = {} as LatestFilterReferenced;
-    this.state.latestMarkerReferenced = {} as LatestMarkerReferenced;
   }
 
   public setFillOpacity = props => {
-    // TODO are we only using backgroundColor, not fill, for kaavio-formatted JSON?
-    const { backgroundColor, fill, fillOpacity } = props;
-    if (backgroundColor === "transparent" || fill === "transparent") {
+    const { fill, fillOpacity } = props;
+    if (fill === "transparent") {
       props.fillOpacity = 0;
     } else if (isFinite(fillOpacity)) {
       props.fillOpacity = fillOpacity;
@@ -97,70 +92,22 @@ export class Diagram extends React.Component<any, any> {
     }
   );
 
-  getNamespacedFilter: GetNamespacedFilter = filterProps => {
-    const { getNamespacedId, filterDrawerMap } = this;
-    const { filterName } = filterProps;
+  mapEntityToSVGTerms = props => {
+    const propsToMap = {
+      backgroundColor: "fill",
+      borderColor: "stroke",
+      borderWidth: "strokeWidth",
+      color: "stroke"
+    };
 
-    return filterDrawerMap[filterName]({
-      getNamespacedId,
-      ...filterProps
+    // TODO are these side effects bad, bc making mutable changes?
+    toPairs(propsToMap).forEach(function([fromKey, toKey]) {
+      if (fromKey in props && !(toKey in props)) {
+        props[toKey] = props[fromKey];
+        //delete props[fromKey];
+      }
     });
-  };
-
-  // NOTE: it's kind of annoying to have the filter functions be all the
-  // way up here in the component hierarchy, but we need to have them here,
-  // because our SVGs use filter functionality in two different places:
-  // the defs and the usage of the defs. Since this is the lowest common ancestor
-  // for those two places, we need to define them way up here.
-
-  /*
-  // TODO: delete the commented out function above if possible
-  getNamespacedFilterId: GetNamespacedFilterId = filterProps => {
-    const { filterDrawerMap, getNamespacedId, getNamespacedFilterId } = this;
-    const {
-      backgroundColor,
-      borderWidth,
-      color,
-      filterName,
-      parentBackgroundColor
-    } = filterProps;
-    const { filterProperties } = filterDrawerMap[filterName]({
-      backgroundColor,
-      borderWidth,
-      color,
-      getNamespacedFilterId,
-      parentBackgroundColor
-    });
-    return getNamespacedId(filterProperties.id);
-  };
-  //*/
-  getNamespacedFilterId: GetNamespacedFilterId = latestFilterReferenced => {
-    const { getNamespacedFilter } = this;
-    const { filterName } = latestFilterReferenced;
-    const svgReferenceType = getSVGFilterReferenceType(filterName);
-
-    if (svgReferenceType === "localIRI") {
-      // We can only tweak the color, border width, etc. for filters that are
-      // located in this SVG (referenced via local IRIs)
-      return getNamespacedFilter(latestFilterReferenced).filterProperties.id;
-    } else {
-      return filterName;
-    }
-  };
-
-  getNamespacedMarkerId: GetNamespacedMarkerId = latestMarkerReferenced => {
-    const { getNamespacedId } = this;
-    const { markerProperty, markerName } = latestMarkerReferenced;
-
-    const svgReferenceType = getSVGMarkerReferenceType(markerName);
-
-    if (svgReferenceType === "localIRI") {
-      // We can only tweak the color, border width, etc. for markers that are
-      // located in this SVG (referenced via local IRIs)
-      return getNamespacedId([markerProperty, markerName].join(""));
-    } else {
-      return markerName;
-    }
+    return props;
   };
 
   createChildProps = (
@@ -173,14 +120,10 @@ export class Diagram extends React.Component<any, any> {
       [
         "createChildProps",
         "Defs",
-        "edgeDrawerMap",
         "entityMap",
-        "getNamespacedFilterId",
         "getNamespacedId",
-        "getNamespacedMarkerId",
         "setFillOpacity",
-        "setFilter",
-        "setMarker",
+        "theme",
         "type"
       ],
       parentProps
@@ -208,34 +151,20 @@ export class Diagram extends React.Component<any, any> {
 
     updatedProps = propsToPassDown.setFillOpacity(updatedProps);
 
+    // TODO could we use these as markers? http://graphemica.com/blocks/arrows
+
     if ("height" in props) {
       updatedProps = defaults(BOX_MODEL_DEFAULTS, updatedProps);
     }
 
-    if ("backgroundColor" in parentProps) {
-      const { backgroundColor, parentBackgroundColor } = parentProps;
-      const interpolatedBackgroundColor = !("fillOpacity" in parentProps)
-        ? backgroundColor
-        : interpolate(
-            parentBackgroundColor,
-            backgroundColor,
-            parentProps.fillOpacity
-          );
-      updatedProps = set(
-        "parentBackgroundColor",
-        interpolatedBackgroundColor,
-        updatedProps
-      );
+    if ("fill" in parentProps) {
+      const { fill, parentFill } = parentProps;
+      const interpolatedFill = !("fillOpacity" in parentProps)
+        ? fill
+        : interpolate(parentFill, fill, parentProps.fillOpacity);
+      updatedProps = set("parentFill", interpolatedFill, updatedProps);
     }
     return updatedProps;
-  };
-
-  setFilter = (latestFilterReferenced: LatestFilterReferenced) => {
-    this.setState({ latestFilterReferenced });
-  };
-
-  setMarker = (latestMarkerReferenced: LatestMarkerReferenced) => {
-    this.setState({ latestMarkerReferenced });
   };
 
   handleClick = e => {
@@ -270,34 +199,19 @@ export class Diagram extends React.Component<any, any> {
   }
 
   render() {
-    const {
-      getNamespacedFilter,
-      getNamespacedFilterId,
-      getNamespacedId,
-      getNamespacedMarkerId,
-      createChildProps,
-      handleClick,
-      state
-    } = this;
+    const { getNamespacedId, createChildProps, handleClick, state } = this;
 
     const {
-      style: diagramStyleCustom,
-      Defs,
+      theme,
       entityMap,
       hiddenEntities,
       highlightedEntities,
       pathway
     } = state;
 
-    const {
-      backgroundColor,
-      contains,
-      height,
-      id,
-      name,
-      textContent,
-      width
-    } = pathway;
+    const { Defs, diagramStyle: diagramStyleCustom } = theme;
+
+    const { fill, contains, height, id, name, textContent, width } = pathway;
 
     const drawnEntities = values(entityMap).filter(
       entity => "drawAs" in entity
@@ -329,7 +243,7 @@ export class Diagram extends React.Component<any, any> {
 
     const diagramStyleForEntityHighlighting = (highlightedEntities || [])
       .map(function({ target, color }) {
-        const namespaceFilterId = getNamespacedFilterId({
+        const filterReference = getFilterReference({
           color,
           filterName: "Highlight"
         });
@@ -353,37 +267,31 @@ export class Diagram extends React.Component<any, any> {
         nodeSelector = `${selectorPrefix} .Icon`;
         edgeSelector = `${selectorPrefix} path`;
 
-        const fill = interpolate("white", color, 0.5);
+        const highlighterFill = interpolate(fill, color, 0.5);
 
         return `
 ${nodeSelector},${edgeSelector} {
-	filter: url(#${namespaceFilterId});
+	filter: ${filterReference};
 }
 ${nodeSelector} {
-	fill: ${fill};
+	fill: ${highlighterFill};
 }`;
       })
       .filter(s => !!s)
       .join("\n");
 
-    const pseudoParent = defaultsAll([state, this]);
+    const pseudoParent = defaultsAll([
+      state,
+      this,
+      {
+        kaavioType: "Viewport"
+      }
+    ]);
 
     // TODO add any prefixes, vocab and base if there is a provided @context
     const prefix = ["schema:http://schema.org/"].join(" ");
 
-    // TODO for foregroundColor, we actually just want to get the color that has
-    // the strongest contrast with backgroundColor. What if backgroundColor were
-    // green or dark gray?
-    const foregroundColor = [
-      "white",
-      "#FFF",
-      "#fff",
-      "#FFFFFF",
-      "#ffffff"
-    ].indexOf(backgroundColor) > -1
-      ? "black"
-      : "white";
-
+    const foregroundColor = foreground(fill);
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -413,11 +321,7 @@ ${nodeSelector} {
         />
 
         <defs>
-          <FilterDefs
-            getNamespacedFilter={getNamespacedFilter}
-            latestFilterReferenced={state.latestFilterReferenced}
-            {...state}
-          />
+          <FilterDefs {...state} />
           <Defs />
         </defs>
 

@@ -1,4 +1,4 @@
-import { filter, isEmpty, partition, reduce, toPairs } from "lodash/fp";
+import { filter, isEmpty, omit, partition, reduce, toPairs } from "lodash/fp";
 import * as React from "react";
 import { Validator } from "collit";
 
@@ -17,8 +17,8 @@ export class Kaavio extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
-    const { style, hiddenEntities, highlightedEntities } = this.props;
-    const { container: containerStyleCustom } = style;
+    const { theme, hiddenEntities, highlightedEntities } = this.props;
+    const { containerStyle: containerStyleCustom } = theme;
 
     const searchParams = new URLSearchParams(location.search);
 
@@ -111,6 +111,7 @@ export class Kaavio extends React.Component<any, any> {
       });
     }
 
+    // TODO don't just keep adding!
     this.addStyle([containerStyleBase, containerStyleCustom]);
 
     this.state = {
@@ -148,15 +149,10 @@ export class Kaavio extends React.Component<any, any> {
       zoomLevel,
       panCoordinates,
       onPanZoomChange,
-      edgeDrawerMap,
-      filterDrawerMap,
-      style,
-      Defs,
+      theme,
       showPanZoomControls = true,
       panZoomLocked = false
     } = this.props;
-
-    const { diagram: diagramStyleCustom } = style;
 
     const {
       highlightedEntities,
@@ -171,9 +167,6 @@ export class Kaavio extends React.Component<any, any> {
 			//*/
     } = this.state;
 
-    // TODO will kaavioStyle.Container have the CSS it needs?
-    // We're currently only using getStyles INSIDE the SVG.
-
     // TODO: Don't use refs!
     // Accessing the diagram ref from the state is a little bit of a hack to get panZoom working.
     // Consider refactoring the panZoom to be truly Reactive and not use refs
@@ -187,10 +180,7 @@ export class Kaavio extends React.Component<any, any> {
           highlightedEntities={highlightedEntities}
           pathway={pathway}
           handleClick={this.handleClick}
-          style={diagramStyleCustom}
-          edgeDrawerMap={edgeDrawerMap}
-          filterDrawerMap={filterDrawerMap}
-          Defs={Defs}
+          theme={omit("containerStyle", theme)}
         />
         <PanZoom
           diagram={this.state.diagramRef}

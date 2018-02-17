@@ -1,5 +1,4 @@
 #!/usr/bin/env node
 
 var path = require("path");
-var json2svgForTesting = require(path.resolve(__dirname, "../dist/json2svgForTesting"));
-module.exports = json2svgForTesting;
+module.exports = require(path.resolve(__dirname, "../dist/json2svgForTesting"));

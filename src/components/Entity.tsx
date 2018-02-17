@@ -1,39 +1,21 @@
 import * as React from "react";
-import { unionLSV } from "../spinoffs/jsonld-utils";
 import * as ReactDom from "react-dom";
-import {
-  filter,
-  isArray,
-  isEmpty,
-  omit,
-  pick,
-  reduce,
-  upperFirst
-} from "lodash/fp";
+import { omit, pick, reduce, upperFirst } from "lodash/fp";
 import { Text } from "../spinoffs/Text";
 import { Node } from "./Node";
 import { Group } from "./Group";
 import { Edge } from "./Edge";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
-import { getSVGFilterReferenceType } from "./Filter/FilterDefs";
-import { formatSVGReference } from "../spinoffs/formatSVGReference";
 import { formatClassNames } from "../utils/formatClassNames";
-import {
-  EntityProps,
-  FilterProps,
-  GetNamespacedFilterId,
-  StringReferenceValue
-} from "../types";
+import { EntityProps, StringReferenceValue } from "../types";
 
 /**
  * Parent Entity component.
  * Most components share many properties so we "lift state up" to the parent.
  */
 export class Entity extends React.Component<any, any> {
-  getNamespacedFilterId: GetNamespacedFilterId;
   constructor(props: EntityProps) {
     super(props);
-    this.getNamespacedFilterId = props.getNamespacedFilterId;
   }
 
   renderText() {
@@ -72,12 +54,10 @@ export class Entity extends React.Component<any, any> {
       containerPropsToPassDown
     );
 
-    //className={formatClassNames(type, className, "textContent")}
     return (
       <Text
         id={`${id}-text`}
         key={`${id}-text`}
-        className="textContent"
         rotation={textRotation}
         {...propsToPassDown}
       />
@@ -89,7 +69,7 @@ export class Entity extends React.Component<any, any> {
     const {
       burrs,
       drawAs: parentDrawAs,
-      edgeDrawerMap,
+      theme,
       entityMap,
       createChildProps,
       height,
@@ -119,10 +99,10 @@ export class Entity extends React.Component<any, any> {
         } else if (kaavioType === "Edge") {
           // TODO get edge logic working so we can position this better
           // TODO look at current production pvjs to see how this is done
-          const edgeDrawer = new edgeDrawerMap[parentDrawAs](points);
-          const positionXY = new edgeDrawerMap[parentDrawAs](
-            points
-          ).getPointAtPosition(xPositionScalar);
+          const edgeDrawer = new theme[parentDrawAs](points);
+          const positionXY = new theme[parentDrawAs](points).getPointAtPosition(
+            xPositionScalar
+          );
           burr.x = positionXY.x - burr.width / 2 + xOffset;
           burr.y = positionXY.y - burr.height / 2 + yOffset;
         } else {
@@ -141,56 +121,23 @@ export class Entity extends React.Component<any, any> {
   }
 
   componentWillReceiveProps(nextProps) {
-    const { filters } = this.props;
-    const { filters: nextFilters, setFilter } = nextProps;
-    if (filters !== nextFilters) {
-      nextFilters.forEach(function(nextFilterName) {
-        setFilter({ filterName: nextFilterName, ...nextProps });
-      });
-    }
+    // TODO handle this
   }
 
-  getFilterPropertyValue = ({
-    color,
-    filterName,
-    backgroundColor,
-    borderWidth,
-    parentBackgroundColor
-  }: FilterProps): StringReferenceValue | string => {
-    const { getNamespacedFilterId } = this;
-    const svgReferenceType = getSVGFilterReferenceType(filterName);
-
-    if (svgReferenceType === "string") {
-      // Don't make a FuncIRI out of a string value
-      return filterName;
-    } else if (svgReferenceType === "nonLocalIRI") {
-      // We can't set the color, etc. for a non-local IRI
-      return formatSVGReference(filterName, [svgReferenceType]);
-    }
-
-    const namespacedFilterId = getNamespacedFilterId({
-      color,
-      filterName,
-      backgroundColor,
-      borderWidth,
-      parentBackgroundColor
-    });
-    return formatSVGReference(namespacedFilterId, [svgReferenceType]);
-  };
-
   render() {
-    const { getFilterPropertyValue, props } = this;
+    const { props } = this;
     const {
-      backgroundColor,
+      fill,
       borderStyle,
-      borderWidth,
+      strokeWidth,
       color,
       className,
       createChildProps,
+      drawAs,
       height,
       id,
       kaavioType,
-      parentBackgroundColor,
+      parentFill,
       rotation,
       textContent,
       type,
@@ -200,45 +147,6 @@ export class Entity extends React.Component<any, any> {
     } = props;
 
     const childProps = omit("className", props);
-    /*
-    const childPropsType = unionLSV(type, kaavioType);
-    const childProps = { type: childPropsType, ...props };
-	  //*/
-
-    // Anders: I think it's best to be explicit. Instead of using components[kaavioType] do this.
-    // I know it's a bit redundant but in this case I think it aids comprehension
-    let child;
-    switch (kaavioType) {
-      case "SingleFreeNode":
-        child = <Node {...childProps} />;
-        break;
-      case "Burr":
-        child = <Node {...childProps} />;
-        break;
-      case "Edge":
-        child = <Edge {...childProps} />;
-        break;
-      case "Group":
-        child = <Group {...childProps} />;
-        break;
-      default:
-        throw new Error(
-          "The Kaavio type of " +
-            kaavioType +
-            " does not exist. Please use one of " +
-            "SingleFreeNode, Edge, or Group."
-        );
-    }
-
-    let { filters } = props;
-
-    if (borderStyle === "double") {
-      filters = unionLSV(filters, "Double");
-    }
-
-    if (kaavioType === "Edge" && !!color) {
-      filters = unionLSV(filters, "BlackToColor");
-    }
 
     let entityTransform;
     if (x || y || rotation) {
@@ -248,13 +156,32 @@ export class Entity extends React.Component<any, any> {
       }
     }
 
+    let child;
+    const kaavioTypeToComponentMap = {
+      SingleFreeNode: Node,
+      Burr: Node,
+      Edge: Edge,
+      Group: Group
+    };
+    const KaavioComponent = kaavioTypeToComponentMap[kaavioType];
+    if (!!KaavioComponent) {
+      child = <KaavioComponent {...childProps} />;
+    } else {
+      throw new Error(
+        "The Kaavio type of " +
+          kaavioType +
+          " does not exist. Please use one of " +
+          "SingleFreeNode, Edge, or Group."
+      );
+    }
+
     return (
       <g
         id={id}
         key={id}
-        className={formatClassNames(type, kaavioType, className)}
         about={id}
-        color={kaavioType === "Edge" ? "currentColor" : color}
+        className={formatClassNames(type, kaavioType, className)}
+        color={color}
         name={textContent}
         transform={entityTransform}
         typeof={type.map(encodeURI).join(" ")}
@@ -291,23 +218,7 @@ export class Entity extends React.Component<any, any> {
 				</metadata>
 				*/}
 
-        {isEmpty(filters)
-          ? child
-          : filters.reduce(function(acc, filterName) {
-              const filterPropertyValue = getFilterPropertyValue({
-                color,
-                filterName,
-                backgroundColor,
-                borderWidth,
-                parentBackgroundColor
-              });
-              //className={formatClassNames(type, className)}
-              return (
-                <g filter={filterPropertyValue}>
-                  {acc}
-                </g>
-              );
-            }, child)}
+        {child}
 
         {this.renderBurrs()}
 

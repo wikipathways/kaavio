@@ -9,8 +9,8 @@
       "es6",
       "scripthost"
     ],
-    "module": "es2015",
-    "target": "es2015",
-    "outDir": "./esnext"
+    "module": "CommonJS",
+    "target": "ES5",
+    "outDir": "./es5"
   }
 }

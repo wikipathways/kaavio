@@ -12,9 +12,9 @@
   "files": [
     "src/types.ts",
     "src/index.ts",
-    "src/createJson2SvgCLI.tsx",
-    "src/json2svgForTesting.tsx",
-    "src/cli.tsx"
+    "src/cli/kaavio.tsx",
+    "src/cli/json2svgForTesting.tsx",
+    "src/createJson2SvgCLI.tsx"
   ],
   "exclude": [
     "dist/**/*",

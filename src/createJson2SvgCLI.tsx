@@ -17,13 +17,11 @@ const VError = require("verror");
 
 import { Diagram } from "./components/Diagram";
 
-import * as edgeDrawerMapDefault from "./drawers/edges/index";
-import * as filterDrawerMapDefault from "./drawers/filters/index";
-//import * as markerDrawerMapDefault from "./drawers/markers/index";
+import * as edgesDefault from "./drawers/edges/index";
 
 import { arrayify } from "./spinoffs/jsonld-utils";
 
-const KaavioNPMPackage = require("../package.json");
+const KaavioNPMPackage = require("./../package.json");
 
 const fs = require("fs-extra");
 const ensureFile = hl.wrapCallback(fs.ensureFile);
@@ -171,13 +169,7 @@ export function createJson2SvgCLI(
         throw new Error(`Multiple themes specified with name "${themeName}"`);
       }
     }
-    acc[themeName] = defaults(
-      {
-        edgeDrawerMap: edgeDrawerMapDefault,
-        filterDrawerMap: filterDrawerMapDefault
-      },
-      theme
-    );
+    acc[themeName] = defaults(edgesDefault, theme);
     return acc;
   }, {});
 
@@ -230,16 +222,6 @@ export function createJson2SvgCLI(
   const highlightedEntities = arrayify(highlight);
 
   const theme = themeMap[themeName];
-
-  /*
-  const {
-    edgeDrawerMap,
-    filterDrawerMap,
-    markerDrawerMap,
-    customSVGStyle,
-    Defs
-  } = theme;
-	//*/
 
   hl(inputStream)
     .through(ndjson.parse())
