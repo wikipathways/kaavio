@@ -1,0 +1,35 @@
+.Viewport > .Icon {
+  filter: url(#Invert95);
+}
+
+.Edge > path {
+  stroke-width: 1.1px;
+}
+
+.Group > .DataNode > .Icon {
+/*
+  filter: url(#Invert95);
+*/
+  stroke-miterlimit: 1;
+  /*filter: drop-shadow( 5px 5px 5px red );*/
+  /*filter: drop-shadow(16px 16px 20px black);*/
+  /* Same syntax as box-shadow */
+  filter: drop-shadow( 2px 2px 2px #000 );
+  -webkit-filter: drop-shadow( 2px 2px 2px #000 );
+  /*
+  */
+}
+
+.SingleFreeNode:hover > .Icon {
+  cursor: default;
+  fill: url(#PatternSmileyWinking);
+  /*filter: url(#Invert95);*/
+  /* needed for FF. See
+     https://bugzilla.mozilla.org/show_bug.cgi?id=1209061 */
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.SingleFreeNode:hover .Text {
+  font-size: 0px;
+}
