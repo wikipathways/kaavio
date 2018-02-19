@@ -17,7 +17,7 @@ export class Kaavio extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
-    const { theme, hiddenEntities, highlightedEntities } = this.props;
+    const { theme, hidden, highlighted } = this.props;
     const { containerStyle: containerStyleCustom } = theme;
 
     const searchParams = new URLSearchParams(location.search);
@@ -26,21 +26,21 @@ export class Kaavio extends React.Component<any, any> {
 
     let reconciledHiddenEntities;
     const hideParam = searchParams.get("hide");
-    if (!isEmpty(hiddenEntities)) {
-      reconciledHiddenEntities = hiddenEntities;
+    if (!isEmpty(hidden)) {
+      reconciledHiddenEntities = hidden;
       if (!isEmpty(hideParam)) {
-        console.warn(`Warning: "hiddenEntities" was specified by two different sources, which may or may not conflict.
+        console.warn(`Warning: "hidden" was specified by two different sources, which may or may not conflict.
 		prop passed to Kaavio class:
-			hiddenEntities={${JSON.stringify(hiddenEntities)}}
+			hidden={${JSON.stringify(hidden)}}
 		URL query param:
 			hide=${hideParam}
 		Setting URL query params to match prop passed to Kaavio class.`);
 
         const searchParams = new URLSearchParams(location.search);
-        searchParams.set("hide", hiddenEntities.join());
+        searchParams.set("hide", hidden.join());
 
         history.replaceState(
-          { hiddenEntities: hiddenEntities },
+          { hidden: hidden },
           document.title,
           "?" + searchParams.toString()
         );
@@ -56,13 +56,13 @@ export class Kaavio extends React.Component<any, any> {
       return Validator.isColor(key);
     }, Array.from(searchParams));
 
-    if (!isEmpty(highlightedEntities)) {
-      reconciledHighlightedEntities = highlightedEntities;
+    if (!isEmpty(highlighted)) {
+      reconciledHighlightedEntities = highlighted;
 
       if (!isEmpty(highlightParams)) {
-        console.warn(`Warning: "highlightedEntities" was specified by two different sources, which may or may not conflict.
+        console.warn(`Warning: "highlighted" was specified by two different sources, which may or may not conflict.
 		prop passed to Kaavio class:
-			highlightedEntities={${JSON.stringify(highlightedEntities)}}
+			highlighted={${JSON.stringify(highlighted)}}
 		URL query params:
 			${JSON.stringify(highlightParams)}
 		Setting URL query params to match prop passed to Kaavio class.`);
@@ -78,7 +78,7 @@ export class Kaavio extends React.Component<any, any> {
                 return acc;
               },
               {},
-              highlightedEntities
+              highlighted
             )
           ).map(function([color, targets]) {
             return [color, targets.join()];
@@ -88,7 +88,7 @@ export class Kaavio extends React.Component<any, any> {
         });
 
         history.replaceState(
-          { highlightedEntities: highlightedEntities },
+          { highlighted: highlighted },
           document.title,
           "?" + updatedParams.toString()
         );
@@ -116,8 +116,8 @@ export class Kaavio extends React.Component<any, any> {
 
     this.state = {
       diagramRef: null,
-      hiddenEntities: reconciledHiddenEntities,
-      highlightedEntities: reconciledHighlightedEntities
+      hidden: reconciledHiddenEntities,
+      highlighted: reconciledHighlightedEntities
     };
   }
 
@@ -142,7 +142,7 @@ export class Kaavio extends React.Component<any, any> {
 
   render() {
     const {
-      entityMap,
+      entitiesById,
       pathway,
       zoomedEntities,
       pannedEntities,
@@ -155,8 +155,8 @@ export class Kaavio extends React.Component<any, any> {
     } = this.props;
 
     const {
-      highlightedEntities,
-      hiddenEntities
+      highlighted,
+      hidden
       /*
       zoomedEntities,
       pannedEntities,
@@ -175,9 +175,9 @@ export class Kaavio extends React.Component<any, any> {
         <Diagram
           ref={diagram =>
             !this.state.diagramRef && this.setState({ diagramRef: diagram })}
-          entityMap={entityMap}
-          hiddenEntities={hiddenEntities}
-          highlightedEntities={highlightedEntities}
+          entitiesById={entitiesById}
+          hidden={hidden}
+          highlighted={highlighted}
           pathway={pathway}
           handleClick={this.handleClick}
           theme={omit("containerStyle", theme)}

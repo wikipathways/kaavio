@@ -92,17 +92,17 @@ export class Node extends React.Component<any, any> {
     const { props } = this;
     const {
       fill,
-      borderRadius,
-      borderStyle,
+      rx,
+      ry,
+      strokeStyle,
       strokeWidth,
       children,
-      color,
+      stroke,
       fillOpacity,
       drawAs,
       height,
       id,
       parentFill,
-      stroke,
       style,
       type,
       width
@@ -138,12 +138,12 @@ export class Node extends React.Component<any, any> {
       iconOnlyProps.height = height + "px";
     }
 
-    // TODO: for icons with borderStyle of double, it appears the actual border
+    // TODO: for icons with strokeStyle of double, it appears the actual stroke
     // width we're currently getting is closer to 4x, but it should be 2x or 3x.
     // TODO: we're getting box-sizing: border-box behavior for a 200x100 rect
-    // with a 3px double-line border, but it's slightly off for a 40x40 rect
-    // with same border.
-    const actualStrokeWidth = borderStyle === "double"
+    // with a 3px double-line stroke, but it's slightly off for a 40x40 rect
+    // with same stroke.
+    const actualStrokeWidth = strokeStyle === "double"
       ? strokeWidth * 4
       : strokeWidth;
     if (width + actualStrokeWidth > 0 && height + actualStrokeWidth > 0) {
@@ -162,22 +162,23 @@ export class Node extends React.Component<any, any> {
     }
 
     if (!!strokeWidth) {
-      firstChildStyleProps.stroke = stroke || color;
       firstChildStyleProps.strokeWidth = strokeWidth;
     }
 
-    if (borderStyle === "dashed") {
+    if (strokeStyle === "dashed") {
       firstChildStyleProps.strokeDasharray = "5,3";
     }
 
-    if (borderRadius) {
-      iconOnlyProps.rx = borderRadius;
-      iconOnlyProps.ry = borderRadius;
+    if (rx) {
+      iconOnlyProps.rx = rx;
+    }
+    if (ry) {
+      iconOnlyProps.ry = ry;
     }
 
     return (
       <Filter
-        borderStyle={borderStyle}
+        strokeStyle={strokeStyle}
         childTag={TagName}
         parentFill={parentFill}
         childOnlyProps={{

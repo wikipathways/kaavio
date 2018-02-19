@@ -53,7 +53,10 @@ module.exports = function(window, $) {
         if (!data) {
           $this.data("kaavio", function() {
             return ReactDom.render(
-              <Kaavio pathway={data.pathway} entityMap={data.entityMap} />,
+              <Kaavio
+                pathway={data.pathway}
+                entitiesById={data.entitiesById}
+              />,
               this
             );
           });
@@ -99,7 +102,7 @@ module.exports = function(window, $) {
 
       if (element.data.kaavio === undefined) {
         element.data.kaavio = data = ReactDom.render(
-          <Kaavio pathway={data.pathway} entityMap={data.entityMap} />,
+          <Kaavio pathway={data.pathway} entitiesById={data.entitiesById} />,
           element
         );
       } else {

@@ -115,7 +115,7 @@ const textAnchorCalculatorsByTextAlign = {
 };
 
 export interface TextProps {
-  color: string;
+  color?: string;
   height: number; // px
   id: string;
   className: string;
@@ -133,6 +133,10 @@ export interface TextProps {
   textContent: string;
   textOverflow: string;
   whiteSpace: string;
+  // NOT HTML properties:
+  fill: string;
+  stroke?: string;
+  strokeWidth?: number;
 }
 
 export class Text extends React.Component<any, any> {
@@ -141,6 +145,7 @@ export class Text extends React.Component<any, any> {
   }
 
   render() {
+    const { props } = this;
     const {
       color,
       height,
@@ -156,11 +161,24 @@ export class Text extends React.Component<any, any> {
       lineHeight: lineHeightUnitless,
       overflow = "visible",
       rotation = 0,
+      stroke = "none",
+      strokeWidth = 0,
       textAlign = "start",
       textContent = "",
       textOverflow = "clip",
       whiteSpace = "normal"
-    }: TextProps = this.props;
+    }: TextProps = props;
+
+    const fill = props.fill || props.color || "currentColor";
+    // TODO the CSS property text-shadow is related to
+    // the SVG stroke and stroke-width properties:
+    // text-shadow https://developer.mozilla.org/en-US/docs/Web/CSS/text-shadow
+    //
+    // These ones are also related but not part of a standard ATM:
+    // -webkit-text-stroke
+    // -webkit-text-fill
+    // text-outline
+
     // TODO text-overflow:
     // ellipsis, clip, "…" (string)
     // https://developer.mozilla.org/en-US/docs/Web/CSS/text-overflow
@@ -300,12 +318,14 @@ export class Text extends React.Component<any, any> {
           clipPath={overflow === "hidden" ? `url(#${clipPathId})` : null}
           direction={ltrCentric ? "ltr" : textDirection}
           dominantBaseline="central"
-          fill={color}
+          fill={fill}
           fontFamily={fontFamily}
           fontSize={`${fontSize}px`}
           fontStyle={fontStyle}
           fontWeight={fontWeight}
           overflow={overflow}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
           textAnchor={textAnchor}
           transform={transforms.join(" ")}
         >
@@ -381,7 +401,7 @@ export class Text extends React.Component<any, any> {
 //        dx={dx}
 //        dy={dy}
 //        textLength="300"
-//        fill={color}
+//        fill={fill}
 //        fontFamily={fontFamily}
 //        fontSize={`${fontSize}px`}
 //        fontStyle={fontStyle}
@@ -452,7 +472,7 @@ function getTextPathXValues(padding, textDirection, width) {
             textAnchor={textAnchor}
             dx={xTranslation}
             style={style}
-            fill={color}
+            fill={fill}
             dominantBaseline="central"
           >
             <textPath xlinkHref={`#${pathId}`}>

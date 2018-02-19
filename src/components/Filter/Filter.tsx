@@ -1,6 +1,5 @@
 import * as React from "react";
 import * as ReactDom from "react-dom";
-import { unionLSV } from "../../spinoffs/jsonld-utils";
 import { defaults } from "lodash/fp";
 import { EntityProps } from "../../types";
 import { getFilterReference } from "./FilterDefs";
@@ -28,7 +27,6 @@ export class Filter extends React.Component<any, any> {
     const { props } = this;
 
     const {
-      borderStyle,
       childTag,
       childOnlyProps,
       firstChildStyleProps,
@@ -38,10 +36,6 @@ export class Filter extends React.Component<any, any> {
     const { className, color, fill, strokeWidth } = firstChildStyleProps;
 
     let filters = props.filters || [];
-
-    if (borderStyle === "double") {
-      filters = unionLSV(filters, "Double");
-    }
 
     const filterCount = filters.length;
     const filtersAreUsed = filterCount > 0;

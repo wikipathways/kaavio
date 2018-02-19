@@ -44,7 +44,7 @@ export class Edge extends React.Component<any, any> {
       // Don't make a FuncIRI out of a string value
       return markerName;
     } else if (svgReferenceType === "nonLocalIRI") {
-      // We can't set the color, etc. for a non-local IRI
+      // We can't set the stroke, etc. for a non-local IRI
       return formatSVGReference(markerName, [svgReferenceType]);
     }
 
@@ -57,18 +57,17 @@ export class Edge extends React.Component<any, any> {
     const { getMarkerPropertyValue, props } = this;
     const {
       id,
-      color,
       drawAs,
-      strokeDasharray: strokeDasharrayPatternString,
-      strokeWidth,
-      points,
-      theme,
-      type,
-      borderStyle,
       height,
       parentFill,
+      points,
       stroke,
-      style
+      strokeDasharray: strokeDasharrayPatternString,
+      strokeStyle,
+      strokeWidth,
+      style,
+      theme,
+      type
     } = props;
     let filters = props.filters || [];
 
@@ -230,17 +229,14 @@ export class Edge extends React.Component<any, any> {
     }
     strokeDasharrayWithMarkerOffsets.push(markerEndOffset);
 
-    //*
     // NOTE: this is a kludge to deal with SVG not
-    // allowing for defining marker color in relation
-    // to the color of the element that refernces the
+    // allowing for defining marker stroke in relation
+    // to the stroke of the element that refernces the
     // marker.
-    // We're setting edge + marker color by doing
+    // We're setting edge + marker stroke by doing
     // a filter transformation from black to
-    // the desired color.
-    if (!!color) {
-      filters = unionLSV(filters, "BlackToColor");
-    }
+    // the desired stroke.
+    filters = unionLSV(filters, "BlackToColor");
     let firstChildStyleProps = {
       color: stroke,
       fill: "transparent",
@@ -255,13 +251,10 @@ export class Edge extends React.Component<any, any> {
       d,
       ...markerProperties
     };
-    //*/
-
-    //stroke={color}
 
     return (
       <Filter
-        borderStyle={borderStyle}
+        strokeStyle={strokeStyle}
         childTag="path"
         parentFill={parentFill}
         filters={filters}

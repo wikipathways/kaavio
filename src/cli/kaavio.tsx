@@ -41,6 +41,9 @@ const program = require("commander");
 const urlRegex = require("url-regex");
 const validDataUrl = require("valid-data-url");
 const VError = require("verror");
+const readPkgUp = require("read-pkg-up");
+
+const resultFromReadPkgUp = readPkgUp.sync();
 
 import { Diagram } from "../components/Diagram";
 import { arrayify } from "../spinoffs/jsonld-utils";
@@ -270,7 +273,19 @@ function parseThemeSpecPropertyPair(
       // TODO should we resolve them here instead of later in the code?
       semiResolvedSrc = src;
     } else if (src === "kaavio") {
-      semiResolvedSrc = `kaavio/esnext/drawers/${themeSpecPropertyKey}/index`;
+      //? path.relative(__dirname, path.dirname(resultFromReadPkgUp.path))
+      /*
+        ? `${path.relative(
+            __dirname,
+            path.dirname(resultFromReadPkgUp.path)
+          )}/src`
+	  //*/
+      const kaavioBase = resultFromReadPkgUp.pkg.name === "kaavio"
+        ? path.dirname(resultFromReadPkgUp.path)
+        : "kaavio";
+      console.log(`kaavioBase: ${kaavioBase}`);
+      semiResolvedSrc = `${kaavioBase}/es5/drawers/${themeSpecPropertyKey}/index`;
+      console.log(`Resolved kaavio as ${semiResolvedSrc}`);
     } else {
       const [pathRelativeToThemeSpecFile, afterHash] = src
         .replace("file://", "")

@@ -9,25 +9,10 @@ export class nodeWithGroup extends React.Component<any, any> {
     super(wrappedNode.props);
   }
   render() {
-    const {
-      x,
-      y,
-      entityMap,
-      highlightedNodes,
-      fill,
-      parentFill,
-      createChildProps,
-      fillOpacity,
-      mergedStyle,
-      contains,
-      id,
-      hiddenEntities,
-      getFilterId,
-      defineMarker
-    } = this.props;
+    const { entitiesById, createChildProps, contains, id } = this.props;
 
     const children = contains
-      .map(containedId => entityMap[containedId])
+      .map(containedId => entitiesById[containedId])
       .map(entity => {
         return (
           <Entity

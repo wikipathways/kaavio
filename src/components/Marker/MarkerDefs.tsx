@@ -13,41 +13,37 @@ export class MarkerDefs extends React.Component<any, any> {
   constructor(props: MarkerDefsProps) {
     super(props);
     const {
-      entityMap,
+      entitiesById,
       getNamespacedMarkerId,
       markerDrawerMap,
       pathway
     } = props;
     this.getNamespacedMarkerId = getNamespacedMarkerId;
 
-    const parentBackgroundColor = pathway.backgroundColor;
+    const parentFill = pathway.fill;
 
-    const edges = values(entityMap).filter(x => x.kaavioType === "Edge");
+    const edges = values(entitiesById).filter(x => x.kaavioType === "Edge");
 
     const markerColors = Array.from(
       edges
-        .filter(edge => edge.hasOwnProperty("color"))
+        .filter(edge => edge.hasOwnProperty("stroke"))
         .reduce(function(acc, edge) {
-          acc.add(edge.color);
+          acc.add(edge.stroke);
           return acc;
         }, new Set())
     );
 
-    const parentBackgroundColors = [parentBackgroundColor];
+    const parentFills = [parentFill];
     Array.from(
-      values(entityMap)
+      values(entitiesById)
         .filter(x => x.kaavioType === "Group")
         .reduce(function(acc, group) {
-          const fill = interpolate(
-            parentBackgroundColor,
-            group.backgroundColor,
-            group.fillOpacity
-          );
+          const fill = interpolate(parentFill, group.fill, group.fillOpacity);
           acc.add(fill);
           return acc;
         }, new Set())
     ).forEach(function(groupColor: string) {
-      parentBackgroundColors.push(groupColor);
+      parentFills.push(groupColor);
     });
 
     const localMarkerNames = Array.from(
@@ -75,15 +71,15 @@ export class MarkerDefs extends React.Component<any, any> {
     );
 
     const defined = markerColors
-      .map(color => ({ color: color }))
+      .map(stroke => ({ stroke: stroke }))
       .reduce(function(acc: any[], partialInput) {
         const pairs = toPairs(partialInput);
         return acc.concat(
-          parentBackgroundColors.map(function(parentBackgroundColor) {
+          parentFills.map(function(parentFill) {
             return pairs.reduce(function(subAcc: any, pair) {
               const key = pair[0];
               subAcc[key] = pair[1];
-              subAcc.parentBackgroundColor = parentBackgroundColor;
+              subAcc.parentFill = parentFill;
               return subAcc;
             }, {});
           })

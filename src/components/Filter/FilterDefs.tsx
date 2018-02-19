@@ -44,11 +44,13 @@ export function getNamespacedFilterId(filterProps) {
   }
 }
 
+/*
 // Isn't the following the same as the one below?
 export function getFilterReference1(filterProps) {
   const namespacedFilterId = getNamespacedFilterId(filterProps);
   return `url(#${namespacedFilterId})`;
 }
+//*/
 
 /* Returns a filter reference like "url(file.svg#filter-element-id)"
  * See
@@ -85,15 +87,15 @@ export function getFilterReference({
 export class FilterDefs extends React.Component<any, any> {
   constructor(props: FilterDefsProps) {
     super(props);
-    const { pathway, entityMap, highlightedEntities } = props;
+    const { entitiesById, highlighted, pathway } = props;
 
-    const entityValues = values(entityMap);
+    const entityValues = values(entitiesById);
 
     const definedFromBorderStyleDouble = entityValues
       .filter(
         entity =>
-          entity.hasOwnProperty("borderStyle") &&
-          entity.borderStyle === "double"
+          entity.hasOwnProperty("strokeStyle") &&
+          entity.strokeStyle === "double"
       )
       .reduce(function(acc, entity) {
         const { filterProperties, filterPrimitives } = getNamespacedFilter({
@@ -123,7 +125,7 @@ export class FilterDefs extends React.Component<any, any> {
         return acc;
       }, {});
 
-    const definedFromHighlights = (highlightedEntities || [])
+    const definedFromHighlighted = (highlighted || [])
       .reduce(function(acc, highlightedEntity) {
         const filterName = "Highlight";
         const { filterProperties, filterPrimitives } = getNamespacedFilter({
@@ -135,47 +137,48 @@ export class FilterDefs extends React.Component<any, any> {
         return acc;
       }, {});
 
-    const definedFromBlackToColor = entityValues
-      .filter(entity => entity.hasOwnProperty("color"))
-      .reduce(function(acc, entity) {
-        const filterName = "BlackToColor";
-        const { filterProperties, filterPrimitives } = getNamespacedFilter({
-          color: entity.color,
+    const definedFromBlackAndWhiteToColor = keys(
+      entityValues
+        .filter(entity => entity.color || entity.fill || entity.stroke)
+        .reduce(function(acc, entity) {
+          [entity.color, entity.fill, entity.stroke].forEach(function(
+            colorFillOrStroke
+          ) {
+            acc[colorFillOrStroke] = true;
+          });
+          return acc;
+        }, {})
+    ).reduce(function(acc, colorFillOrStroke) {
+      ["WhiteToColor", "BlackToColor"].forEach(function(filterName) {
+        const filterResponse = getNamespacedFilter({
+          color: colorFillOrStroke,
           filterName
         });
-
-        acc[filterProperties.id] = { filterProperties, filterPrimitives };
-        return acc;
-      }, {});
-
-    const definedFromWhiteToColor = entityValues
-      .filter(entity => entity.hasOwnProperty("color"))
-      .reduce(function(acc, entity) {
-        const filterName = "WhiteToColor";
-        const { filterProperties, filterPrimitives } = getNamespacedFilter({
-          color: entity.color,
-          filterName
-        });
-
-        acc[filterProperties.id] = { filterProperties, filterPrimitives };
-        return acc;
-      }, {});
+        if (filterResponse !== "none") {
+          const { filterProperties, filterPrimitives } = filterResponse;
+          acc[filterProperties.id] = {
+            filterProperties,
+            filterPrimitives
+          };
+        }
+      });
+      return acc;
+    }, {});
 
     this.state = {
       defined: defaultsAll([
         definedFromEntityFilterProperties,
         definedFromBorderStyleDouble,
-        definedFromHighlights,
-        definedFromBlackToColor,
-        definedFromWhiteToColor
+        definedFromHighlighted,
+        definedFromBlackAndWhiteToColor
       ])
     };
   }
 
   /* If the diagram is updated after the initial render, this step will handle
 	 * the case of needing a filter definition that wasn't defined in the
-	 * constructor, such as if a user were to add a new group with a background
-	 * color that was not present initially and then dragged a filter on top of a
+	 * constructor, such as if a user were to add a new group with a fill (background
+	 * color) that was not present initially and then dragged a filter on top of a
 	 * type of that group. This doesn't do anything on server-side rendering.
 	 */
   // TODO re-enable this, but take into account potential clobbering of id globally

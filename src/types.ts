@@ -28,8 +28,8 @@ declare module "*.css" {
 export type GetNamespacedId = (input: string) => string;
 
 export interface FilterProps {
-  color: string;
   filterName: string;
+  color?: string;
   fill?: string;
   strokeWidth?: number;
   parentFill?: string;
@@ -65,18 +65,8 @@ export type GetNamespacedFilterId = (filterProps: FilterProps) => string;
 
 export interface FilterDefsProps {
   pathway: Record<string, any>;
-  entityMap: Record<string, any>;
-  getNamespacedFilter: GetNamespacedFilter;
-  highlightedEntities: Record<string, any>;
-  latestFilterReferenced: LatestFilterReferenced;
-}
-
-export interface MarkerDefsProps {
-  entityMap: Record<string, any>;
-  getNamespacedMarkerId: GetNamespacedMarkerId;
-  latestMarkerReferenced: LatestMarkerReferenced;
-  markerDrawerMap: Record<string, Function>;
-  pathway: Record<string, any>;
+  entitiesById: Record<string, any>;
+  highlighted: Record<string, any>;
 }
 
 export type MarkerProperty =
@@ -117,7 +107,7 @@ export interface EntityProps extends NodeProps {
   highlightedNodes: HighlightedNode[]; // The entity needs this because Groups need it
   getNamespacedFilterId: GetNamespacedFilterId;
   getNamespacedMarkerId: GetNamespacedMarkerId;
-  entityMap: any[]; // Group needs this
+  entitiesById: any[]; // Group needs this
   type: string[]; // Anders: Why do we include this? It could be [shape, physicalComponent, Node, cellularComponent]
   textContent: string;
   textAlign?: "left" | "center" | "right";
@@ -127,7 +117,7 @@ export interface EntityProps extends NodeProps {
 
 export interface NodeProps {
   strokeWidth: number;
-  color: string; // Used for borders
+  stroke: string;
   height: number;
   id: number;
   width: number;

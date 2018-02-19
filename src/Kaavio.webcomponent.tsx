@@ -83,7 +83,7 @@ import { Kaavio } from "./Kaavio";
     vm.innerHTML = "";
 
     const {
-      entityMap,
+      entitiesById,
       pathway,
       zoomedEntities,
       pannedEntities,

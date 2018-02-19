@@ -17,8 +17,6 @@ const VError = require("verror");
 
 import { Diagram } from "./components/Diagram";
 
-import * as edgesDefault from "./drawers/edges/index";
-
 import { arrayify } from "./spinoffs/jsonld-utils";
 
 const KaavioNPMPackage = require("./../package.json");
@@ -81,16 +79,16 @@ export function createJson2SvgCLI(
       "[source] [target]. If specified, must be a filepath. Default: standard in and standard out for source and target, respectively."
     )
     .option(
-      "--hide target[,target...]",
+      "--hidden target[,target...]",
       `Specify entities to hide. 
 
 			target: entity id, type or textContent
 
 			Examples:
-				--hide b99fe
-				--hide b99fe,abd6e
-				--hide ensembl:ENSG00000124762
-				--hide b99fe,ensembl:ENSG00000124762`,
+				--hidden b99fe
+				--hidden b99fe,abd6e
+				--hidden ensembl:ENSG00000124762
+				--hidden b99fe,ensembl:ENSG00000124762`,
       (argValue: string) => {
         return argValue
           .split(",")
@@ -100,7 +98,7 @@ export function createJson2SvgCLI(
       []
     )
     .option(
-      "--highlight target[=color][,target[=color],...]",
+      "--highlighted target[=color][,target[=color],...]",
       `Specify entities to highlight.
 
 			target: entity id or typeof value
@@ -113,15 +111,15 @@ export function createJson2SvgCLI(
 				mytext,moretext => mytext%2Cmoretext
 
 			Examples:
-				--highlight b99fe
-				--highlight b99fe=red
-				--highlight b99fe=ff000
-				--highlight "b99fe=#ff000"
-				--highlight b99fe=red,abd6e=red
-				--highlight ensembl:ENSG00000124762=red
-				--highlight b99fe,ensembl:ENSG00000124762=red
-				--highlight b99fe=red,ensembl:ENSG00000124762=red
-				--highlight b99fe=66c2a5,ensembl:ENSG00000124762=8da0cb`,
+				--highlighted b99fe
+				--highlighted b99fe=red
+				--highlighted b99fe=ff000
+				--highlighted "b99fe=#ff000"
+				--highlighted b99fe=red,abd6e=red
+				--highlighted ensembl:ENSG00000124762=red
+				--highlighted b99fe,ensembl:ENSG00000124762=red
+				--highlighted b99fe=red,ensembl:ENSG00000124762=red
+				--highlighted b99fe=66c2a5,ensembl:ENSG00000124762=8da0cb`,
       (argValue: string) => {
         return argValue
           .split(",")
@@ -169,7 +167,7 @@ export function createJson2SvgCLI(
         throw new Error(`Multiple themes specified with name "${themeName}"`);
       }
     }
-    acc[themeName] = defaults(edgesDefault, theme);
+    acc[themeName] = theme;
     return acc;
   }, {});
 
@@ -217,16 +215,16 @@ export function createJson2SvgCLI(
   if (process.stdin.isTTY && !inputStream) program.help();
 
   const render = program.react ? renderToString : renderToStaticMarkup;
-  const { hide, highlight, theme: themeName = defaultThemeName } = program;
-  const hiddenEntities = arrayify(hide);
-  const highlightedEntities = arrayify(highlight);
+  const { theme: themeName = defaultThemeName } = program;
+  const hidden = arrayify(program.hidden);
+  const highlighted = arrayify(program.highlighted);
 
   const theme = themeMap[themeName];
 
   hl(inputStream)
     .through(ndjson.parse())
     //      .flatMap(function(input) {
-    //        const entitiesWithText = values(input.entityMap).filter(entity =>
+    //        const entitiesWithText = values(input.entitiesById).filter(entity =>
     //          entity.hasOwnProperty("textContent")
     //        );
     //        const fontFamilies = compact(

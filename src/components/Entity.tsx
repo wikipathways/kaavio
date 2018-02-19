@@ -2,6 +2,9 @@ import * as React from "react";
 import * as ReactDom from "react-dom";
 import { omit, pick, reduce, upperFirst } from "lodash/fp";
 import { Text } from "../spinoffs/Text";
+import { unionLSV } from "../spinoffs/jsonld-utils";
+//import { contrast, foreground, isValidColor } from "../spinoffs/wcag-contrast";
+import { foreground, isValidColor } from "../spinoffs/wcag-contrast";
 import { Node } from "./Node";
 import { Group } from "./Group";
 import { Edge } from "./Edge";
@@ -20,11 +23,17 @@ export class Entity extends React.Component<any, any> {
 
   renderText() {
     const { props } = this;
-    const { id, textContent, textRotation, type } = props;
+    const {
+      id,
+      fill: containerFill,
+      stroke: containerStroke,
+      textContent,
+      textRotation,
+      type
+    } = props;
     if (!textContent) return;
 
     const textPropsToPassDown = [
-      "color",
       "fontFamily",
       "fontSize",
       "fontStyle",
@@ -42,6 +51,27 @@ export class Entity extends React.Component<any, any> {
       "whiteSpace",
       "width"
     ];
+
+    const textStroke = isValidColor(containerStroke)
+      ? foreground(containerStroke)
+      : containerFill;
+    const textStrokeWidth = "0.1px";
+    /*
+    let textStroke;
+    let textStrokeWidth;
+    if (
+      isValidColor(containerStroke) &&
+      isValidColor(containerFill) &&
+      contrast(containerStroke, containerFill) < 5
+    ) {
+      textStroke = foreground(containerFill);
+      textStrokeWidth = "0.25px";
+    } else {
+      textStroke = "none";
+      textStrokeWidth = "0px";
+    }
+	  //*/
+
     const containerPropsToPassDown = ["id"];
     const seed = pick(textPropsToPassDown, props);
     const propsToPassDown = reduce(
@@ -58,6 +88,9 @@ export class Entity extends React.Component<any, any> {
       <Text
         id={`${id}-text`}
         key={`${id}-text`}
+        fill={props.stroke}
+        stroke={textStroke}
+        strokeWidth={textStrokeWidth}
         rotation={textRotation}
         {...propsToPassDown}
       />
@@ -70,7 +103,7 @@ export class Entity extends React.Component<any, any> {
       burrs,
       drawAs: parentDrawAs,
       theme,
-      entityMap,
+      entitiesById,
       createChildProps,
       height,
       kaavioType,
@@ -81,7 +114,7 @@ export class Entity extends React.Component<any, any> {
     if (!burrs || burrs.length < 1) return;
 
     return burrs
-      .map(burrId => entityMap[burrId])
+      .map(burrId => entitiesById[burrId])
       .map(burr => {
         // NOTE: notice side effect
         burr.width += 0;
@@ -128,9 +161,9 @@ export class Entity extends React.Component<any, any> {
     const { props } = this;
     const {
       fill,
-      borderStyle,
+      strokeStyle,
       strokeWidth,
-      color,
+      stroke,
       className,
       createChildProps,
       drawAs,
@@ -146,7 +179,12 @@ export class Entity extends React.Component<any, any> {
       y
     } = props;
 
-    const childProps = omit("className", props);
+    let filters = props.filters || [];
+    if (strokeStyle === "double") {
+      filters = unionLSV(filters, "Double");
+    }
+
+    const childProps = { filters, ...omit("className", props) };
 
     let entityTransform;
     if (x || y || rotation) {
@@ -181,7 +219,7 @@ export class Entity extends React.Component<any, any> {
         key={id}
         about={id}
         className={formatClassNames(type, kaavioType, className)}
-        color={color}
+        color={stroke}
         name={textContent}
         transform={entityTransform}
         typeof={type.map(encodeURI).join(" ")}

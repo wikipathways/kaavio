@@ -1,4 +1,4 @@
-import { foreground } from "../spinoffs/wcag-contrast";
+import { foreground, isValidColor } from "../spinoffs/wcag-contrast";
 import * as React from "react";
 import * as ReactDom from "react-dom";
 import {
@@ -28,16 +28,20 @@ import { formatClassNames } from "../utils/formatClassNames";
 import { GetNamespacedId } from "../types";
 import { Entity } from "./Entity";
 import { FilterDefs, getFilterReference } from "./Filter/FilterDefs";
-const diagramStyleBase = require("./Diagram.css");
 import { interpolate } from "../spinoffs/interpolate";
 import { normalizeElementId } from "../utils/normalizeElementId";
+
+// TODO what is the best way to handle CSS when using tsc?
+// Compiling w/ webpack is really slow for the CLI.
+//const diagramStyleBase = require("./Diagram.css");
+//${diagramStyleBase || ""}
 
 const BOX_MODEL_DEFAULTS = {
   padding: 0, // px
   verticalAlign: "top"
 };
 const TEXT_CONTENT_DEFAULTS = {
-  color: "#141414",
+  fill: "#141414",
   fontFamily: "arial",
   fontSize: 12, // px
   lineHeight: 1.5, // unitless
@@ -50,11 +54,7 @@ export class Diagram extends React.Component<any, any> {
 
   constructor(props) {
     super(props);
-    const { entityMap, pathway, theme } = props;
-    const mapEntityToSVGTerms = this.mapEntityToSVGTerms;
-    // TODO update gpml2pvjson to always use SVG terms, except maybe for textContent
-    mapEntityToSVGTerms(pathway);
-    values(entityMap).forEach(mapEntityToSVGTerms);
+    const { entitiesById, pathway, theme } = props;
 
     const { id } = pathway;
     let diagramNamespace;
@@ -92,24 +92,6 @@ export class Diagram extends React.Component<any, any> {
     }
   );
 
-  mapEntityToSVGTerms = props => {
-    const propsToMap = {
-      backgroundColor: "fill",
-      borderColor: "stroke",
-      borderWidth: "strokeWidth",
-      color: "stroke"
-    };
-
-    // TODO are these side effects bad, bc making mutable changes?
-    toPairs(propsToMap).forEach(function([fromKey, toKey]) {
-      if (fromKey in props && !(toKey in props)) {
-        props[toKey] = props[fromKey];
-        //delete props[fromKey];
-      }
-    });
-    return props;
-  };
-
   createChildProps = (
     parentProps: Record<string, any>,
     props: Record<string, any>
@@ -120,7 +102,7 @@ export class Diagram extends React.Component<any, any> {
       [
         "createChildProps",
         "Defs",
-        "entityMap",
+        "entitiesById",
         "getNamespacedId",
         "setFillOpacity",
         "theme",
@@ -159,18 +141,27 @@ export class Diagram extends React.Component<any, any> {
 
     if ("fill" in parentProps) {
       const { fill, parentFill } = parentProps;
-      const interpolatedFill = !("fillOpacity" in parentProps)
-        ? fill
-        : interpolate(parentFill, fill, parentProps.fillOpacity);
+      let interpolatedFill;
+      if (!isValidColor(fill)) {
+        interpolatedFill = parentFill;
+      } else if (!("fillOpacity" in parentProps)) {
+        interpolatedFill = fill;
+      } else {
+        interpolatedFill = interpolate(
+          parentFill,
+          fill,
+          parentProps.fillOpacity
+        );
+      }
       updatedProps = set("parentFill", interpolatedFill, updatedProps);
     }
     return updatedProps;
   };
 
   handleClick = e => {
-    const { handleClick, entityMap } = this.props;
+    const { handleClick, entitiesById } = this.props;
     const id = e.target.parentNode.parentNode.getAttribute("id");
-    const entity = entityMap[id];
+    const entity = entitiesById[id];
     handleClick(
       omitBy((v, k) => k.indexOf("_") === 0, defaults(e, { entity: entity }))
     );
@@ -201,19 +192,13 @@ export class Diagram extends React.Component<any, any> {
   render() {
     const { getNamespacedId, createChildProps, handleClick, state } = this;
 
-    const {
-      theme,
-      entityMap,
-      hiddenEntities,
-      highlightedEntities,
-      pathway
-    } = state;
+    const { entitiesById, hidden, highlighted, pathway, theme } = state;
 
     const { Defs, diagramStyle: diagramStyleCustom } = theme;
 
     const { fill, contains, height, id, name, textContent, width } = pathway;
 
-    const drawnEntities = values(entityMap).filter(
+    const drawnEntities = values(entitiesById).filter(
       entity => "drawAs" in entity
     );
 
@@ -241,7 +226,7 @@ export class Diagram extends React.Component<any, any> {
       [textContent]
     );
 
-    const diagramStyleForEntityHighlighting = (highlightedEntities || [])
+    const diagramStyleForHighlighted = (highlighted || [])
       .map(function({ target, color }) {
         const filterReference = getFilterReference({
           color,
@@ -250,7 +235,7 @@ export class Diagram extends React.Component<any, any> {
         let selectorPrefix;
         let nodeSelector;
         let edgeSelector;
-        if (target in entityMap && "drawAs" in entityMap[target]) {
+        if (target in entitiesById && "drawAs" in entitiesById[target]) {
           selectorPrefix = `#${target}`;
         } else if (types.indexOf(target) > -1) {
           const formattedTarget = formatClassNames(target);
@@ -311,11 +296,32 @@ ${nodeSelector} {
           type="text/css"
           dangerouslySetInnerHTML={{
             __html: `
-				<![CDATA[
-					${diagramStyleBase || ""}
-					${diagramStyleCustom || ""}
-					${diagramStyleForEntityHighlighting || ""}
-				]]>
+<![CDATA[
+	.Viewport .Text > tspan {
+	  /*all: inherit;*/
+	  direction: inherit;
+	  dominant-baseline: inherit;
+	  fill: inherit;
+	  font-family: inherit;
+	  font-size: inherit;
+	  font-style: inherit;
+	  font-weight: inherit;
+	  overflow: inherit;
+	  pointer-events: none;
+	  stroke: inherit;
+	  stroke-width: inherit;
+	  text-anchor: inherit;
+	}
+
+	marker {
+	  /* this is what should work per the spec
+	  stroke-dasharray: none; */
+	  /* but I need to add this to make it work in Safari */
+	  stroke-dasharray: 9999999999999999999999999;
+	}
+	${diagramStyleCustom || ""}
+	${diagramStyleForHighlighted || ""}
+]]>
 			`
           }}
         />
