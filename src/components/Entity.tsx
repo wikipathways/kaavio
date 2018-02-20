@@ -55,22 +55,7 @@ export class Entity extends React.Component<any, any> {
     const textStroke = isValidColor(containerStroke)
       ? foreground(containerStroke)
       : containerFill;
-    const textStrokeWidth = "0.1px";
-    /*
-    let textStroke;
-    let textStrokeWidth;
-    if (
-      isValidColor(containerStroke) &&
-      isValidColor(containerFill) &&
-      contrast(containerStroke, containerFill) < 5
-    ) {
-      textStroke = foreground(containerFill);
-      textStrokeWidth = "0.25px";
-    } else {
-      textStroke = "none";
-      textStrokeWidth = "0px";
-    }
-	  //*/
+    const textStrokeWidth = "0.05px";
 
     const containerPropsToPassDown = ["id"];
     const seed = pick(textPropsToPassDown, props);

@@ -13,6 +13,7 @@
     "src/types.ts",
     "src/index.ts",
     "src/cli/kaavio.tsx",
+    "src/drawers/edges/index.ts",
     "src/createJson2SvgCLI.tsx"
   ],
   "exclude": [
