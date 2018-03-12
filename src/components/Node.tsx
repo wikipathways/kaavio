@@ -100,6 +100,7 @@ export class Node extends React.Component<any, any> {
       stroke,
       fillOpacity,
       drawAs,
+      filters,
       height,
       id,
       parentFill,
@@ -178,6 +179,7 @@ export class Node extends React.Component<any, any> {
 
     return (
       <Filter
+        filters={filters}
         strokeStyle={strokeStyle}
         childTag={TagName}
         parentFill={parentFill}

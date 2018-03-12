@@ -203,10 +203,11 @@ export class Entity extends React.Component<any, any> {
         id={id}
         key={id}
         about={id}
-        className={formatClassNames(type, kaavioType, className)}
+        className={formatClassNames(className)}
         color={stroke}
         name={textContent}
         transform={entityTransform}
+        // encodeURI vs. encodeURIComponent?
         typeof={type.map(encodeURI).join(" ")}
       >
         {/*

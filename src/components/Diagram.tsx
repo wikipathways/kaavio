@@ -24,6 +24,7 @@ import {
   toPairs,
   values
 } from "lodash/fp";
+import { unionLSV } from "../spinoffs/jsonld-utils";
 import { formatClassNames } from "../utils/formatClassNames";
 import { GetNamespacedId } from "../types";
 import { Entity } from "./Entity";
@@ -92,71 +93,96 @@ export class Diagram extends React.Component<any, any> {
     }
   );
 
-  createChildProps = (
-    parentProps: Record<string, any>,
-    props: Record<string, any>
-  ) => {
-    let updatedProps;
+  createChildProps3 = curry(
+    (
+      entitiesById: Record<string, any>,
+      parentProps: Record<string, any>,
+      props: Record<string, any>
+    ) => {
+      let updatedProps;
 
-    const propsToPassDown = pick(
-      [
-        "createChildProps",
-        "Defs",
-        "entitiesById",
-        "getNamespacedId",
-        "setFillOpacity",
-        "theme",
-        "type"
-      ],
-      parentProps
-    );
+      const propsToPassDown = pick(
+        [
+          "createChildProps",
+          "Defs",
+          "entitiesById",
+          "getNamespacedId",
+          "setFillOpacity",
+          "theme",
+          "type"
+        ],
+        parentProps
+      );
 
-    const inheritedProps = toPairs(props)
-      .filter(([key, value]) => value === "inherit")
-      .reduce(function(acc, [key, value]) {
-        if (!(key in parentProps)) {
-          throw new Error(
-            `Error: props.${key} equals "inherit", but parentProps.${key} is missing in createChildProps(${JSON.stringify(
-              parentProps
-            )}, ${JSON.stringify(props)})`
+      const inheritedProps = toPairs(props)
+        .filter(([key, value]) => value === "inherit")
+        .reduce(function(acc, [key, value]) {
+          if (!(key in parentProps)) {
+            throw new Error(
+              `Error: props.${key} equals "inherit", but parentProps.${key} is missing in createChildProps(${JSON.stringify(
+                parentProps
+              )}, ${JSON.stringify(props)})`
+            );
+          }
+          acc[key] = parentProps[key];
+        }, {});
+
+      const updatedType = reduce(
+        function(acc, typeItem) {
+          let moreTypes;
+          if (typeItem in entitiesById) {
+            const { id, exactMatch, closeMatch, sameAs } = entitiesById[
+              typeItem
+            ];
+            return unionLSV(acc, typeItem, id, exactMatch, closeMatch, sameAs);
+          } else {
+            return unionLSV(acc, typeItem);
+          }
+        },
+        [],
+        props.type
+      );
+
+      // type (for typeof) will include any available synonyms;
+      // className (for class) will not.
+      updatedProps = assignAll([
+        TEXT_CONTENT_DEFAULTS,
+        propsToPassDown,
+        props,
+        inheritedProps,
+        {
+          className: unionLSV(props.className, props.type, props.kaavioType),
+          type: updatedType
+        }
+      ]);
+
+      updatedProps = propsToPassDown.setFillOpacity(updatedProps);
+
+      // TODO could we use these as markers? http://graphemica.com/blocks/arrows
+
+      if ("height" in props) {
+        updatedProps = defaults(BOX_MODEL_DEFAULTS, updatedProps);
+      }
+
+      if ("fill" in parentProps) {
+        const { fill, parentFill } = parentProps;
+        let interpolatedFill;
+        if (!isValidColor(fill)) {
+          interpolatedFill = parentFill;
+        } else if (!("fillOpacity" in parentProps)) {
+          interpolatedFill = fill;
+        } else {
+          interpolatedFill = interpolate(
+            parentFill,
+            fill,
+            parentProps.fillOpacity
           );
         }
-        acc[key] = parentProps[key];
-      }, {});
-
-    updatedProps = assignAll([
-      TEXT_CONTENT_DEFAULTS,
-      propsToPassDown,
-      props,
-      inheritedProps
-    ]);
-
-    updatedProps = propsToPassDown.setFillOpacity(updatedProps);
-
-    // TODO could we use these as markers? http://graphemica.com/blocks/arrows
-
-    if ("height" in props) {
-      updatedProps = defaults(BOX_MODEL_DEFAULTS, updatedProps);
-    }
-
-    if ("fill" in parentProps) {
-      const { fill, parentFill } = parentProps;
-      let interpolatedFill;
-      if (!isValidColor(fill)) {
-        interpolatedFill = parentFill;
-      } else if (!("fillOpacity" in parentProps)) {
-        interpolatedFill = fill;
-      } else {
-        interpolatedFill = interpolate(
-          parentFill,
-          fill,
-          parentProps.fillOpacity
-        );
+        updatedProps = set("parentFill", interpolatedFill, updatedProps);
       }
-      updatedProps = set("parentFill", interpolatedFill, updatedProps);
+      return updatedProps;
     }
-    return updatedProps;
-  };
+  );
 
   handleClick = e => {
     const { handleClick, entitiesById } = this.props;
@@ -190,9 +216,11 @@ export class Diagram extends React.Component<any, any> {
   }
 
   render() {
-    const { getNamespacedId, createChildProps, handleClick, state } = this;
+    const { getNamespacedId, createChildProps3, handleClick, state } = this;
 
     const { entitiesById, hidden, highlighted, pathway, theme } = state;
+
+    const createChildProps = createChildProps3(entitiesById);
 
     const { Defs, diagramStyle: diagramStyleCustom } = theme;
 
@@ -269,6 +297,7 @@ ${nodeSelector} {
       state,
       this,
       {
+        createChildProps,
         kaavioType: "Viewport"
       }
     ]);

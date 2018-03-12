@@ -88,10 +88,11 @@ export class FilterDefs extends React.Component<any, any> {
   constructor(props: FilterDefsProps) {
     super(props);
     const { entitiesById, highlighted, pathway } = props;
+    const { height, width } = pathway;
 
     const entityValues = values(entitiesById);
 
-    const definedFromBorderStyleDouble = entityValues
+    const definedFromStrokeStyleDouble = entityValues
       .filter(
         entity =>
           entity.hasOwnProperty("strokeStyle") &&
@@ -139,6 +140,8 @@ export class FilterDefs extends React.Component<any, any> {
 
     const definedFromBlackAndWhiteToColor = keys(
       entityValues
+        // TODO should we filter out "white", "#fff", "#ffffff", "black", "#000", "#000000"?
+        // would I need to make sure I'm not referencing those filters somewhere?
         .filter(entity => entity.color || entity.fill || entity.stroke)
         .reduce(function(acc, entity) {
           [entity.color, entity.fill, entity.stroke].forEach(function(
@@ -157,7 +160,19 @@ export class FilterDefs extends React.Component<any, any> {
         if (filterResponse !== "none") {
           const { filterProperties, filterPrimitives } = filterResponse;
           acc[filterProperties.id] = {
-            filterProperties,
+            // TODO file a bug report on this. Observed in both Chrome and FF.
+            // Paths don't get the filter property applied properly, because
+            // when the SVG height/width=inherit, somehow the filter thinks
+            // the total size of the SVG is smaller than it actually is when
+            // the browser window is small.
+            filterProperties: {
+              x: 0,
+              y: 0,
+              height,
+              width,
+              ...filterProperties
+            },
+            //filterProperties,
             filterPrimitives
           };
         }
@@ -168,7 +183,7 @@ export class FilterDefs extends React.Component<any, any> {
     this.state = {
       defined: defaultsAll([
         definedFromEntityFilterProperties,
-        definedFromBorderStyleDouble,
+        definedFromStrokeStyleDouble,
         definedFromHighlighted,
         definedFromBlackAndWhiteToColor
       ])
