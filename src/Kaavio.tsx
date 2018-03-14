@@ -146,8 +146,24 @@ export class Kaavio extends React.Component<any, any> {
     this.state = {
       diagramRef: null,
       hidden: reconciledHiddenEntities,
-      highlighted: reconciledHighlightedEntities
+      highlighted: reconciledHighlightedEntities,
+      ...this.propsToState(props)
     };
+  }
+
+  propsToState(props) {
+    return {
+      pathway: props.pathway,
+      entitiesById: props.entitiesById,
+      theme: props.theme,
+      filter: props.filter
+    };
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.setState({
+      ...this.propsToState(nextProps)
+    });
   }
 
   addStyle = (styles: string[]) => {
@@ -180,11 +196,9 @@ export class Kaavio extends React.Component<any, any> {
       onPanZoomChange,
       theme,
       showPanZoomControls = true,
-      panZoomLocked = false
-    } = this.props;
-
-    const {
+      panZoomLocked = false,
       highlighted,
+
       hidden
       /*
       zoomedEntities,

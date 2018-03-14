@@ -9,7 +9,6 @@ import {
   defaultsAll,
   filter,
   fromPairs,
-  forOwn,
   isArray,
   isBoolean,
   isEmpty,
@@ -193,26 +192,18 @@ export class Diagram extends React.Component<any, any> {
     );
   };
 
-  componentWillReceiveProps(nextPropsRaw) {
+  componentWillReceiveProps(nextProps) {
     let that = this;
     const prevProps = that.props;
 
-    const nextProps = this.setFillOpacity(nextPropsRaw);
-
-    forOwn(function(prop, key) {
-      if (key === "filters") {
-        that.setState({
-          [key]: prop
-        });
-      } else if (
-        prop &&
-        JSON.stringify(prevProps[key]) !== JSON.stringify(prop)
-      ) {
-        that.setState({
-          [key]: prop
-        });
-      }
-    }, nextProps);
+    const changedProps = fromPairs(
+      toPairs(nextProps).filter(function([key, nextProp]) {
+        return prevProps[key] !== nextProp;
+      })
+    );
+    if (!isEmpty(changedProps)) {
+      that.setState(this.setFillOpacity(changedProps));
+    }
   }
 
   render() {
