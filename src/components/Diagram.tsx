@@ -186,7 +186,7 @@ export class Diagram extends React.Component<any, any> {
 
   handleClick = e => {
     const { handleClick, entitiesById } = this.props;
-    const id = e.target.parentNode.parentNode.getAttribute("id");
+    const id = e.target.parentNode.getAttribute("id");
     const entity = entitiesById[id];
     handleClick(
       omitBy((v, k) => k.indexOf("_") === 0, defaults(e, { entity: entity }))
@@ -297,8 +297,7 @@ ${nodeSelector} {
       state,
       this,
       {
-        createChildProps,
-        kaavioType: "Viewport"
+        createChildProps
       }
     ]);
 
@@ -326,6 +325,10 @@ ${nodeSelector} {
           dangerouslySetInnerHTML={{
             __html: `
 <![CDATA[
+	.Viewport .Text, .Viewport .Text * {
+	  pointer-events: none;
+	}
+
 	.Viewport .Text > tspan {
 	  /*all: inherit;*/
 	  direction: inherit;
@@ -336,7 +339,6 @@ ${nodeSelector} {
 	  font-style: inherit;
 	  font-weight: inherit;
 	  overflow: inherit;
-	  pointer-events: none;
 	  stroke: inherit;
 	  stroke-width: inherit;
 	  text-anchor: inherit;
@@ -351,7 +353,7 @@ ${nodeSelector} {
 	${diagramStyleCustom || ""}
 	${diagramStyleForHighlighted || ""}
 ]]>
-			`
+`
           }}
         />
 
@@ -361,8 +363,10 @@ ${nodeSelector} {
         </defs>
 
         <Entity
-          className="Viewport"
-          {...createChildProps(pseudoParent, pathway)}
+          {...createChildProps(pseudoParent, {
+            className: "Viewport",
+            ...pathway
+          })}
         />
       </svg>
     );

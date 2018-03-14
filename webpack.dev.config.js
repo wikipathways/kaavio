@@ -1,25 +1,23 @@
 const path = require("path");
 const webpack = require("webpack");
-
 const webpackConfig = require("./webpack.base.config");
+const npmPkg = require("./package.json");
 
-webpackConfig.entry = path.resolve(__dirname, "src/browser.tsx");
-webpackConfig.output = {
-  path: path.resolve(__dirname, "dist"),
-  filename: "Kaavio.vanilla.js",
-  library: "Kaavio",
-  libraryTarget: "umd"
+webpackConfig.output.path = path.resolve(__dirname, "test");
+
+const numericIdentifier = Math.abs(
+  (!!npmPkg && !!npmPkg.name ? npmPkg.name : __dirname)
+    .split("")
+    .reduce((acc, char, i) => acc + (i + 27) * (char.codePointAt(0) - 97), 0) +
+    1025
+);
+const port = Math.min(65336, numericIdentifier);
+
+webpackConfig.devtool = "cheap-module-eval-source-map";
+webpackConfig.devServer = {
+  contentBase: [path.join(__dirname, "test")],
+  port: port
 };
-
-webpackConfig.module.rules.push({
-  test: require.resolve("react-dom"),
-  use: [
-    {
-      loader: "expose-loader",
-      options: "ReactDOM"
-    }
-  ]
-});
 
 [
   new webpack.DefinePlugin({

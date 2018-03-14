@@ -2,11 +2,7 @@ const path = require("path");
 const webpack = require("webpack");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const StringReplacePlugin = require("string-replace-webpack-plugin");
-
-const babelLoader = {
-  loader: "babel-loader",
-  options: { presets: ["env", "react"] }
-};
+const npmPkg = require("./package.json");
 
 const shebangRemovalLoader = {
   loader: StringReplacePlugin.replace({
@@ -23,6 +19,26 @@ const shebangRemovalLoader = {
 
 module.exports = {
   context: path.resolve(__dirname),
+  entry: {
+    "kaavio.dummy": ["babel-polyfill", "./test/kaavio.dummy.js"]
+    //"kaavio.vanilla": ["babel-polyfill", "./esnext/kaavio.vanilla.js"]
+    /*
+    "kaavio.jquery": ["babel-polyfill", "./esnext/kaavio.jquery.js"]
+    "wikipathways-kaavio.webcomponent": [
+      "babel-polyfill",
+      "./esnext/wikipathways-kaavio.webcomponent.js"
+    ]
+    //*/
+    //"Kaavio": ["babel-polyfill", "./esnext/Kaavio.js"],
+    //cli: ["babel-polyfill", "./esnext/cli.js"]
+  },
+  output: {
+    filename: "[name].js",
+    path: path.resolve(__dirname, "dist"),
+    library: "Kaavio",
+    libraryExport: "Kaavio",
+    libraryTarget: "umd"
+  },
   resolve: {
     extensions: [
       ".webpack.js",
@@ -82,32 +98,27 @@ module.exports = {
         use: "json-loader"
       },
       {
-        test: /\.tsx?$/,
-        exclude: /node_modules/,
-        use: [
-          babelLoader,
-          shebangRemovalLoader,
-          {
-            loader: "ts-loader"
-          }
-        ]
+        test: /\.[jt]sx?$/,
+        use: ["source-map-loader", shebangRemovalLoader],
+        enforce: "pre",
+        exclude: [/lodash/, /react-dom/, /react-spinkit/]
       },
       {
-        test: /\.jsx?$/,
-        include: [
-          path.resolve(__dirname, "src"),
-          // we need to babelify any modules published as esnext
-          path.resolve(__dirname, "node_modules/color-interpolate/"),
-          path.resolve(__dirname, "node_modules/fs-extra/"),
-          path.resolve(__dirname, "node_modules/parent-package-json/"),
-          path.resolve(__dirname, "node_modules/universalify/"),
-          path.resolve(__dirname, "node_modules/url-regex/")
-        ],
-        use: [babelLoader, shebangRemovalLoader]
+        test: require.resolve("react-dom"),
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: "expose-loader",
+            options: "ReactDOM"
+          }
+        ]
       }
     ]
   },
   plugins: [
+    new webpack.DefinePlugin({
+      version: npmPkg.version
+    }),
     new ExtractTextPlugin({
       filename: "style.css",
       allChunks: true
