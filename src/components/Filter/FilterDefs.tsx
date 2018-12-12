@@ -87,7 +87,7 @@ export function getFilterReference({
 export class FilterDefs extends React.Component<any, any> {
   constructor(props: FilterDefsProps) {
     super(props);
-    const { entitiesById, highlighted, pathway } = props;
+    const { entitiesById, highlights, pathway }: FilterDefsProps = props;
     const { height, width } = pathway;
 
     const entityValues = values(entitiesById);
@@ -126,17 +126,20 @@ export class FilterDefs extends React.Component<any, any> {
         return acc;
       }, {});
 
-    const definedFromHighlighted = (highlighted || [])
-      .reduce(function(acc, highlightedEntity) {
-        const filterName = "Highlight";
-        const { filterProperties, filterPrimitives } = getNamespacedFilter({
-          color: highlightedEntity.color,
-          filterName
-        });
+    const definedFromHighlighted = highlights.reduce(function(
+      acc,
+      [targetKey, targetValue, styleValue]
+    ) {
+      const filterName = "Highlight";
+      const { filterProperties, filterPrimitives } = getNamespacedFilter({
+        color: styleValue,
+        filterName
+      });
 
-        acc[filterProperties.id] = { filterProperties, filterPrimitives };
-        return acc;
-      }, {});
+      acc[filterProperties.id] = { filterProperties, filterPrimitives };
+      return acc;
+    },
+    {});
 
     const definedFromBlackAndWhiteToColor = keys(
       entityValues
@@ -246,15 +249,15 @@ export class FilterDefs extends React.Component<any, any> {
 
     return (
       <g id="jit-defs">
-        {toPairs(
-          defined
-        ).map(([filterId, { filterProperties, filterPrimitives }]) => {
-          return (
-            <filter key={filterId} {...filterProperties}>
-              {filterPrimitives}
-            </filter>
-          );
-        })}
+        {toPairs(defined).map(
+          ([filterId, { filterProperties, filterPrimitives }]) => {
+            return (
+              <filter key={filterId} {...filterProperties}>
+                {filterPrimitives}
+              </filter>
+            );
+          }
+        )}
       </g>
     );
   }

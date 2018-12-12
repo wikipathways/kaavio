@@ -11,8 +11,6 @@
  *
  * Anders: is this the best way to do this? For me, this really helps documentation.
  * I'm not sure about the parent Entity inheriting the props of it's children.
- *
- * TODO: the logic for icons and highlightedNodes is duplicated in Diagram and Group. Fix this.
  */
 
 /*
@@ -66,7 +64,7 @@ export type GetNamespacedFilterId = (filterProps: FilterProps) => string;
 export interface FilterDefsProps {
   pathway: Record<string, any>;
   entitiesById: Record<string, any>;
-  highlighted: Record<string, any>;
+  highlights: [string, string, string][];
 }
 
 export type MarkerProperty =
@@ -100,11 +98,7 @@ export interface EntityProps extends NodeProps {
   y: number;
   rotation: number;
   fill: string;
-  isHighlighted: boolean;
-  highlightedColor?: string;
-  customClass?: string;
   drawAs: string;
-  highlightedNodes: HighlightedNode[]; // The entity needs this because Groups need it
   getNamespacedFilterId: GetNamespacedFilterId;
   getNamespacedMarkerId: GetNamespacedMarkerId;
   entitiesById: any[]; // Group needs this

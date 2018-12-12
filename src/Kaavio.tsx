@@ -1,7 +1,5 @@
 import { filter, isEmpty, omit, partition, reduce, toPairs } from "lodash/fp";
 import * as React from "react";
-import { Validator } from "collit";
-
 import { Diagram } from "./components/Diagram";
 import { PanZoom } from "./components/PanZoom";
 
@@ -46,125 +44,21 @@ export class Kaavio extends React.Component<any, any> {
   constructor(props) {
     super(props);
 
-    const { theme, hidden, highlighted } = this.props;
+    const { theme, opacities, highlights } = this.props;
     const { containerStyle: containerStyleCustom } = theme;
-
-    const searchParams = new URLSearchParams(location.search);
-
-    // TODO reconcile query params and class props for pan/zoom settings
-
-    let reconciledHiddenEntities;
-    const hideParam = searchParams.get("hide");
-    if (!isEmpty(hidden)) {
-      reconciledHiddenEntities = hidden;
-      if (!isEmpty(hideParam)) {
-        console.warn(`Warning: "hidden" was specified by two different sources, which may or may not conflict.
-		prop passed to Kaavio class:
-			hidden={${JSON.stringify(hidden)}}
-		URL query param:
-			hide=${hideParam}
-		Setting URL query params to match prop passed to Kaavio class.`);
-
-        const searchParams = new URLSearchParams(location.search);
-        searchParams.set("hide", hidden.join());
-
-        history.replaceState(
-          { hidden: hidden },
-          document.title,
-          "?" + searchParams.toString()
-        );
-      }
-    } else if (!isEmpty(hideParam)) {
-      reconciledHiddenEntities = hideParam.split(",").map(decodeURIComponent);
-    }
-
-    let reconciledHighlightedEntities;
-    const [highlightParams, nonHighlightParams] = partition(function(
-      [key, value]
-    ) {
-      return Validator.isColor(key);
-    }, Array.from(searchParams));
-
-    if (!isEmpty(highlighted)) {
-      reconciledHighlightedEntities = highlighted;
-
-      if (!isEmpty(highlightParams)) {
-        console.warn(`Warning: "highlighted" was specified by two different sources, which may or may not conflict.
-		prop passed to Kaavio class:
-			highlighted={${JSON.stringify(highlighted)}}
-		URL query params:
-			${JSON.stringify(highlightParams)}
-		Setting URL query params to match prop passed to Kaavio class.`);
-
-        const updatedParams = new URLSearchParams();
-        [
-          ...nonHighlightParams,
-          ...toPairs(
-            reduce(
-              function(acc, { target, color }) {
-                acc[color] = acc[color] || [];
-                acc[color].push(target);
-                return acc;
-              },
-              {},
-              highlighted
-            )
-          ).map(function([color, targets]) {
-            return [color, targets.join()];
-          })
-        ].forEach(function([name, value]) {
-          updatedParams.set(name, value);
-        });
-
-        history.replaceState(
-          { highlighted: highlighted },
-          document.title,
-          "?" + updatedParams.toString()
-        );
-      }
-    } else if (!isEmpty(highlightParams)) {
-      reconciledHighlightedEntities = toPairs(
-        highlightParams.reduce(function(acc, [color, targetString]) {
-          targetString
-            .split(",")
-            .map(decodeURIComponent)
-            .forEach(function(target) {
-              if (!acc.hasOwnProperty(target)) {
-                acc[target] = color;
-              }
-            });
-          return acc;
-        }, {})
-      ).map(function([target, color]) {
-        return { target, color };
-      });
-    }
 
     // TODO don't just keep adding!
     this.addStyle([containerStyleBase, containerStyleCustom]);
 
     this.state = {
-      diagramRef: null,
-      hidden: reconciledHiddenEntities,
-      highlighted: reconciledHighlightedEntities,
-      ...this.propsToState(props)
+      diagramRef: null
     };
   }
 
-  propsToState(props) {
-    return {
-      pathway: props.pathway,
-      entitiesById: props.entitiesById,
-      theme: props.theme,
-      filter: props.filter
-    };
-  }
-
+  /*
   componentWillReceiveProps(nextProps) {
-    this.setState({
-      ...this.propsToState(nextProps)
-    });
   }
+	//*/
 
   addStyle = (styles: string[]) => {
     var styleEl = document.createElement("style");
@@ -197,9 +91,8 @@ export class Kaavio extends React.Component<any, any> {
       theme,
       showPanZoomControls = true,
       panZoomLocked = false,
-      highlighted,
-
-      hidden
+      highlights,
+      opacities
       /*
       zoomedEntities,
       pannedEntities,
@@ -208,7 +101,30 @@ export class Kaavio extends React.Component<any, any> {
       showPanZoomControls = true,
       panZoomLocked = false
 			//*/
+    } = this.props;
+    /*
+    const {
+      entitiesById,
+      pathway,
+      zoomedEntities,
+      pannedEntities,
+      zoomLevel,
+      panCoordinates,
+      onPanZoomChange,
+      theme,
+      showPanZoomControls = true,
+      panZoomLocked = false,
+      highlights,
+
+      opacities
+//      zoomedEntities,
+//      pannedEntities,
+//      zoomLevel,
+//      panCoordinates,
+//      showPanZoomControls = true,
+//      panZoomLocked = false
     } = this.state;
+	  //*/
 
     // TODO: Don't use refs!
     // Accessing the diagram ref from the state is a little bit of a hack to get panZoom working.
@@ -217,10 +133,11 @@ export class Kaavio extends React.Component<any, any> {
       <div id={`kaavio-container-for-${pathway.id}`} className="Container">
         <Diagram
           ref={diagram =>
-            !this.state.diagramRef && this.setState({ diagramRef: diagram })}
+            !this.state.diagramRef && this.setState({ diagramRef: diagram })
+          }
           entitiesById={entitiesById}
-          hidden={hidden}
-          highlighted={highlighted}
+          opacities={opacities}
+          highlights={highlights}
           pathway={pathway}
           handleClick={this.handleClick}
           theme={omit("containerStyle", theme)}

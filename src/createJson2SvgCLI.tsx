@@ -78,6 +78,7 @@ export function createJson2SvgCLI(
     .usage(
       "[source] [target]. If specified, must be a filepath. Default: standard in and standard out for source and target, respectively."
     )
+    // TODO change this to use opacities
     .option(
       "--hidden target[,target...]",
       `Specify entities to hide. 

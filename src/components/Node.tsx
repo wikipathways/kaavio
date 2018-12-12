@@ -2,7 +2,6 @@ import * as React from "react";
 import { assign, difference, isEmpty, isFinite, pick } from "lodash/fp";
 import * as ReactDOM from "react-dom";
 import * as validDataUrl from "valid-data-url";
-import { formatClassNames } from "../utils/formatClassNames";
 import { NodeProps } from "../types";
 import { Filter } from "./Filter/Filter";
 

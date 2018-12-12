@@ -16,7 +16,6 @@ import {
   getSVGMarkerReferenceType,
   MARKER_PROPERTIES
 } from "./Marker/helpers";
-import { formatClassNames } from "../utils/formatClassNames";
 import { formatSVGReference } from "../spinoffs/formatSVGReference";
 import { MarkerProperty, StringReferenceValue } from "../types";
 import { Filter } from "./Filter/Filter";

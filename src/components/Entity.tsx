@@ -9,7 +9,7 @@ import { Node } from "./Node";
 import { Group } from "./Group";
 import { Edge } from "./Edge";
 import ReactCSSTransitionGroup from "react-addons-css-transition-group";
-import { formatClassNames } from "../utils/formatClassNames";
+import { classNamesToString } from "../utils/formatClassNames";
 import { EntityProps, StringReferenceValue } from "../types";
 
 /**
@@ -149,7 +149,7 @@ export class Entity extends React.Component<any, any> {
       strokeStyle,
       strokeWidth,
       stroke,
-      className,
+      classNames,
       createChildProps,
       drawAs,
       height,
@@ -169,7 +169,7 @@ export class Entity extends React.Component<any, any> {
       filters = unionLSV(filters, "Double");
     }
 
-    const childProps = { filters, ...omit("className", props) };
+    const childProps = { filters, ...omit("classNames", props) };
 
     let entityTransform;
     if (x || y || rotation) {
@@ -203,7 +203,7 @@ export class Entity extends React.Component<any, any> {
         id={id}
         key={id}
         about={id}
-        className={formatClassNames(className)}
+        className={classNamesToString(classNames)}
         color={stroke}
         name={textContent}
         transform={entityTransform}

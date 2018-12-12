@@ -24,7 +24,10 @@ import {
   values
 } from "lodash/fp";
 import { unionLSV } from "../spinoffs/jsonld-utils";
-import { formatClassNames } from "../utils/formatClassNames";
+import {
+  classNamesToArray,
+  classNamesToString
+} from "../utils/formatClassNames";
 import { GetNamespacedId } from "../types";
 import { Entity } from "./Entity";
 import { FilterDefs, getFilterReference } from "./Filter/FilterDefs";
@@ -49,12 +52,16 @@ const TEXT_CONTENT_DEFAULTS = {
   whiteSpace: "pre"
 };
 
+function normalizeTargetValue(targetValue) {
+  return targetValue.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+}
+
 export class Diagram extends React.Component<any, any> {
   getNamespacedId: GetNamespacedId;
 
   constructor(props) {
     super(props);
-    const { entitiesById, pathway, theme } = props;
+    const { entitiesById, pathway, theme, opacities, highlights } = props;
 
     const { id } = pathway;
     let diagramNamespace;
@@ -73,7 +80,170 @@ export class Diagram extends React.Component<any, any> {
     this.getNamespacedId = this.getNamespacedIdWithDiagramNamespace(
       diagramNamespace
     );
-    this.state = { ...this.setFillOpacity(props) };
+
+    const drawnEntities = values(entitiesById).filter(
+      entity => "drawAs" in entity
+    );
+
+    drawnEntities.forEach(function(drawnEntity) {
+      if ("type" in drawnEntity) {
+        drawnEntity.classNames = classNamesToArray(
+          reduce(
+            function(acc, typeItem) {
+              if (typeItem in entitiesById) {
+                const { id, exactMatch, closeMatch, sameAs } = entitiesById[
+                  typeItem
+                ];
+                return unionLSV(
+                  acc,
+                  typeItem,
+                  id,
+                  exactMatch,
+                  closeMatch,
+                  sameAs
+                );
+              } else {
+                return unionLSV(acc, typeItem);
+              }
+            },
+            unionLSV(
+              drawnEntity.className,
+              drawnEntity.classNames,
+              drawnEntity.kaavioType
+            ),
+            drawnEntity.type
+          )
+        );
+      }
+    });
+
+    const classNamesByNormalized = drawnEntities.reduce(function(acc, entity) {
+      if ("classNames" in entity) {
+        entity.classNames.forEach(function(classNameValue) {
+          const normalized = normalizeTargetValue(classNameValue);
+          if (!(normalized in acc)) {
+            acc[normalized] = [];
+          }
+          if (acc[normalized].indexOf(classNameValue) === -1) {
+            acc[normalized].push(classNameValue);
+          }
+        });
+      }
+      return acc;
+    }, {});
+
+    const textContentValuesByNormalized = drawnEntities.reduce(function(
+      acc,
+      entity
+    ) {
+      if ("textContent" in entity) {
+        const textContentValue = entity.textContent;
+        const normalized = normalizeTargetValue(textContentValue);
+        if (!(normalized in acc)) {
+          acc[normalized] = [];
+        }
+        if (acc[normalized].indexOf(textContentValue) === -1) {
+          acc[normalized].push(textContentValue);
+        }
+      }
+      return acc;
+    }, {});
+
+    const diagramStyleForHighlighted = (highlights || [])
+      .map(function([targetKey, targetValue, styleValue]) {
+        const color = styleValue;
+        const filterReference = getFilterReference({
+          color,
+          filterName: "Highlight"
+        });
+        let targetValues;
+        if (!targetKey) {
+          const normalized = normalizeTargetValue(targetValue);
+          if (
+            targetValue in entitiesById &&
+            "drawAs" in entitiesById[targetValue]
+          ) {
+            targetKey = "id";
+          } else if (
+            normalized in classNamesByNormalized ||
+            normalized in textContentValuesByNormalized
+          ) {
+            //ReactDOM.Element.proto
+            let originals;
+            if (normalized in classNamesByNormalized) {
+              targetKey = "class";
+              originals = classNamesByNormalized[normalized];
+            } else {
+              targetKey = "name";
+              originals = textContentValuesByNormalized[normalized];
+            }
+
+            if (targetValue in originals) {
+              targetValues = [targetValue];
+            } else {
+              targetValues = originals;
+              if (originals.length > 1) {
+                console.warn(
+                  `Warning: ${targetValue} maps to multiple: ${originals.join()}`
+                );
+              }
+            }
+          } else {
+            console.warn(
+              `"${targetValue}" does not match the id, class/type or textContent of any entity. Highlight failed.`
+            );
+            return;
+          }
+        } else {
+          targetValues = [targetValue];
+        }
+
+        let selectorPrefixes = [];
+        if (targetKey === "id") {
+          selectorPrefixes = [`#${targetValue}`];
+        } else if (targetKey === "class") {
+          /*
+          selectorPrefixes = targetValues.map(
+            targetValue => `[typeof~="${targetValue}"]`
+          );
+		//*/
+          //*
+          selectorPrefixes = targetValues.map(
+            targetValue => `.${classNamesToArray(targetValue)}`
+          );
+          //*/
+        } else if (targetKey === "name") {
+          selectorPrefixes = targetValues.map(
+            targetValue => `[name="${targetValue}"]`
+          );
+        }
+
+        const nodeSelector = selectorPrefixes
+          .map(selectorPrefix => `${selectorPrefix} > .Icon`)
+          .join(",");
+        const edgeSelector = selectorPrefixes
+          .map(selectorPrefix => `${selectorPrefix} > path`)
+          .join(",");
+
+        const highlighterFill = interpolate(pathway.fill, color, 0.5);
+
+        return `
+${nodeSelector} {
+	fill: ${highlighterFill};
+	filter: ${filterReference};
+}
+${edgeSelector} {
+	filter: ${filterReference};
+}`;
+      })
+      .filter(s => !!s)
+      .join("\n");
+
+    this.state = {
+      diagramStyleForHighlighted,
+      ...{ highlights: [], opacities: [] },
+      ...this.setFillOpacity(props)
+    };
   }
 
   public setFillOpacity = props => {
@@ -126,33 +296,11 @@ export class Diagram extends React.Component<any, any> {
           acc[key] = parentProps[key];
         }, {});
 
-      const updatedType = reduce(
-        function(acc, typeItem) {
-          let moreTypes;
-          if (typeItem in entitiesById) {
-            const { id, exactMatch, closeMatch, sameAs } = entitiesById[
-              typeItem
-            ];
-            return unionLSV(acc, typeItem, id, exactMatch, closeMatch, sameAs);
-          } else {
-            return unionLSV(acc, typeItem);
-          }
-        },
-        [],
-        props.type
-      );
-
-      // type (for typeof) will include any available synonyms;
-      // className (for class) will not.
       updatedProps = assignAll([
         TEXT_CONTENT_DEFAULTS,
         propsToPassDown,
         props,
-        inheritedProps,
-        {
-          className: unionLSV(props.className, props.type, props.kaavioType),
-          type: updatedType
-        }
+        inheritedProps
       ]);
 
       updatedProps = propsToPassDown.setFillOpacity(updatedProps);
@@ -209,80 +357,20 @@ export class Diagram extends React.Component<any, any> {
   render() {
     const { getNamespacedId, createChildProps3, handleClick, state } = this;
 
-    const { entitiesById, hidden, highlighted, pathway, theme } = state;
+    const {
+      diagramStyleForHighlighted,
+      entitiesById,
+      opacities,
+      highlights,
+      pathway,
+      theme
+    } = state;
 
     const createChildProps = createChildProps3(entitiesById);
 
     const { Defs, diagramStyle: diagramStyleCustom } = theme;
 
-    const { fill, contains, height, id, name, textContent, width } = pathway;
-
-    const drawnEntities = values(entitiesById).filter(
-      entity => "drawAs" in entity
-    );
-
-    const types = drawnEntities.reduce(function(acc, entity) {
-      if ("type" in entity) {
-        entity.type.forEach(function(typeValue) {
-          if (acc.indexOf(typeValue) === -1) {
-            acc.push(typeValue);
-          }
-        });
-      }
-      return acc;
-    }, []);
-
-    const textContentValues = drawnEntities.reduce(
-      function(acc, entity) {
-        if ("textContent" in entity) {
-          const textContent = entity.textContent;
-          if (acc.indexOf(textContent) === -1) {
-            acc.push(textContent);
-          }
-        }
-        return acc;
-      },
-      [textContent]
-    );
-
-    const diagramStyleForHighlighted = (highlighted || [])
-      .map(function({ target, color }) {
-        const filterReference = getFilterReference({
-          color,
-          filterName: "Highlight"
-        });
-        let selectorPrefix;
-        let nodeSelector;
-        let edgeSelector;
-        if (target in entitiesById && "drawAs" in entitiesById[target]) {
-          selectorPrefix = `#${target}`;
-        } else if (types.indexOf(target) > -1) {
-          const formattedTarget = formatClassNames(target);
-          selectorPrefix = `.${formattedTarget}`;
-        } else if (textContentValues.indexOf(target) > -1) {
-          selectorPrefix = `[name="${target}"]`;
-        } else {
-          console.warn(
-            `"${target}" does not match the id, type or textContent of any entity. Highlight failed.`
-          );
-          return;
-        }
-
-        nodeSelector = `${selectorPrefix} .Icon`;
-        edgeSelector = `${selectorPrefix} path`;
-
-        const highlighterFill = interpolate(fill, color, 0.5);
-
-        return `
-${nodeSelector},${edgeSelector} {
-	filter: ${filterReference};
-}
-${nodeSelector} {
-	fill: ${highlighterFill};
-}`;
-      })
-      .filter(s => !!s)
-      .join("\n");
+    const { fill, contains, height, id, name, width } = pathway;
 
     const pseudoParent = defaultsAll([
       state,
@@ -307,7 +395,7 @@ ${nodeSelector} {
         preserveAspectRatio="xMidYMid"
         color={foregroundColor}
         onClick={handleClick}
-        className={formatClassNames("Diagram")}
+        className={classNamesToString("Diagram")}
         typeof="Diagram"
         viewBox={`0 0 ${width} ${height}`}
       >
@@ -349,7 +437,7 @@ ${nodeSelector} {
         />
 
         <defs>
-          <FilterDefs {...state} />
+          <FilterDefs {...{ entitiesById, highlights, pathway }} />
           <Defs />
         </defs>
 
