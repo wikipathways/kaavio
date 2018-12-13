@@ -167,7 +167,7 @@ export class Text extends React.Component<any, any> {
       textContent = "",
       textOverflow = "clip",
       whiteSpace = "normal"
-    }: TextProps = props;
+    } = props;
 
     const fill = props.fill || props.color || "currentColor";
     // TODO the CSS property text-shadow is related to

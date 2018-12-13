@@ -88,7 +88,7 @@ export class Edge extends React.Component<any, any> {
       return acc;
     }, {});
 
-    const markerDetailsMap = intersection(
+    const markerDetailsMap: Record<string, any> = intersection(
       MARKER_PROPERTIES,
       keys(this.props)
     ).reduce((acc, markerProperty: MarkerProperty) => {

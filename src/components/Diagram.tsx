@@ -89,7 +89,7 @@ export class Diagram extends React.Component<any, any> {
       if ("type" in drawnEntity) {
         drawnEntity.classNames = classNamesToArray(
           reduce(
-            function(acc, typeItem) {
+            function(acc, typeItem): any {
               if (typeItem in entitiesById) {
                 const { id, exactMatch, closeMatch, sameAs } = entitiesById[
                   typeItem
@@ -285,7 +285,7 @@ ${edgeSelector} {
 
       const inheritedProps = toPairs(props)
         .filter(([key, value]) => value === "inherit")
-        .reduce(function(acc, [key, value]) {
+        .reduce(function(acc, [key, value]): void|Record<string, any> {
           if (!(key in parentProps)) {
             throw new Error(
               `Error: props.${key} equals "inherit", but parentProps.${key} is missing in createChildProps(${JSON.stringify(

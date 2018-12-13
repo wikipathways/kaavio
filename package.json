@@ -20,7 +20,7 @@
   ],
   "bin": "./bin/kaavio",
   "scripts": {
-    "build": "rm -rf dist/ es5/ esnext/; npm-run-all -r -s build:css -p build:assets -s build:ts",
+    "build": "rm -rf dist/ es5/ esnext/; npm-run-all -s build:css -p build:assets -s build:ts",
     "build:assets": "npm-run-all -p build:assets:*",
     "build:assets:es5": "rsync -a --delete --include='*.json' --include='*.svg' --include='*.css' --include='*.css.d.ts' --include='*/' --exclude='*' src/ es5/",
     "build:assets:esnext": "rsync -a --delete --include='*.json' --include='*.svg' --include='*.css' --include='*.css.d.ts' --include='*/' --exclude='*' src/ esnext/",
@@ -51,7 +51,7 @@
     "test-broken:jest": "echo 'Get the jest test(s) working (again-ish).' && jest",
     "test-broken:e2e": "npm run serve && npm run serve:bundle",
     "watch-old": "rm -rf ./es5 ./dist ./esnext && npm-run-all -s build:assets -p watch:*",
-    "watch": "rm -rf es5/ esnext/; npm-run-all -r -s build:css -p build:assets -s build:ts -p watch:*",
+    "watch": "rm -rf es5/ esnext/; npm-run-all -s build:css -p build:assets -s build:ts -p watch:*",
     "watch:browser": "webpack-dev-server --config webpack.dev.config.js --open --progress --inline",
     "watch:css": "tcm src --watch",
     "watch:assets": "onchange 'src/**' -- npm-run-all build:assets",

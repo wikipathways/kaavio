@@ -250,7 +250,7 @@ export class FilterDefs extends React.Component<any, any> {
     return (
       <g id="jit-defs">
         {toPairs(defined).map(
-          ([filterId, { filterProperties, filterPrimitives }]) => {
+          ([filterId, { filterProperties, filterPrimitives }]: [string, Record<string, any>]): any => {
             return (
               <filter key={filterId} {...filterProperties}>
                 {filterPrimitives}
