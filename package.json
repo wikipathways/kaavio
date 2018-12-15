@@ -80,8 +80,7 @@
     "url": "https://github.com/wikipathways/kaavio/issues"
   },
   "homepage": "https://wikipathways.github.io/kaavio/docs/",
-  "dependencies": [
-    {
+  "dependencies": {
       "collit": "^1.0.1",
       "color-interpolate": "^1.0.2",
       "commander": "^2.14.1",
@@ -129,10 +128,8 @@
       "xmldom": "^0.1.27",
       "xpath": "0.0.24",
       "xpath.js": "^1.1.0"
-    }
-  ],
-  "devDependencies": [
-    {
+  },
+  "devDependencies": {
       "@types/js-base64": "^2.3.1",
       "@types/node": "^8.9.0",
       "@types/react": "https://github.com/ariutta/types-react-v15.git#50edb5d44342e201cba7945e6040ebdd8b15c063",
@@ -167,8 +164,7 @@
       "webpack": "^3.10.0",
       "webpack-dev-server": "^3.1.10",
       "webpack-hot-middleware": "^2.21.0"
-    }
-  ],
+  },
   "semverBumper": {
     "jsonFiles": [
       {
