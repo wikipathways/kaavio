@@ -9,27 +9,26 @@
     "noImplicitAny": false,
     "pretty": true
   },
-  "files": [
+  "include": [
     "src/types.ts",
     "src/index.ts",
-    "src/components/Marker/helpers.ts",
     "src/utils/formatClassNames.ts",
     "src/utils/normalizeElementId.ts",
-    "src/types.ts",
-    "src/cli/kaavio.tsx",
     "src/drawers/edges/index.ts",
-    "src/createJson2SvgCLI.tsx"
-  ],
-  "include": [
-    "src/components/Filter/*.ts?",
-    "src/components/*.ts?",
-    "src/drawers/*.ts?",
-    "src/drawers/**/*.ts?",
+    "src/createJson2SvgCLI.tsx",
+    "src/Kaavio.ts*",
+    "src/components/Marker/helpers.ts",
+    "src/components/Filter/*.ts*",
+    "src/components/*.ts*",
+    "src/cli/*.ts*",
+    "src/drawers/*.ts*",
+    "src/drawers/**/*.ts*",
     "src/spinoffs/*"
   ],
   "exclude": [
     "dist/**/*",
     "tmp/**/*",
-    "node_modules"
+    "node_modules",
+    "../../../node_modules"
   ]
 }
