@@ -21,6 +21,11 @@ export class SVGPointElement implements SVGPoint {
     this.x = x;
     this.y = y;
   }
+  // the following are dummy items that we're not using
+  // but typescript seems to require:
+  w: number;
+  z: number;
+  toJSON: () => {};
 }
 export type PathDataCommand =
   | "M"
@@ -141,7 +146,7 @@ export class ElbowLine extends SVGPath {
 
       var pathData = [new SVGPathSegment("M", [firstPoint.x, firstPoint.y])];
 
-      var direction = [] as Direction;
+      var direction = (<unknown>[]) as Direction;
 
       if (firstPoint.orientation) {
         direction.push(firstPoint.orientation[0]);
@@ -157,8 +162,8 @@ export class ElbowLine extends SVGPath {
       points.forEach(function(point, index) {
         if (index > 0 && index < pointCount) {
           var x0 =
-            Math.abs(direction[0]) * (points[index].x - points[index - 1].x) +
-            points[index - 1].x,
+              Math.abs(direction[0]) * (points[index].x - points[index - 1].x) +
+              points[index - 1].x,
             y0 =
               Math.abs(direction[1]) * (points[index].y - points[index - 1].y) +
               points[index - 1].y;
@@ -244,7 +249,7 @@ export class CurvedLine extends SVGPath {
       var lastSegment = [];
       var pathData = [new SVGPathSegment("M", [firstPoint.x, firstPoint.y])];
 
-      var direction = [] as Direction;
+      var direction = (<unknown>[]) as Direction;
       if (firstPoint.orientation) {
         const orientation = firstPoint.orientation;
         direction.push(orientation[0]);
