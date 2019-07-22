@@ -488,7 +488,7 @@ const processThemeSpecPropertyFor = {
 						__html: '${data}'
 					}}/>
 			}
-		}`);
+		}`, {parser: 'babylon'});
         });
       });
   },
