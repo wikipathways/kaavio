@@ -5,17 +5,18 @@ var pathvisioNS = pathvisioNS || {};
 
 function isIE() {
   var myNav = navigator.userAgent.toLowerCase();
-  return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1], 10) : false;
+  return myNav.indexOf("msie") != -1
+    ? parseInt(myNav.split("msie")[1], 10)
+    : false;
 }
 
 function serializeXmlToString(xmlDoc) {
   var oSerializer;
-  if (!(isIE()) || (isIE() > 8)) {
+  if (!isIE() || isIE() > 8) {
     oSerializer = new XMLSerializer();
     return oSerializer.serializeToString(xmlDoc);
-  }
-  else {
-    throw new Error('IE8 and older do not support XMLSerializer');
+  } else {
+    throw new Error("IE8 and older do not support XMLSerializer");
   }
 }
 
@@ -24,7 +25,9 @@ function serializeXmlToString(xmlDoc) {
 // it returns a d3 selection of the cloned element
 function cloneNode(selector) {
   var node = d3.select(selector).node();
-  return d3.select(node.parentNode.insertBefore(node.cloneNode(true), node.nextSibling));
+  return d3.select(
+    node.parentNode.insertBefore(node.cloneNode(true), node.nextSibling)
+  );
 }
 
 // see http://stackoverflow.com/questions/18082/validate-numbers-in-javascript-isnumeric
@@ -38,10 +41,12 @@ function isOdd(num) {
 
 function isWikiPathwaysId(data) {
   data = data.trim();
-  if (data.substr(0,2).toUpperCase() === 'WP' && this.isNumber(data.substr(data.length - 1))) {
+  if (
+    data.substr(0, 2).toUpperCase() === "WP" &&
+    this.isNumber(data.substr(data.length - 1))
+  ) {
     return true;
-  }
-  else {
+  } else {
     return false;
   }
 }
@@ -52,8 +57,7 @@ function isUri(str) {
   return uriPattern.test(str);
 }
 
-var developmentLoader = function() {
-
+var developmentLoader = (function() {
   /* *******************
   /* Get the desired GPML file URL or WikiPathways ID from the URL parameters.
   /* *******************/
@@ -62,15 +66,18 @@ var developmentLoader = function() {
   // hard code it as the data parameter in the pathvisiojs.load() function below
 
   function getUriParamByName(name) {
-
     // Thanks to http://stackoverflow.com/questions/11582512/how-to-get-uri-parameters-with-javascript
     // This will be replaced once we get the backend php to get the GPML
 
-    var parameter = decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||null;
+    var parameter =
+      decodeURIComponent(
+        (new RegExp("[?|&]" + name + "=" + "([^&;]+?)(&|#|;|$)").exec(
+          location.search
+        ) || [, ""])[1].replace(/\+/g, "%20")
+      ) || null;
     if (!!parameter) {
       return parameter;
-    }
-    else {
+    } else {
       return null;
     }
   }
@@ -79,35 +86,44 @@ var developmentLoader = function() {
     // this includes both explicit and implicit URI params, e.g.,
     // if svg-disabled is not specified as a URI param, it will still be included in this object with its default value of false.
     uriParams = {
-      'svg-disabled': false,
-      'gpml': null,
-      'rev': 0,
-      'creator': 'pathvisiojs-dev',
-      'account': '',
-      'branch': ''
+      "svg-disabled": false,
+      gpml: null,
+      rev: 0,
+      creator: "pathvisiojs-dev",
+      account: "",
+      branch: ""
     };
     Object.keys(uriParams).forEach(function(element) {
       if (!!getUriParamByName(element)) {
         uriParams[element] = getUriParamByName(element);
       }
       window.setTimeout(function() {
-        $('#' + element).val(uriParams[element]);
+        $("#" + element).val(uriParams[element]);
       }, 50);
     });
 
     var locationSearch = location.search;
-    var colors = getUriParamByName('colors');
+    var colors = getUriParamByName("colors");
     if (!!colors) {
-      colors = colors.split(',');
+      colors = colors.split(",");
     }
 
-    var findElementsByStrings = locationSearch.match(/(xref=|label=|selector=)(.*?)&/gi);
+    var findElementsByStrings = locationSearch.match(
+      /(xref=|label=|selector=)(.*?)&/gi
+    );
     var highlights;
     if (!!findElementsByStrings) {
-      highlights = findElementsByStrings.map(function(findElementsByString, index) {
+      highlights = findElementsByStrings.map(function(
+        findElementsByString,
+        index
+      ) {
         var highlight = {};
-        var findElementsBy = findElementsByString.match(/xref|label|selector/)[0];
-        var findElementsByValue = findElementsByString.match(/=(.*?)&/)[0].slice(1, -1);
+        var findElementsBy = findElementsByString.match(
+          /xref|label|selector/
+        )[0];
+        var findElementsByValue = findElementsByString
+          .match(/=(.*?)&/)[0]
+          .slice(1, -1);
         highlight[findElementsBy] = findElementsByValue;
         highlight.style = {};
         highlight.style.fill = colors[index];
@@ -120,20 +136,20 @@ var developmentLoader = function() {
       }
     }
 
-    console.log('uriParams');
+    console.log("uriParams");
     console.log(uriParams);
     return uriParams;
   }
 
   function updateParams(updatedParam) {
-    var targetUri = currentUri + '?' + updatedParam.key + '=' + updatedParam.value;
+    var targetUri =
+      currentUri + "?" + updatedParam.key + "=" + updatedParam.value;
 
     Object.keys(uriParams).forEach(function(element) {
       if (element === updatedParam.key) {
         uriParams[element] = updatedParam.value;
-      }
-      else {
-        targetUri += '&' + element + '=' + uriParams[element];
+      } else {
+        targetUri += "&" + element + "=" + uriParams[element];
       }
     });
 
@@ -145,13 +161,13 @@ var developmentLoader = function() {
     // or a uri for another type of file.
     var uriParams = convertUriParamsToJson();
     if (!uriParams) {
-      throw new Error('No URI params to parse.');
+      throw new Error("No URI params to parse.");
     }
 
     // object we will return
     var parsedInputData = {};
     parsedInputData.sourceData = [];
-    console.log('uriParams.highlights');
+    console.log("uriParams.highlights");
     console.log(JSON.stringify(uriParams.highlights));
 
     if (!!uriParams.highlights) {
@@ -159,26 +175,29 @@ var developmentLoader = function() {
     }
 
     var uri;
-    var svgDisabled = parsedInputData.svgDisabled = uriParams['svg-disabled'] || false;
+    var svgDisabled = (parsedInputData.svgDisabled =
+      uriParams["svg-disabled"] || false);
     var gpmlParam = uriParams.gpml; // this might be equal to the value of uriParams.gpml, but it might not.
 
     var wpId, wpRevision, gpmlUri, pngUri;
 
     if (isUri(gpmlParam)) {
       uri = gpmlParam;
-      if (uri.indexOf('.gpml') > -1) {
+      if (uri.indexOf(".gpml") > -1) {
         parsedInputData.sourceData.push({
-          uri:gpmlParam,
-          fileType:'gpml',
-          db: 'local',
-          dbId: 'unspecified',
-          idVersion: 'unspecified'
+          uri: gpmlParam,
+          fileType: "gpml",
+          db: "local",
+          dbId: "unspecified",
+          idVersion: "unspecified"
         });
 
         console.log(parsedInputData);
         return callback(parsedInputData);
       } else {
-        throw new Error('Pathvisiojs cannot handle the data source type entered.');
+        throw new Error(
+          "Pathvisiojs cannot handle the data source type entered."
+        );
       }
     } else {
       if (isWikiPathwaysId(gpmlParam)) {
@@ -186,29 +205,36 @@ var developmentLoader = function() {
         // TODO this is messy if we later want to use a data format that is not GPML
         gpmlUri = getGpmlUri(gpmlParam, wpRevision); //get uri
         parsedInputData.sourceData.push({
-          uri:gpmlUri,
-          fileType:'gpml',
-          db: 'wikipathways',
+          uri: gpmlUri,
+          fileType: "gpml",
+          db: "wikipathways",
           dbId: gpmlParam,
           idVersion: wpRevision
         });
 
-        pngUri = encodeURI('http://www.wikipathways.org/wpi//wpi.php?action=downloadFile&type=png&pwTitle=Pathway:' + gpmlParam + '&revision=' + wpRevision);
+        pngUri = encodeURI(
+          "http://www.wikipathways.org/wpi//wpi.php?action=downloadFile&type=png&pwTitle=Pathway:" +
+            gpmlParam +
+            "&revision=" +
+            wpRevision
+        );
         parsedInputData.sourceData.push({
-          uri:pngUri,
-          fileType:'png',
-          db: 'wikipathways',
+          uri: pngUri,
+          fileType: "png",
+          db: "wikipathways",
           dbId: gpmlParam,
           idVersion: wpRevision
         });
 
         parsedInputData.wpId = gpmlParam;
         parsedInputData.revision = wpRevision;
-        console.log('parsedInputData');
+        console.log("parsedInputData");
         console.log(parsedInputData);
         return callback(parsedInputData);
       } else {
-        throw new Error('Pathvisiojs cannot handle the data source type entered.');
+        throw new Error(
+          "Pathvisiojs cannot handle the data source type entered."
+        );
       }
     }
   }
@@ -225,14 +251,22 @@ var developmentLoader = function() {
     // I don't know what this is doing. It might be a start at handling display of multiple pathways on a page.
     var PathwayViewer_viewers = PathwayViewer_viewers || [];
 
-    if (isWikiPathwaysId(wpId)) { // if the input is a WP ID
-      if (PathwayViewer_viewers.length > 0 && isOnWikiPathwaysDomain) { // if we are also on a *.wikipathways.org domain
+    if (isWikiPathwaysId(wpId)) {
+      // if the input is a WP ID
+      if (PathwayViewer_viewers.length > 0 && isOnWikiPathwaysDomain) {
+        // if we are also on a *.wikipathways.org domain
         gpmlUri = PathwayViewer_viewers[0].gpml.gpmlUri; // TODO we are not handling multiple pathways on one page here
       } else {
-        gpmlUri = 'http://pointer.ucsf.edu/d3/r/data-sources/gpml.php?id=' + wpId + '&rev=' + revision;
+        gpmlUri =
+          "http://pointer.ucsf.edu/d3/r/data-sources/gpml.php?id=" +
+          wpId +
+          "&rev=" +
+          revision;
       }
     } else {
-      throw new Error('Pathvisiojs cannot handle the data source type entered.');
+      throw new Error(
+        "Pathvisiojs cannot handle the data source type entered."
+      );
     }
 
     // be sure server has set gpml mime type to application/xml or application/gpml+xml
@@ -240,25 +274,31 @@ var developmentLoader = function() {
     return gpmlUri;
   }
 
-  function loadScripts(array, callback){
-    var loader = function(src,handler){
-      var script = document.createElement('script');
+  function loadScripts(array, callback) {
+    var loader = function(src, handler) {
+      var script = document.createElement("script");
       script.src = src;
-      script.onload = script.onreadystatechange = function(){
+      script.onload = script.onreadystatechange = function() {
         script.onreadystatechange = script.onload = null;
-        if(/MSIE ([6-9]+\.\d+);/.test(navigator.userAgent)) {
-          window.setTimeout(function(){handler();},8,this);
+        if (/MSIE ([6-9]+\.\d+);/.test(navigator.userAgent)) {
+          window.setTimeout(
+            function() {
+              handler();
+            },
+            8,
+            this
+          );
         } else {
           handler();
         }
       };
-      var head = document.getElementsByTagName('head')[0];
-      (head || document.body).appendChild( script );
+      var head = document.getElementsByTagName("head")[0];
+      (head || document.body).appendChild(script);
     };
-    (function(){
-      if(array.length!==0){
-        loader(array.shift(),arguments.callee);
-      } else{
+    (function() {
+      if (array.length !== 0) {
+        loader(array.shift(), arguments.callee);
+      } else {
         callback();
       }
     })();
@@ -358,7 +398,13 @@ var developmentLoader = function() {
     console.log(inputData);
     window.setTimeout(function() {
       inputData.forEach(function(inputDataElement) {
-        $('#' + inputDataElement.containerId).prepend('<iframe id="' + inputDataElement.containerId + '-frame" src="' + inputDataElement.frameSrc + '" style="width:inherit; height:inherit; margin:0; " />');
+        $("#" + inputDataElement.containerId).prepend(
+          '<iframe id="' +
+            inputDataElement.containerId +
+            '-frame" src="' +
+            inputDataElement.frameSrc +
+            '" style="width:inherit; height:inherit; margin:0; " />'
+        );
       });
       callback();
     }, 50);
@@ -367,9 +413,9 @@ var developmentLoader = function() {
     //*/
   }
 
-  return{
+  return {
     //preload:preload,
-    loadFrames:loadFrames,
-    parseUriParams:parseUriParams
+    loadFrames: loadFrames,
+    parseUriParams: parseUriParams
   };
-}();
+})();

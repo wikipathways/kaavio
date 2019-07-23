@@ -194,11 +194,11 @@ export class FilterDefs extends React.Component<any, any> {
   }
 
   /* If the diagram is updated after the initial render, this step will handle
-	 * the case of needing a filter definition that wasn't defined in the
-	 * constructor, such as if a user were to add a new group with a fill (background
-	 * color) that was not present initially and then dragged a filter on top of a
-	 * type of that group. This doesn't do anything on server-side rendering.
-	 */
+   * the case of needing a filter definition that wasn't defined in the
+   * constructor, such as if a user were to add a new group with a fill (background
+   * color) that was not present initially and then dragged a filter on top of a
+   * type of that group. This doesn't do anything on server-side rendering.
+   */
   // TODO re-enable this, but take into account potential clobbering of id globally
   //  componentWillReceiveProps(nextProps: FilterDefsProps) {
   //    const { state, props } = this;
@@ -250,7 +250,10 @@ export class FilterDefs extends React.Component<any, any> {
     return (
       <g id="jit-defs">
         {toPairs(defined).map(
-          ([filterId, { filterProperties, filterPrimitives }]: [string, Record<string, any>]): any => {
+          ([filterId, { filterProperties, filterPrimitives }]: [
+            string,
+            Record<string, any>
+          ]): any => {
             return (
               <filter key={filterId} {...filterProperties}>
                 {filterPrimitives}

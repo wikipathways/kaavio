@@ -220,9 +220,8 @@ export function Round({
 
   const normalizedWidth = 3;
   //const strokeWidthNormalizationOperator = (strokeWidth > 2) ? 'contract' : 'dilate';
-  const strokeWidthNormalizationOperator = strokeWidth > normalizedWidth
-    ? "contract"
-    : "dilate";
+  const strokeWidthNormalizationOperator =
+    strokeWidth > normalizedWidth ? "contract" : "dilate";
   // strangely, this is what appears needed to normalize stroke width to a value
   // large enough to be blurred without being destroyed:
   const radius = strokeWidthNormalizationOperator === "dilate" ? 1 : 0;
@@ -231,46 +230,45 @@ export function Round({
   //const radius = Math.abs((normalizedWidth - strokeWidth - 1) / 2 );
   //const radius = Math.abs(normalizedWidth - strokeWidth);
 
-  const strokeWidthRevertOperator = strokeWidthNormalizationOperator ===
-    "contract"
-    ? "dilate"
-    : "contract";
+  const strokeWidthRevertOperator =
+    strokeWidthNormalizationOperator === "contract" ? "dilate" : "contract";
 
-  const normalizedDark = strokeWidth === 1
-    ? [
-        <feBlend
-          in="SourceGraphic"
-          in2="SourceGraphic"
-          mode="multiply"
-          result="rounddarkinput"
-        />,
-        <feBlend
-          in="rounddarkinput"
-          in2="rounddarkinput"
-          mode="multiply"
-          result="roundnormalizeddarkinput"
-        />,
-        <feMorphology
-          in="roundnormalizeddarkinput"
-          operator={strokeWidthNormalizationOperator}
-          radius={radius}
-          result="roundnormalized"
-        />
-      ]
-    : [
-        <feBlend
-          in="SourceGraphic"
-          in2="SourceGraphic"
-          mode="multiply"
-          result="roundnormalizeddarkinput"
-        />,
-        <feMorphology
-          in="roundnormalizeddarkinput"
-          operator={strokeWidthNormalizationOperator}
-          radius={radius}
-          result="roundnormalized"
-        />
-      ];
+  const normalizedDark =
+    strokeWidth === 1
+      ? [
+          <feBlend
+            in="SourceGraphic"
+            in2="SourceGraphic"
+            mode="multiply"
+            result="rounddarkinput"
+          />,
+          <feBlend
+            in="rounddarkinput"
+            in2="rounddarkinput"
+            mode="multiply"
+            result="roundnormalizeddarkinput"
+          />,
+          <feMorphology
+            in="roundnormalizeddarkinput"
+            operator={strokeWidthNormalizationOperator}
+            radius={radius}
+            result="roundnormalized"
+          />
+        ]
+      : [
+          <feBlend
+            in="SourceGraphic"
+            in2="SourceGraphic"
+            mode="multiply"
+            result="roundnormalizeddarkinput"
+          />,
+          <feMorphology
+            in="roundnormalizeddarkinput"
+            operator={strokeWidthNormalizationOperator}
+            radius={radius}
+            result="roundnormalized"
+          />
+        ];
 
   return {
     filterProperties: {

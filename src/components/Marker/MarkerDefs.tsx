@@ -116,11 +116,11 @@ export class MarkerDefs extends React.Component<any, any> {
   }
 
   /* If the diagram is updated after the initial render, this step will handle
-	 * the case of needing a marker definition that wasn't defined in the
-	 * constructor, such as if a user were to add a new group with a background
-	 * color that was not present initially and then dragged a marker on top of a
-	 * type of that group. This doesn't do anything on server-side rendering.
-	 */
+   * the case of needing a marker definition that wasn't defined in the
+   * constructor, such as if a user were to add a new group with a background
+   * color that was not present initially and then dragged a marker on top of a
+   * type of that group. This doesn't do anything on server-side rendering.
+   */
   componentWillReceiveProps(nextProps: MarkerDefsProps) {
     const { getNamespacedMarkerId, state, props } = this;
     const { defined } = state;

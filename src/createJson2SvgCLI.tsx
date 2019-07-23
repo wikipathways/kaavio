@@ -72,7 +72,9 @@ export function createJson2SvgCLI(
     .version(version)
     .description(
       `Convert Kaavio-formatted JSON to SVG by running ${name} from the command line.
-	${name}, version ${version}, built on version ${KaavioNPMPackage.version} of Kaavio.`
+	${name}, version ${version}, built on version ${
+        KaavioNPMPackage.version
+      } of Kaavio.`
     )
     .arguments("[source] [target]")
     .usage(
