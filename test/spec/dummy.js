@@ -1,9 +1,9 @@
-console.log('hello');
-var Kaavio = window.Kaavio = function() {};
+console.log("hello");
+var Kaavio = (window.Kaavio = function() {});
 
 Kaavio.prototype.init = function() {
-  console.log('why');
+  console.log("why");
   return {};
-}
+};
 
 module.exports = Kaavio;

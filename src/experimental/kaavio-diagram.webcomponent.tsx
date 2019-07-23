@@ -123,9 +123,10 @@ import { Kaavio } from "./Kaavio";
   //
   //   # => <wikipathways-kaavio></wikipathways-kaavio>
   //
-  window["WikipathwaysKaavioElement"] = document[
-    "registerElement"
-  ]("wikipathways-kaavio", {
-    prototype: WikipathwaysKaavioPrototype
-  });
+  window["WikipathwaysKaavioElement"] = document["registerElement"](
+    "wikipathways-kaavio",
+    {
+      prototype: WikipathwaysKaavioPrototype
+    }
+  );
 })(window);

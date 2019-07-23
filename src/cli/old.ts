@@ -7,13 +7,15 @@ const NS = {
 };
 
 export function processSymbolDefs(s) {
-  s.observe().map(({ node }) => node.getAttribute("id")).toArray(function(ids) {
-    if (ids.length > 0) {
-      const suggestedFillOnlyCSS = ids
-        .map((id, i) => `#${id} {fill: currentColor; stroke: none;}`)
-        .join("\n\t");
+  s.observe()
+    .map(({ node }) => node.getAttribute("id"))
+    .toArray(function(ids) {
+      if (ids.length > 0) {
+        const suggestedFillOnlyCSS = ids
+          .map((id, i) => `#${id} {fill: currentColor; stroke: none;}`)
+          .join("\n\t");
 
-      console.log(`
+        console.log(`
 Note that most SVG glyph sets expect a fill color but not a stroke.
 To disable stroke for your def(s) and enable fill, add this to the CSS string for Kaavio prop style.diagram:
 
@@ -23,8 +25,8 @@ To disable stroke for your def(s) and enable fill, add this to the CSS string fo
 	]]>
 </style>
 `);
-    }
-  });
+      }
+    });
 
   return s.map(function({ node, preserveAspectRatio }) {
     const id = node.getAttribute("id");

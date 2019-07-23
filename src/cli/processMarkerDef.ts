@@ -111,9 +111,10 @@ export function processMarkerDef({
   }
   return MARKER_PROPERTIES.map(function(markerProperty) {
     const nodeClone = node.cloneNode(true);
-    const markerForThisProperty = markerProperty === "markerStart"
-      ? surroundWithFlip180Container(nodeClone, markerWidth, markerHeight)
-      : nodeClone;
+    const markerForThisProperty =
+      markerProperty === "markerStart"
+        ? surroundWithFlip180Container(nodeClone, markerWidth, markerHeight)
+        : nodeClone;
 
     const updatedId = createMarkerId(markerProperty, id);
     nodeClone.setAttribute("id", updatedId);

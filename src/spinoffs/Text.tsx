@@ -300,18 +300,18 @@ export class Text extends React.Component<any, any> {
 
     return (
       <Fragment>
-        {overflow === "hidden"
-          ? <defs>
-              <clipPath id={clipPathId}>
-                <rect
-                  x={-1 * shiftX}
-                  y={-1 * shiftY}
-                  width={width}
-                  height={height}
-                />
-              </clipPath>
-            </defs>
-          : null}
+        {overflow === "hidden" ? (
+          <defs>
+            <clipPath id={clipPathId}>
+              <rect
+                x={-1 * shiftX}
+                y={-1 * shiftY}
+                width={width}
+                height={height}
+              />
+            </clipPath>
+          </defs>
+        ) : null}
         <text
           id={id}
           className={"Text" + (!!className ? " " + className : "")}

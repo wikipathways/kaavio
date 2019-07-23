@@ -261,9 +261,8 @@ function parseThemeSpecPropertyPair(
     } else {
       src = value.src;
       destTagName = value.tagName;
-      preserveAspectRatio = "preserveAspectRatio" in value
-        ? value.preserveAspectRatio
-        : false;
+      preserveAspectRatio =
+        "preserveAspectRatio" in value ? value.preserveAspectRatio : false;
     }
 
     let semiResolvedSrc;
@@ -280,9 +279,10 @@ function parseThemeSpecPropertyPair(
             path.dirname(resultFromReadPkgUp.path)
           )}/src`
 	  //*/
-      const kaavioBase = resultFromReadPkgUp.pkg.name === "kaavio"
-        ? path.dirname(resultFromReadPkgUp.path)
-        : "kaavio";
+      const kaavioBase =
+        resultFromReadPkgUp.pkg.name === "kaavio"
+          ? path.dirname(resultFromReadPkgUp.path)
+          : "kaavio";
       console.log(`kaavioBase: ${kaavioBase}`);
       semiResolvedSrc = `${kaavioBase}/es5/drawers/${themeSpecPropertyKey}/index`;
       console.log(`Resolved kaavio as ${semiResolvedSrc}`);
@@ -333,12 +333,14 @@ function bundleBySelectiveExportFromKaavio({
       }
       acc[modulePath].push(moduleName);
       return acc;
-    }, {})
+    },
+    {})
   )
     .map(function([modulePath, moduleNames]: [string, string[]]) {
-      const exports = isEmpty(moduleNames) || moduleNames[0] === "*"
-        ? "*"
-        : "{" + uniq(moduleNames).join(", ") + "}";
+      const exports =
+        isEmpty(moduleNames) || moduleNames[0] === "*"
+          ? "*"
+          : "{" + uniq(moduleNames).join(", ") + "}";
 
       console.log(`  ${moduleNames.join(", ")}
 	src: ${modulePath}`);
@@ -466,20 +468,25 @@ const processThemeSpecPropertyFor = {
       .flatMap(function(processed) {
         return hl(
           svgo.optimize(
-            `<svg xmlns="http://www.w3.org/2000/svg"><defs>${processed.content}</defs></svg>`
+            `<svg xmlns="http://www.w3.org/2000/svg"><defs>${
+              processed.content
+            }</defs></svg>`
           )
         ).map(function({ data, info }) {
           const jic = processed.jic;
-          const JicKey = keys(jic).map(key => `"${key}"`).join("|");
-          return prettier.format(`import * as React from "react";
+          const JicKey = keys(jic)
+            .map(key => `"${key}"`)
+            .join("|");
+          return prettier.format(
+            `import * as React from "react";
 		import * as ReactDom from "react-dom";
 		export class Defs extends React.Component<any, any> {
 			static jicPath: string = "./defs.svg";
 			static jic: Record<${JicKey}, string|Record<"contextStrokeDashoffset", number>> = ${JSON.stringify(
-            jic,
-            null,
-            "  "
-          )};
+              jic,
+              null,
+              "  "
+            )};
 			constructor(props) {
 				super(props);
 			}
@@ -488,7 +495,9 @@ const processThemeSpecPropertyFor = {
 						__html: '${data}'
 					}}/>
 			}
-		}`, {parser: 'babylon'});
+		}`,
+            { parser: "babylon" }
+          );
         });
       });
   },
@@ -600,12 +609,13 @@ program
           //const { preserveAspectRatio } = themeSpec;
           return themeSpecPropertyProcessorNames.reduce(
             function(acc, themeSpecPropertyProcessorName) {
-              acc[
-                themeSpecPropertyProcessorName
-              ] = parseThemeSpecPropertyPair(themeNameOrPathToThemeSpec, [
-                themeSpecPropertyProcessorName,
-                themeSpec[themeSpecPropertyProcessorName]
-              ]);
+              acc[themeSpecPropertyProcessorName] = parseThemeSpecPropertyPair(
+                themeNameOrPathToThemeSpec,
+                [
+                  themeSpecPropertyProcessorName,
+                  themeSpec[themeSpecPropertyProcessorName]
+                ]
+              );
               return acc;
             },
             { themeName, out }
@@ -651,9 +661,10 @@ program
               themeSpecPropertyProcessorNames.indexOf(themeSpecPropertyName) >
               -1
           )
-          .flatMap(function(
-            [themeSpecPropertyName, themeSpecParsedPropertyValue]
-          ) {
+          .flatMap(function([
+            themeSpecPropertyName,
+            themeSpecParsedPropertyValue
+          ]) {
             return processThemeSpecPropertyFor[themeSpecPropertyName]({
               themeName,
               themeSpecPropertyName,

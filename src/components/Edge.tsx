@@ -118,9 +118,9 @@ export class Edge extends React.Component<any, any> {
      * start        N0                N1                 end
      * |            |                 |                  |
      * v            v                 v                  v
-     * --------------                 -------------- ... 
+     * --------------                 -------------- ...
      *
-     * The same logic applies for each subsequent number. If after using all the 
+     * The same logic applies for each subsequent number. If after using all the
      * numbers we haven't reach the end point, we just start over from N0 and repeat
      * the until we reach the end point.
      *
@@ -132,18 +132,20 @@ export class Edge extends React.Component<any, any> {
      * at the end.
      */
     const strokeDasharrayWithMarkerOffsets = [];
-    const markerStartOffset = !!markerDetailsMap.markerStart &&
+    const markerStartOffset =
+      !!markerDetailsMap.markerStart &&
       !!markerDetailsMap.markerStart.contextStrokeDashoffset
-      ? markerDetailsMap.markerStart.contextStrokeDashoffset
-      : 0;
+        ? markerDetailsMap.markerStart.contextStrokeDashoffset
+        : 0;
     if (markerStartOffset) {
       strokeDasharrayWithMarkerOffsets.push(0);
       strokeDasharrayWithMarkerOffsets.push(markerStartOffset);
     }
-    const markerEndOffset = !!markerDetailsMap.markerEnd &&
+    const markerEndOffset =
+      !!markerDetailsMap.markerEnd &&
       !!markerDetailsMap.markerEnd.contextStrokeDashoffset
-      ? markerDetailsMap.markerEnd.contextStrokeDashoffset
-      : 0;
+        ? markerDetailsMap.markerEnd.contextStrokeDashoffset
+        : 0;
     let distanceToEndOffset =
       getTotalLength() - markerStartOffset - markerEndOffset;
     if (strokeDasharrayPatternString) {
@@ -151,14 +153,13 @@ export class Edge extends React.Component<any, any> {
         .split(/[,\ ]+/)
         .map(toFinite);
       // See MDN -- if stroke-dasharray has an odd number of segments, it is concatenated with itself.
-      const strokeDasharrayPattern = strokeDasharrayPatternHalfOrFull.length %
-        2 ===
-        0
-        ? strokeDasharrayPatternHalfOrFull
-        : concat(
-            strokeDasharrayPatternHalfOrFull,
-            strokeDasharrayPatternHalfOrFull
-          );
+      const strokeDasharrayPattern =
+        strokeDasharrayPatternHalfOrFull.length % 2 === 0
+          ? strokeDasharrayPatternHalfOrFull
+          : concat(
+              strokeDasharrayPatternHalfOrFull,
+              strokeDasharrayPatternHalfOrFull
+            );
       const strokeDasharrayPatternSegmentCount = strokeDasharrayPattern.length;
 
       const strokeDasharrayPatternSummedLength = sum(strokeDasharrayPattern);

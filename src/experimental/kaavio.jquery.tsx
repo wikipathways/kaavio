@@ -66,7 +66,9 @@ module.exports = function(window, $) {
       if (option === "get") {
         // Return an array of Kaavio instances
         return $.map(this, function(a) {
-          return $(a).data("kaavio").getPublicInstance();
+          return $(a)
+            .data("kaavio")
+            .getPublicInstance();
         });
       } else {
         // Return jQuery object

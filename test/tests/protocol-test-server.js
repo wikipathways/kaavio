@@ -2,36 +2,34 @@ var username = process.env.SAUCE_USERNAME;
 var accessKey = process.env.SAUCE_ACCESS_KEY;
 
 // checking sauce credential
-if(!username || !accessKey){
-    console.warn(
-        '\nPlease configure your sauce credential:\n\n' +
-        'export SAUCE_USERNAME=<SAUCE_USERNAME>\n' +
-        'export SAUCE_ACCESS_KEY=<SAUCE_ACCESS_KEY>\n\n'
-    );
-    throw new Error("Missing sauce credentials");
+if (!username || !accessKey) {
+  console.warn(
+    "\nPlease configure your sauce credential:\n\n" +
+      "export SAUCE_USERNAME=<SAUCE_USERNAME>\n" +
+      "export SAUCE_ACCESS_KEY=<SAUCE_ACCESS_KEY>\n\n"
+  );
+  throw new Error("Missing sauce credentials");
 }
 
-var  chai = require("chai")
-  , chaiAsPromised = require("chai-as-promised")
-  , colors = require('colors')
-  , crypto = require('crypto')
-  , expect = chai.expect
-  , fs = require('fs')
-  , gulp = require('gulp')
-  , highland = require('highland')
-  , imageDiff = require('image-diff')
-  , os   = require('os')
-  , wd = require('wd')
-  ;
-
+var chai = require("chai"),
+  chaiAsPromised = require("chai-as-promised"),
+  colors = require("colors"),
+  crypto = require("crypto"),
+  expect = chai.expect,
+  fs = require("fs"),
+  gulp = require("gulp"),
+  highland = require("highland"),
+  imageDiff = require("image-diff"),
+  os = require("os"),
+  wd = require("wd");
 //*
 // http configuration, not needed for simple runs,
 // but possibly needed for running tests from sauce labs
 // or for very slow or long tests running locally.
-wd.configureHttp( {
-    timeout: 60000,
-    retryDelay: 15000,
-    retries: 5
+wd.configureHttp({
+  timeout: 60000,
+  retryDelay: 15000,
+  retries: 5
 });
 //*/
 
@@ -42,9 +40,9 @@ chai.should();
 chaiAsPromised.transferPromiseness = wd.transferPromiseness;
 
 var desired = {
-  browserName:'iexplore',
-  version:'11',
-  platform:'Windows 7',
+  browserName: "iexplore",
+  version: "11",
+  platform: "Windows 7",
   tags: ["examples"],
   name: "This is an example test"
 };
@@ -53,17 +51,26 @@ var desired = {
 //desired.name = 'Test Server Protocol for ' + pathwayName.toUpperCase().cyan + ' (' + desired.browserName.grey + ')';
 //desired.tags = ['localhost'];
 
-var pathway = JSON.parse(process.env.PVJS_PATHWAY || '{"name":"anchors","fileName":"anchors.gpml.xml"}');
+var pathway = JSON.parse(
+  process.env.PVJS_PATHWAY || '{"name":"anchors","fileName":"anchors.gpml.xml"}'
+);
 var pathwayName = pathway.name;
 
-var lastKnownGoodScreenshotHashes = JSON.parse(fs.readFileSync('./test/last-known-goods/protocol/screenshot-hashes.json'));
+var lastKnownGoodScreenshotHashes = JSON.parse(
+  fs.readFileSync("./test/last-known-goods/protocol/screenshot-hashes.json")
+);
 
 describe(desired.name, function() {
   var browser;
   var allPassed = true;
 
   before(function(done) {
-    browser = wd.promiseChainRemote("ondemand.saucelabs.com", 80, username, accessKey);
+    browser = wd.promiseChainRemote(
+      "ondemand.saucelabs.com",
+      80,
+      username,
+      accessKey
+    );
 
     /*
     // optional extra logging
@@ -87,36 +94,45 @@ describe(desired.name, function() {
   });
 
   afterEach(function(done) {
-    allPassed = allPassed && (this.currentTest.state === 'passed');  
+    allPassed = allPassed && this.currentTest.state === "passed";
     done();
   });
 
   after(function(done) {
-    return browser
-      .quit()
-      .nodeify(done);
+    return browser.quit().nodeify(done);
   });
 
-  it('should render diagram', function(done) {
+  it("should render diagram", function(done) {
     browser
-      .get('http://pointer.ucsf.edu/pvjs/test/one-diagram.html?gpml=http://pointer.ucsf.edu/pvjs/test/input-data/protocol/' + pathway.fileName)
+      .get(
+        "http://pointer.ucsf.edu/pvjs/test/one-diagram.html?gpml=http://pointer.ucsf.edu/pvjs/test/input-data/protocol/" +
+          pathway.fileName
+      )
       .waitForElementById("pvjs-diagram-1", wd.asserters.isDisplayed, 4000)
-      .waitForElementByCss(".pathvisiojs-highlighter", wd.asserters.isDisplayed, 4000)
+      .waitForElementByCss(
+        ".pathvisiojs-highlighter",
+        wd.asserters.isDisplayed,
+        4000
+      )
       .nodeify(done);
   });
 
   //*
   var detailsPanelTimeout = 6000;
-  if (pathwayName === 'data-nodes') {
-    it('should open the details panel for CCR5', function(done) {
+  if (pathwayName === "data-nodes") {
+    it("should open the details panel for CCR5", function(done) {
       browser
         // TODO the contains selector isn't working for me, even though it would be nice to use it
         //.waitForElementByCss(":contains('CCR5')", wd.asserters.isDisplayed, detailsPanelTimeout)
         .waitForElementByCss("#bbd97", wd.asserters.isDisplayed, 500)
-        .elementById('bbd97')
+        .elementById("bbd97")
         .click()
         //.waitForElementByCss("span:contains('CCR5')", wd.asserters.isDisplayed, detailsPanelTimeout)
-        .waitForElementByCss("a.annotation-item-text", wd.asserters.isDisplayed, detailsPanelTimeout)
+        .waitForElementByCss(
+          "a.annotation-item-text",
+          wd.asserters.isDisplayed,
+          detailsPanelTimeout
+        )
         .nodeify(done);
     });
   }
@@ -124,12 +140,20 @@ describe(desired.name, function() {
 
   //*
   it("should confirm test and last known good screenshots are the same", function(done) {
-    browser.saveScreenshot('./tmp/protocol/' + pathwayName + '-' + desired.browserName + '-test.png')
+    browser.saveScreenshot(
+      "./tmp/protocol/" + pathwayName + "-" + desired.browserName + "-test.png"
+    );
 
-    var pathActualImage = 'tmp/protocol/' + pathwayName + '-' + desired.browserName + '-test.png'
-      , pathExpectedImage = 'test/input-data/protocol/' + pathwayName + '-lkg.png'
-      , pathDiffImage = 'tmp/protocol/' + pathwayName + '-' + desired.browserName + '-difference.png'
-      ;
+    var pathActualImage =
+        "tmp/protocol/" + pathwayName + "-" + desired.browserName + "-test.png",
+      pathExpectedImage =
+        "test/input-data/protocol/" + pathwayName + "-lkg.png",
+      pathDiffImage =
+        "tmp/protocol/" +
+        pathwayName +
+        "-" +
+        desired.browserName +
+        "-difference.png";
 
     /*
     imageDiff({
@@ -163,4 +187,3 @@ describe(desired.name, function() {
   });
   //*/
 });
-

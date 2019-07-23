@@ -1,26 +1,31 @@
-var  chai = require("chai")
-  , chaiAsPromised = require("chai-as-promised")
-  , colors = require('colors')
-  , expect = chai.expect
-  , fs = require('fs')
-  , gulp = require('gulp')
-  , highland = require('highland')
-  , imageDiff = require('image-diff')
-  , imagemagick = require('imagemagick-native')
-  , os   = require('os')
-  , pHash = require('phash')
-  , prompt = require('prompt')
-  , wd = require('wd')
-  ;
-
+var chai = require("chai"),
+  chaiAsPromised = require("chai-as-promised"),
+  colors = require("colors"),
+  expect = chai.expect,
+  fs = require("fs"),
+  gulp = require("gulp"),
+  highland = require("highland"),
+  imageDiff = require("image-diff"),
+  imagemagick = require("imagemagick-native"),
+  os = require("os"),
+  pHash = require("phash"),
+  prompt = require("prompt"),
+  wd = require("wd");
 var pathway = JSON.parse(process.env.PVJS_PATHWAY);
 var pathwayName = pathway.name;
 
-var desired = {"browserName": process.env.BROWSER};
-desired.name = 'Local Protocol for ' + pathwayName.toUpperCase().cyan + ' (' + desired.browserName.grey + ')';
-desired.tags = ['localhost'];
+var desired = { browserName: process.env.BROWSER };
+desired.name =
+  "Local Protocol for " +
+  pathwayName.toUpperCase().cyan +
+  " (" +
+  desired.browserName.grey +
+  ")";
+desired.tags = ["localhost"];
 
-var lastKnownGoodScreenshotHashes = JSON.parse(fs.readFileSync('./test/last-known-goods/protocol/screenshot-hashes.json'));
+var lastKnownGoodScreenshotHashes = JSON.parse(
+  fs.readFileSync("./test/last-known-goods/protocol/screenshot-hashes.json")
+);
 
 chai.use(chaiAsPromised);
 chai.should();
@@ -40,15 +45,20 @@ describe(desired.name, function() {
   var allPassed = true;
 
   before(function(done) {
-    browser = wd.remote({
-      hostname: '127.0.0.1',
+    browser = wd.remote(
+      {
+        hostname: "127.0.0.1",
         port: process.env.SELENIUM_PORT || 4444
-    }, 'promiseChain');
+      },
+      "promiseChain"
+    );
 
     // Check if tmp/protocol folder exists. Create if it does not exist
-    if (!fs.existsSync('./tmp/protocol/')) {
-      fs.mkdirSync('./tmp/protocol/', 0755, function(err){
-        if(err){console.log(err);}
+    if (!fs.existsSync("./tmp/protocol/")) {
+      fs.mkdirSync("./tmp/protocol/", 0755, function(err) {
+        if (err) {
+          console.log(err);
+        }
       });
     }
 
@@ -74,54 +84,70 @@ describe(desired.name, function() {
   });
 
   afterEach(function(done) {
-    allPassed = allPassed && (this.currentTest.state === 'passed');
+    allPassed = allPassed && this.currentTest.state === "passed";
     done();
   });
 
   after(function(done) {
     return browser
-      .saveScreenshot('tmp/protocol/' + pathwayName + '-' + desired.browserName + '-test.png')
+      .saveScreenshot(
+        "tmp/protocol/" + pathwayName + "-" + desired.browserName + "-test.png"
+      )
       .quit()
       .nodeify(done);
   });
 
-  it('should render diagram', function(done) {
+  it("should render diagram", function(done) {
     browser
-      .get('http://localhost:3000/test/one-diagram.html?gpml=http://localhost:3000/test/input-data/protocol/' + pathway.fileName)
+      .get(
+        "http://localhost:3000/test/one-diagram.html?gpml=http://localhost:3000/test/input-data/protocol/" +
+          pathway.fileName
+      )
       .waitForElementById("pvjs-diagram-1", wd.asserters.isDisplayed, 4000)
-      .waitForElementByCss(".pathvisiojs-highlighter", wd.asserters.isDisplayed, 4000)
+      .waitForElementByCss(
+        ".pathvisiojs-highlighter",
+        wd.asserters.isDisplayed,
+        4000
+      )
       .nodeify(done);
   });
 
   //*
   var detailsPanelTimeout = 6000;
-  if (pathwayName === 'data-nodes') {
-    it('should highlight the CCR5 node', function(done) {
+  if (pathwayName === "data-nodes") {
+    it("should highlight the CCR5 node", function(done) {
       browser
-        .waitForElementByCss('[placeholder="Enter node name to highlight"]', wd.asserters.isDisplayed, 500)
+        .waitForElementByCss(
+          '[placeholder="Enter node name to highlight"]',
+          wd.asserters.isDisplayed,
+          500
+        )
         .elementByCss('[placeholder="Enter node name to highlight"]')
         //.elementByCss('.pathvisiojs-highlighter')
         .click()
-        .type('CCR')
-        .type('\uE014') // right arrow key
-        .type('\uE007') // enter key
+        .type("CCR")
+        .type("\uE014") // right arrow key
+        .type("\uE007") // enter key
         //.moveTo(null, 20, 20)
         //.elementByCss('.tt-dropdown-menu')
         //.click()
         .nodeify(done);
     });
-    it('should open the details panel for CCR5', function(done) {
+    it("should open the details panel for CCR5", function(done) {
       browser
         // TODO the contains selector isn't working for me, even though it would be nice to use it
         //.waitForElementByCss(":contains('CCR5')", wd.asserters.isDisplayed, detailsPanelTimeout)
         .waitForElementByCss("#bbd97", wd.asserters.isDisplayed, 500)
-        .elementById('bbd97')
+        .elementById("bbd97")
         .click()
         //.waitForElementByCss("span:contains('CCR5')", wd.asserters.isDisplayed, detailsPanelTimeout)
-        .waitForElementByCss("a.annotation-item-text", wd.asserters.isDisplayed, detailsPanelTimeout)
+        .waitForElementByCss(
+          "a.annotation-item-text",
+          wd.asserters.isDisplayed,
+          detailsPanelTimeout
+        )
         .nodeify(done);
     });
   }
   //*/
 });
-

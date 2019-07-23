@@ -254,16 +254,14 @@ export class PanZoom extends React.Component<any, any> {
 
       if (BBox.width >= BBox.height) {
         panZoom.zoom(
-          containerBBox.width /
-            BBox.width *
+          (containerBBox.width / BBox.width) *
             scalingFactor *
             containerBBox.realZoom
         );
         return;
       }
       panZoom.zoom(
-        containerBBox.height /
-          BBox.height *
+        (containerBBox.height / BBox.height) *
           scalingFactor *
           containerBBox.realZoom
       );

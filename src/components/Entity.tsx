@@ -106,9 +106,8 @@ export class Entity extends React.Component<any, any> {
         burr.height += 0;
         const attachmentDisplay = burr.attachmentDisplay;
         const [xPositionScalar, yPositionScalar] = attachmentDisplay.position;
-        const [xOffset, yOffset] = "offset" in attachmentDisplay
-          ? attachmentDisplay.offset
-          : [0, 0];
+        const [xOffset, yOffset] =
+          "offset" in attachmentDisplay ? attachmentDisplay.offset : [0, 0];
 
         // kaavioType is referring to the entity the burr is attached to
         if (["SingleFreeNode", "Group"].indexOf(kaavioType) > -1) {

@@ -147,7 +147,8 @@ export class Diagram extends React.Component<any, any> {
         }
       }
       return acc;
-    }, {});
+    },
+    {});
 
     const diagramStyleForHighlighted = (highlights || [])
       .map(function([targetKey, targetValue, styleValue]) {
@@ -285,7 +286,7 @@ ${edgeSelector} {
 
       const inheritedProps = toPairs(props)
         .filter(([key, value]) => value === "inherit")
-        .reduce(function(acc, [key, value]): void|Record<string, any> {
+        .reduce(function(acc, [key, value]): void | Record<string, any> {
           if (!(key in parentProps)) {
             throw new Error(
               `Error: props.${key} equals "inherit", but parentProps.${key} is missing in createChildProps(${JSON.stringify(

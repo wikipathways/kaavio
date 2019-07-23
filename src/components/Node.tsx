@@ -143,9 +143,8 @@ export class Node extends React.Component<any, any> {
     // TODO: we're getting box-sizing: border-box behavior for a 200x100 rect
     // with a 3px double-line stroke, but it's slightly off for a 40x40 rect
     // with same stroke.
-    const actualStrokeWidth = strokeStyle === "double"
-      ? strokeWidth * 4
-      : strokeWidth;
+    const actualStrokeWidth =
+      strokeStyle === "double" ? strokeWidth * 4 : strokeWidth;
     if (width + actualStrokeWidth > 0 && height + actualStrokeWidth > 0) {
       const scaleX = width / (width + actualStrokeWidth);
       const scaleY = height / (height + actualStrokeWidth);
