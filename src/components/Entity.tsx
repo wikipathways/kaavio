@@ -201,7 +201,6 @@ export class Entity extends React.Component<any, any> {
       <g
         id={id}
         key={id}
-        about={id}
         className={classNamesToString(classNames)}
         color={stroke}
         name={textContent}

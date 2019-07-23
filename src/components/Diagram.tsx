@@ -374,15 +374,11 @@ ${edgeSelector} {
       }
     ]);
 
-    // TODO add any prefixes, vocab and base if there is a provided @context
-    const prefix = ["schema:http://schema.org/"].join(" ");
-
     const foregroundColor = foreground(fill);
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
-        prefix={prefix}
         id={`${normalizeElementId(id)}-svg`}
         version="1.1"
         baseProfile="full"
