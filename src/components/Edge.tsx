@@ -246,7 +246,7 @@ export class Edge extends React.Component<any, any> {
       strokeWidth: strokeWidth
     };
     let childOnlyProps = {
-      id,
+      id: `${id}-path`,
       key: `${id}-path`,
       d,
       ...markerProperties

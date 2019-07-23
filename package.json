@@ -64,7 +64,11 @@
     "type": "git",
     "url": "https://github.com/wikipathways/kaavio.git"
   },
-  "keywords": ["kaavio", "network", "diagram"],
+  "keywords": [
+    "kaavio",
+    "network",
+    "diagram"
+  ],
   "author": "WikiPathways team",
   "license": "Apache-2.0",
   "bugs": {
@@ -165,7 +169,11 @@
     ],
     "grepOptions": {
       "include": [],
-      "exclude": [".git", "jsdoc-conf.json", "npm-debug.log"],
+      "exclude": [
+        ".git",
+        "jsdoc-conf.json",
+        "npm-debug.log"
+      ],
       "excludeDir": [
         "./docs",
         "./test",
