@@ -203,16 +203,9 @@ export class Diagram extends React.Component<any, any> {
         if (targetKey === "id") {
           selectorPrefixes = [`#${targetValue}`];
         } else if (targetKey === "class") {
-          /*
-          selectorPrefixes = targetValues.map(
-            targetValue => `[typeof~="${targetValue}"]`
-          );
-		//*/
-          //*
           selectorPrefixes = targetValues.map(
             targetValue => `.${classNamesToArray(targetValue)}`
           );
-          //*/
         } else if (targetKey === "name") {
           selectorPrefixes = targetValues.map(
             targetValue => `[name="${targetValue}"]`
@@ -397,7 +390,6 @@ ${edgeSelector} {
         color={foregroundColor}
         onClick={handleClick}
         className={classNamesToString("Diagram")}
-        typeof="Diagram"
         viewBox={`0 0 ${width} ${height}`}
       >
         <style

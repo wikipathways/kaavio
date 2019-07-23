@@ -206,8 +206,6 @@ export class Entity extends React.Component<any, any> {
         color={stroke}
         name={textContent}
         transform={entityTransform}
-        // encodeURI vs. encodeURIComponent?
-        typeof={type.map(encodeURI).join(" ")}
       >
         {/*
         // NOTE: recommendation is to only use one metadata child per element,

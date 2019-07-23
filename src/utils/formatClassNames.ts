@@ -11,7 +11,7 @@ export const classNamesToArray = function(
     ...map(
       (input: string) =>
         input
-          .replace(/([^a-zA-Z0-9\-\_\u00A0-\uFFFF])/g, "-")
+          .replace(/([^a-zA-Z0-9\-\_\u00A0-\uFFFF])/g, "_")
           .replace(/^(\d|\-\-|\-\d)/, "_"),
       compact(flatten(inputs))
     )
