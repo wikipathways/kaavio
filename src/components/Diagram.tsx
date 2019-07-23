@@ -436,7 +436,7 @@ ${edgeSelector} {
 
         <Entity
           {...createChildProps(pseudoParent, {
-            className: "Viewport",
+            classNames: "Viewport",
             ...pathway
           })}
         />
