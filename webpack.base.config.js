@@ -101,7 +101,7 @@ module.exports = {
         test: /\.[jt]sx?$/,
         use: ["source-map-loader", shebangRemovalLoader],
         enforce: "pre",
-        exclude: [/lodash/, /react-dom/, /react-spinkit/]
+        exclude: [/lodash/, /react-dom/]
       },
       {
         test: require.resolve("react-dom"),

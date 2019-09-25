@@ -8,7 +8,6 @@ import { foreground, isValidColor } from "../spinoffs/wcag-contrast";
 import { Node } from "./Node";
 import { Group } from "./Group";
 import { Edge } from "./Edge";
-import ReactCSSTransitionGroup from "react-addons-css-transition-group";
 import { classNamesToString } from "../utils/formatClassNames";
 import { EntityProps, StringReferenceValue } from "../types";
 
@@ -206,38 +205,6 @@ export class Entity extends React.Component<any, any> {
         name={textContent}
         transform={entityTransform}
       >
-        {/*
-        // NOTE: recommendation is to only use one metadata child per element,
-				// so if we want multiple RDFa property/content pairs, we could use <g>:
-        // https://www.w3.org/TR/SVG/metadata.html#MetadataElement
-        <g
-          property="biopax:entityReference"
-          content="identifiers:ec-code/3.6.3.14"
-        />
-				// alternatively, we could use regular RDF inside a metadata element:
-				<metadata>
-					<rdf:RDF
-							 xmlns:rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-							 xmlns:rdfs = "http://www.w3.org/2000/01/rdf-schema#"
-							 xmlns:dc = "http://purl.org/dc/elements/1.1/" >
-						<rdf:Description about="http://example.org/myfoo"
-								 dc:title="MyFoo Financial Report"
-								 dc:description="$three $bar $thousands $dollars $from 1998 $through 2000"
-								 dc:publisher="Example Organization"
-								 dc:date="2000-04-11"
-								 dc:format="image/svg+xml"
-								 dc:language="en" >
-							<dc:creator>
-								<rdf:Bag>
-									<rdf:li>Irving Bird</rdf:li>
-									<rdf:li>Mary Lambert</rdf:li>
-								</rdf:Bag>
-							</dc:creator>
-						</rdf:Description>
-					</rdf:RDF>
-				</metadata>
-				*/}
-
         {child}
 
         {this.renderBurrs()}

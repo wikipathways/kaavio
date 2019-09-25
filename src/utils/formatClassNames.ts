@@ -8,13 +8,13 @@ export const classNamesToArray = function(
   ...inputs: (string | string[])[]
 ): string[] {
   return uniq([
-    ...map(
+    ...(map(
       (input: string) =>
         input
           .replace(/([^a-zA-Z0-9\-\_\u00A0-\uFFFF])/g, "_")
           .replace(/^(\d|\-\-|\-\d)/, "_"),
       compact(flatten(inputs))
-    )
+    ) as string[])
   ]);
 };
 

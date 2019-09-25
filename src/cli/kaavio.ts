@@ -468,9 +468,7 @@ const processThemeSpecPropertyFor = {
       .flatMap(function(processed) {
         return hl(
           svgo.optimize(
-            `<svg xmlns="http://www.w3.org/2000/svg"><defs>${
-              processed.content
-            }</defs></svg>`
+            `<svg xmlns="http://www.w3.org/2000/svg"><defs>${processed.content}</defs></svg>`
           )
         ).map(function({ data, info }) {
           const jic = processed.jic;

@@ -24,7 +24,6 @@ import * as hl from "highland";
 import { curry, get, keys } from "lodash/fp";
 import * as path from "path";
 const osFonts = require("os-fonts");
-import * as Promise from "promise";
 import * as opentype from "opentype.js";
 import * as opentypeLayoutUncurried from "opentype-layout";
 import * as levenUncurried from "fast-levenshtein";
