@@ -1,6 +1,6 @@
 {
   "name": "kaavio",
-  "version": "4.0.9",
+  "version": "4.0.10",
   "description": "Diagram viewer and editor for biological pathways.",
   "main": "es5/index.js",
   "module": "esnext/index.js",
