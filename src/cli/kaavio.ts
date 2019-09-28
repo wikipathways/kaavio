@@ -494,7 +494,7 @@ const processThemeSpecPropertyFor = {
 					}}/>
 			}
 		}`,
-            { parser: "babylon" }
+            { parser: "babel" }
           );
         });
       });
