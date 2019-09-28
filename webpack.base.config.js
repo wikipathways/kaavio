@@ -1,6 +1,6 @@
 const path = require("path");
 const webpack = require("webpack");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const StringReplacePlugin = require("string-replace-webpack-plugin");
 const npmPkg = require("./package.json");
 
@@ -119,9 +119,9 @@ module.exports = {
     new webpack.DefinePlugin({
       version: npmPkg.version
     }),
-    new ExtractTextPlugin({
+    new MiniCssExtractPlugin({
       filename: "style.css",
-      allChunks: true
+      ignoreOrder: false
     })
   ]
 };
