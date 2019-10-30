@@ -8,7 +8,6 @@ import { DOMParser } from "xmldom";
 const select = require("xpath.js");
 import { Base64 } from "js-base64";
 const prettier = require("prettier");
-const SVGO = require("svgo");
 import {
   assign,
   camelCase,
@@ -50,127 +49,6 @@ import { arrayify } from "../spinoffs/jsonld-utils";
 import { processFilterDef } from "./processFilterDef";
 import { processMarkerDef } from "./processMarkerDef";
 import { processSymbolDef } from "./processSymbolDef";
-
-// TODO which of these plugins are defaults and don't need to be specified here?
-const svgo = new SVGO({
-  //full: true,
-  plugins: [
-    {
-      cleanupAttrs: true
-    },
-    {
-      removeDoctype: true
-    },
-    {
-      removeXMLProcInst: true
-    },
-    {
-      removeComments: true
-    },
-    {
-      removeMetadata: true
-    },
-    {
-      removeTitle: true
-    },
-    {
-      removeDesc: true
-    },
-    {
-      removeUselessDefs: true
-    },
-    {
-      removeEditorsNSData: true
-    },
-    {
-      removeEmptyAttrs: true
-    },
-    {
-      removeHiddenElems: true
-    },
-    {
-      removeEmptyText: true
-    },
-    {
-      removeEmptyContainers: true
-    },
-    {
-      removeViewBox: false
-    },
-    {
-      cleanUpEnableBackground: true
-    },
-    {
-      convertStyleToAttrs: true
-    },
-    {
-      convertColors: true
-    },
-    {
-      convertPathData: true
-    },
-    {
-      convertTransform: true
-    },
-    {
-      removeUnknownsAndDefaults: true
-    },
-    {
-      removeNonInheritableGroupAttrs: true
-    },
-    {
-      removeUselessStrokeAndFill: true
-    },
-    {
-      removeUnusedNS: true
-    },
-    {
-      cleanupIDs: false
-    },
-    {
-      cleanupNumericValues: true
-    },
-    {
-      moveElemsAttrsToGroup: true
-    },
-    {
-      moveGroupAttrsToElems: false
-    },
-    {
-      collapseGroups: true
-    },
-    {
-      removeRasterImages: false
-    },
-    {
-      mergePaths: true
-    },
-    {
-      convertShapeToPath: true
-    },
-    {
-      sortAttrs: true
-    },
-    {
-      transformsWithOnePath: true
-    },
-    {
-      removeDimensions: true
-    },
-    {
-      removeScriptElement: true
-    },
-    /*
-    {
-      removeXMLNS: true
-    },
-    //*/
-    {
-      removeAttrs: { attrs: "(data-context-stroke-dashoffset|xmlns)" }
-    }
-  ]
-  //js2svg: { pretty: true, indent: 2 }
-});
 
 const npmPackage = require("../../package.json");
 const exec = hl.wrapCallback(require("child_process").exec);
@@ -465,39 +343,34 @@ const processThemeSpecPropertyFor = {
         acc.jic = defaultsDeep(acc.jic, jic);
         return acc;
       })
-      .flatMap(function(processed) {
-        return hl(
-          svgo.optimize(
-            `<svg xmlns="http://www.w3.org/2000/svg"><defs>${processed.content}</defs></svg>`
-          )
-        ).map(function({ data, info }) {
-          const jic = processed.jic;
-          const JicKey = keys(jic)
-            .map(key => `"${key}"`)
-            .join("|");
-          return prettier.format(
-            `import * as React from "react";
-		import * as ReactDom from "react-dom";
-		export class Defs extends React.Component<any, any> {
-			static jicPath: string = "./defs.svg";
-			static jic: Record<${JicKey}, string|Record<"contextStrokeDashoffset", number>> = ${JSON.stringify(
-              jic,
-              null,
-              "  "
-            )};
-			constructor(props) {
-				super(props);
-			}
-			render() {
-				return <g id="jic-defs" dangerouslySetInnerHTML={{
-						__html: '${data}'
-					}}/>
-			}
-		}`,
-            { parser: "babel" }
-          );
-        });
-      });
+      .map(function(processed) {
+        const data = processed.content.replace(/[\r\n]/g, "").replace(/>\s+</g, "><");
+        const jic = processed.jic;
+        const JicKey = keys(jic)
+          .map(key => `"${key}"`)
+          .join("|");
+        return prettier.format(
+          `import * as React from "react";
+  import * as ReactDom from "react-dom";
+  export class Defs extends React.Component<any, any> {
+    static jicPath: string = "./defs.svg";
+    static jic: Record<${JicKey}, string|Record<"contextStrokeDashoffset", number>> = ${JSON.stringify(
+            jic,
+            null,
+            "  "
+          )};
+    constructor(props) {
+      super(props);
+    }
+    render() {
+      return <g id="jic-defs" dangerouslySetInnerHTML={{
+          __html: '${data}'
+        }}/>
+    }
+  }`,
+          { parser: "babel" }
+        );
+      })
   },
   edges: function({
     themeName,
