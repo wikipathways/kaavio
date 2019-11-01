@@ -150,6 +150,82 @@ export class Diagram extends React.Component<any, any> {
     },
     {});
 
+    const diagramStyleForOpacities = (opacities || [])
+      .map(function([targetKey, targetValue, styleValue]) {
+        const opacity = styleValue;
+        let targetValues;
+        if (!targetKey) {
+          const normalized = normalizeTargetValue(targetValue);
+          if (
+            targetValue in entitiesById &&
+            "drawAs" in entitiesById[targetValue]
+          ) {
+            targetKey = "id";
+          } else if (
+            normalized in classNamesByNormalized ||
+            normalized in textContentValuesByNormalized
+          ) {
+            //ReactDOM.Element.proto
+            let originals;
+            if (normalized in classNamesByNormalized) {
+              targetKey = "class";
+              originals = classNamesByNormalized[normalized];
+            } else {
+              targetKey = "name";
+              originals = textContentValuesByNormalized[normalized];
+            }
+
+            if (targetValue in originals) {
+              targetValues = [targetValue];
+            } else {
+              targetValues = originals;
+              if (originals.length > 1) {
+                console.warn(
+                  `Warning: ${targetValue} maps to multiple: ${originals.join()}`
+                );
+              }
+            }
+          } else {
+            console.warn(
+              `"${targetValue}" does not match the id, class/type or textContent of any entity. Hide failed.`
+            );
+            return;
+          }
+        } else {
+          targetValues = [targetValue];
+        }
+
+        let selectorPrefixes = [];
+        if (targetKey === "id") {
+          selectorPrefixes = [`#${targetValue}`];
+        } else if (targetKey === "class") {
+          selectorPrefixes = targetValues.map(
+            targetValue => `.${classNamesToArray(targetValue)}`
+          );
+        } else if (targetKey === "name") {
+          selectorPrefixes = targetValues.map(
+            targetValue => `[name="${targetValue}"]`
+          );
+        }
+
+        const nodeSelector = selectorPrefixes
+          .map(selectorPrefix => `${selectorPrefix}`)
+          .join(",");
+        const edgeSelector = selectorPrefixes
+          .map(selectorPrefix => `${selectorPrefix}`)
+          .join(",");
+
+        return `
+${nodeSelector} {
+	opacity: ${opacity};
+}
+${edgeSelector} {
+	opacity: ${opacity};
+}`;
+      })
+      .filter(s => !!s)
+      .join("\n");
+
     const diagramStyleForHighlighted = (highlights || [])
       .map(function([targetKey, targetValue, styleValue]) {
         const color = styleValue;
@@ -215,16 +291,32 @@ export class Diagram extends React.Component<any, any> {
         const nodeSelector = selectorPrefixes
           .map(selectorPrefix => `${selectorPrefix} > .Icon`)
           .join(",");
+        const nodeTextSelector = selectorPrefixes
+          .map(selectorPrefix => `${selectorPrefix} > .Text`)
+          .join(",");
         const edgeSelector = selectorPrefixes
           .map(selectorPrefix => `${selectorPrefix} > path`)
           .join(",");
 
-        const highlighterFill = interpolate(pathway.fill, color, 0.5);
+        const highlighterFill = color;
+        /*
+        const highlighterFill = interpolate(
+          foreground(foreground(pathway.fill)),
+          color,
+          0.75
+        );
+        //*/
+
+        // change font color to contrast with highlighted color
+        const highlightedFontColor = foreground(highlighterFill);
 
         return `
 ${nodeSelector} {
 	fill: ${highlighterFill};
 	filter: ${filterReference};
+}
+${nodeTextSelector} {
+	fill: ${highlightedFontColor};
 }
 ${edgeSelector} {
 	filter: ${filterReference};
@@ -234,6 +326,7 @@ ${edgeSelector} {
       .join("\n");
 
     this.state = {
+      diagramStyleForOpacities,
       diagramStyleForHighlighted,
       ...{ highlights: [], opacities: [] },
       ...this.setFillOpacity(props)
@@ -352,6 +445,7 @@ ${edgeSelector} {
     const { getNamespacedId, createChildProps3, handleClick, state } = this;
 
     const {
+      diagramStyleForOpacities,
       diagramStyleForHighlighted,
       entitiesById,
       opacities,
@@ -420,6 +514,7 @@ ${edgeSelector} {
 	}
 	${diagramStyleCustom || ""}
 	${diagramStyleForHighlighted || ""}
+	${diagramStyleForOpacities || ""}
 ]]>
 `
           }}

@@ -80,26 +80,34 @@ export function createJson2SvgCLI(
     )
     // TODO change this to use opacities
     .option(
-      "--hidden target[,target...]",
+      "--hide <target[=opacity][,target[=opacity],...]>",
       `Specify entities to hide. 
 
 			target: entity id, type or textContent
 
+			opacity: value between 0 and 1, with 0 being fully hidden and 1 being fully visible.
+				<https://developer.mozilla.org/en-US/docs/Web/CSS/opacity>
+				Default: 0
+
 			Examples:
-				--hidden b99fe
-				--hidden b99fe,abd6e
-				--hidden ensembl:ENSG00000124762
-				--hidden b99fe,ensembl:ENSG00000124762`,
+				--hide b99fe
+				--hide b99fe=0.5
+				--hide b99fe,abd6e
+				--hide ensembl:ENSG00000124762
+				--hide b99fe,ensembl:ENSG00000124762`,
       (argValue: string) => {
         return argValue
           .split(",")
           .filter(x => x !== "")
-          .map(decodeURIComponent);
+          .map(function(chunk: string) {
+            const [target, opacity = 0] = chunk.split(/=/);
+            return [null, target, opacity];
+          });
       },
       []
     )
     .option(
-      "--highlighted target[=color][,target[=color],...]",
+      "--highlight <target[=color][,target[=color],...]>",
       `Specify entities to highlight.
 
 			target: entity id or typeof value
@@ -112,21 +120,21 @@ export function createJson2SvgCLI(
 				mytext,moretext => mytext%2Cmoretext
 
 			Examples:
-				--highlighted b99fe
-				--highlighted b99fe=red
-				--highlighted b99fe=ff000
-				--highlighted "b99fe=#ff000"
-				--highlighted b99fe=red,abd6e=red
-				--highlighted ensembl:ENSG00000124762=red
-				--highlighted b99fe,ensembl:ENSG00000124762=red
-				--highlighted b99fe=red,ensembl:ENSG00000124762=red
-				--highlighted b99fe=66c2a5,ensembl:ENSG00000124762=8da0cb`,
+				--highlight b99fe
+				--highlight b99fe=red
+				--highlight b99fe=ff000
+				--highlight "b99fe=#ff000"
+				--highlight b99fe=red,abd6e=red
+				--highlight ensembl:ENSG00000124762=red
+				--highlight b99fe,ensembl:ENSG00000124762=red
+				--highlight b99fe=red,ensembl:ENSG00000124762=red
+				--highlight b99fe=66c2a5,ensembl:ENSG00000124762=8da0cb`,
       (argValue: string) => {
         return argValue
           .split(",")
           .filter(x => x !== "")
           .map(function(chunk: string) {
-            const [rawTarget, rawColor = "yellow"] = chunk.split(/=/);
+            const [target, rawColor = "yellow"] = chunk.split(/=/);
             let color;
             if (Validator.isColor(rawColor)) {
               color = Parser.parseColor(rawColor);
@@ -142,10 +150,7 @@ export function createJson2SvgCLI(
                 );
               }
             }
-            return {
-              target: decodeURIComponent(rawTarget),
-              color: color || "yellow"
-            };
+            return [null, target, !!color ? color.hex : "yellow"];
           });
       },
       []
@@ -217,8 +222,9 @@ export function createJson2SvgCLI(
 
   const render = program.react ? renderToString : renderToStaticMarkup;
   const { theme: themeName = defaultThemeName } = program;
-  const hidden = arrayify(program.hidden);
-  const highlighted = arrayify(program.highlighted);
+  // hide elements by setting opacity to zero
+  const opacities = arrayify(program.hide);
+  const highlights = arrayify(program.highlight);
 
   const theme = themeMap[themeName];
 
@@ -281,7 +287,9 @@ export function createJson2SvgCLI(
     //      })
     .map(function(input) {
       const props = defaultsDeep(input, theme);
-      return render(<Diagram {...props} />);
+      return render(
+        <Diagram highlights={highlights} opacities={opacities} {...props} />
+      );
     })
     .errors(function(err) {
       console.error("err");
