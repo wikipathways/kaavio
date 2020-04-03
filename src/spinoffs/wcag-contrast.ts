@@ -1,6 +1,9 @@
 import { Parser, Validator } from "collit";
 import { isString } from "lodash/fp";
-import * as luminance from "relative-luminance";
+import * as l from "relative-luminance";
+
+// Dirty hack to stop typescript complaining
+const luminance = l.default;
 
 const whiteRelLuminance = 1;
 const blackRelLuminance = 0;
