@@ -1,6 +1,6 @@
 import { Parser, Validator } from "collit";
 import { isString } from "lodash/fp";
-const luminance = require("relative-luminance");
+const luminance = require("relative-luminance").default;
 
 const whiteRelLuminance = 1;
 const blackRelLuminance = 0;
