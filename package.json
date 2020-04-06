@@ -100,7 +100,7 @@
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
     "read-pkg-up": "^3.0.0",
-    "relative-luminance": "^2.0.1",
+    "relative-luminance": "0.0.2",
     "roboto-fontface": "^0.10.0",
     "rx-extra": "2.1.4",
     "rxjs": "^5.5.12",
