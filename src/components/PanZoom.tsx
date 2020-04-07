@@ -140,6 +140,11 @@ export class PanZoom extends React.Component<any, any> {
     });
   };
 
+  componentWillUnmount() {
+    this.state.panZoom.destroy();
+    window.removeEventListener("resize", this.onResize);
+  }
+
   init = diagram => {
     const { showPanZoomControls } = this.props;
     this.destroy(); // Destroy the diagram first in case there is one
