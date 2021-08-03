@@ -113,7 +113,7 @@
     "valid-data-url": "^2.0.0",
     "verror": "^1.10.0",
     "word-wrappr": "^1.0.3",
-    "xmldom": "^0.1.27",
+    "xmldom": "^0.6.0",
     "xpath": "^0.0.27",
     "xpath.js": "^1.1.0"
   },
